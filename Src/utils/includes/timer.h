@@ -49,6 +49,22 @@
 
 /******************************************************************************\
 **
+**  MACROS
+**
+\******************************************************************************/
+
+/// @brief Invokation limit to detect whether the timer is alive or not.
+///
+/// This limit specifies how many times the @ref TimerAPI_GetTimeLapse function
+/// can be invoked without increase in the timer tick value before the system
+/// gets tired. Adjust this value depends on the ratio between the system clock 
+/// and the timer tick frequency. Too small limit value causes the timer to
+/// get tired accidentally. However, keeping this as small as possible enhances
+/// the system response on error situations.
+#define TIMER_INVOKATION_LIMIT 100000
+
+/******************************************************************************\
+**
 **  ERROR CODES
 **
 \******************************************************************************/
@@ -57,6 +73,11 @@
 ///
 /// At least one of the pointer parameters is invalid (points to null).
 #define TIMER_ERROR_INVALID_POINTER -1
+
+/// @brief Timer is not running.
+///
+/// Timer system is not running. Timer tick counter don't increase as expected.
+#define TIMER_ERROR_TIMER_NOT_RUNNING -2
 
 /******************************************************************************\
 **
@@ -77,7 +98,9 @@ TimerSys_t{
         /// Current time helper variable.
         Timer_t ctim;
         /// Timer tick counter.
-        Timer_t tck;        
+        Timer_t tck;
+        /// Invokation counter.
+        uint32_t icnt;
 } TimerSys_t;
 
 /******************************************************************************\
@@ -134,6 +157,21 @@ TimerAPI_GetTimeLapse(
         TimerSys_t *timerSys,
         Timer_t timer,
         uint32_t *timeLapse
+);
+
+/*-------------------------------------------------------------------------*//** 
+**  @brief Makes a delay in timer ticks.
+**
+**  @param[in] timerSys Timer system to use.
+**  @param[in] delay Delay time in timer ticks.
+**
+**  @retval RESULT_OK Successful.
+**  @retval TIMER_ERROR_INVALID_POINTER The timerSys parameter points to null.
+*/
+Result_t
+TimerAPI_Delay(
+        TimerSys_t *timerSys,
+        uint32_t delay
 );
 
 /*-------------------------------------------------------------------------*//** 

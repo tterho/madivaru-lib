@@ -64,6 +64,14 @@
 				</PostOutput>
 			</Target>
 		</Build>
+		<Compiler>
+			<Add directory="Src" />
+			<Add directory="Src/cli/includes" />
+			<Add directory="Src/spi/includes" />
+			<Add directory="Src/sensor_framework/includes" />
+			<Add directory="Src/serialport/includes" />
+			<Add directory="Src/utils/includes" />
+		</Compiler>
 		<PostOutput>
 			<ConvertedOutput PostOutputCreate="0" />
 			<ConvertedOutput PostOutputType="HEX" />
@@ -72,6 +80,11 @@
 		<Unit filename="Doc/README.txt" />
 		<Unit filename="Setup/Flash.ld" />
 		<Unit filename="Setup/startup.S" />
+		<Unit filename="Src/cli/includes/cli_api.h" />
+		<Unit filename="Src/cli/includes/cli_cfg.h" />
+		<Unit filename="Src/cli/src/cli_api.c">
+			<Option compilerVar="CC" />
+		</Unit>
 		<Unit filename="Src/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -80,6 +93,15 @@
 		</Unit>
 		<Unit filename="Src/sensor_framework/includes/sensor_api.h" />
 		<Unit filename="Src/sensor_framework/includes/sensors.h" />
+		<Unit filename="Src/serialport/api/serialport.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="Src/serialport/includes/serialport.h" />
+		<Unit filename="Src/spi/api/spi_api.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="Src/spi/includes/spi_api.h" />
+		<Unit filename="Src/types.h" />
 		<Unit filename="Src/utils/includes/average16.h" />
 		<Unit filename="Src/utils/includes/crc16.h" />
 		<Unit filename="Src/utils/includes/crc32.h" />

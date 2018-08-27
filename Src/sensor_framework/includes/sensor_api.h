@@ -3,10 +3,12 @@
 **  @file       sensor_api.h
 **  @ingroup    sensor_framework
 **  @brief      Generic sensor API and driver interface.
-**  @copyright  (C) 2012-2018 Tuomas Terho
+**  @copyright  Copyright (C) 2012-2018 Tuomas Terho. All rights reserved.
 **
 *******************************************************************************/
 /*
+**  BSD 3-Clause License
+**
 **  COPYRIGHT (c) 2012-2018, Tuomas Terho
 **  All rights reserved.
 **
@@ -124,11 +126,13 @@
 /// the function @ref SensorAPI_InitDriver to initialize the driver before using
 /// it.
 #define SENSORAPI_ERROR_NOT_INITIALIZED -1
+
 /// @brief Function not implemented in the driver.
 ///
 /// Trying to use a function which is not supported by the driver (not 
 /// implemented). Refer to the documentation of the particular driver.
 #define SENSORAPI_ERROR_NOT_IMPLEMENTED -2
+
 /// @brief Invalid handle value.
 ///
 /// Trying to use an invalid handle. Use the function @ref SensorAPI_GetHandle
@@ -223,7 +227,9 @@ Sensor_Control_t{
         /// Turns a sensor off.
         SENSOR_DISABLE=0, 
         /// Turns a sensor on.
-        SENSOR_ENABLE 
+        SENSOR_ENABLE,
+        /// Halts a sensor.
+        SENSOR_HALT
 } Sensor_Control_t;
 
 /*-------------------------------------------------------------------------*//**
@@ -578,6 +584,8 @@ SensorDrv_t{
                 Sensor_Control_t ctrl;
                 /// Calibration state.
                 bool cal;
+                /// Timer system.
+                TimerSys_t *tsys;
                 /// Sensor specific driver instance.
                 void *inst;
         } dd;
@@ -596,24 +604,24 @@ SensorDrv_t{
 **  @param[in] sensor Type of the sensor to be associated with the driver.
 **  @param[in] funcInit Driver function pointer (mandatory).
 **  @param[in] funcSetCalibrationParams Driver function pointer (optional, set 
-**      to zero if not used).
+**      to null if not used).
 **  @param[in] funcStartCalibration Driver function pointer (optional, set to 
-**      zero if not used).
+**      null if not used).
 **  @param[in] funcGetCalibrationState Driver function pointer (optional, set to 
-**      zero if not used).
+**      null if not used).
 **  @param[in] funcGetCalibrationData Driver function pointer (optional, set to 
-**      zero if not used).
+**      null if not used).
 **  @param[in] funcSetCalibrationData Driver function pointer (optional, set to
-**      zero if not used).
-**  @param[in] funcConfigure Driver function pointer (optional, set to zero if 
+**      null if not used).
+**  @param[in] funcConfigure Driver function pointer (optional, set to null if 
 **      not used).
 **  @param[in] funcSetInput Driver function pointer (mandatory).
 **  @param[in] funcGetOutput Driver function pointer (mandatory).
-**  @param[in] funcOn Driver function pointer (optional, set to zero if not 
+**  @param[in] funcOn Driver function pointer (optional, set to null if not 
 **      used).
-**  @param[in] funcOff Driver function pointer (optional, set to zero if not
+**  @param[in] funcOff Driver function pointer (optional, set to null if not
 **      used).
-**  @param[in] funcRun Driver function pointer (optional, set to zero if not 
+**  @param[in] funcRun Driver function pointer (optional, set to null if not 
 **      used).
 **  @param[in] inputDataItemCount Item count in the input data set (driver 
 **      specific, must be greater than zero).
@@ -629,6 +637,7 @@ SensorDrv_t{
 **      (mandatory).
 **  @param[in] ctrlCmdCallback Callback routine for special control commands 
 **      (optional, driver specific).
+**  @param[in] timerSys Timer system to be used for timings.
 **  @param[in] instance A pointer to a driver instance (mandatory).
 **
 **  @return No return value.
@@ -661,6 +670,7 @@ SensorAPI_InitDriver(
         SensorCbk_Input_t inputCallback,
         SensorCbk_Output_t outputCallback,
         SensorCbk_CtrlCmd_t ctrlCmdCallback,
+        TimerSys_t *timerSys,
         void *instance
 );
 

@@ -76,6 +76,7 @@ TimerAPI_StartTimer(
                 return TIMER_ERROR_INVALID_POINTER;
         }
         *timer=timerSys->tck;
+        timerSys->icnt=0;
         return RESULT_OK;
 }
 
@@ -92,10 +93,54 @@ TimerAPI_GetTimeLapse(
         if(!timerSys||!timeLapse){
                 return TIMER_ERROR_INVALID_POINTER;
         }
+        // If there is no change between the current timer value and the 
+        // running tick counter, advance the invokation counter. Otherwise,
+        // reset the invokation counter.
+        if(timerSys->ctim==timerSys->tck){
+                timerSys->icnt++;
+        }else{
+                timerSys->icnt=0;
+        }
+        // If the invokation counter has reached the timer invokation limit,
+        // the timer is not running properly.
+        if(timerSys->icnt>TIMER_INVOKATION_LIMIT){
+                return TIMER_ERROR_TIMER_NOT_RUNNING;
+        }
+        // Store the running tick counter and compare it to the given timer.
+        // Handle a wrap-around of the tick counter. Store the difference to the 
+        // output parameter.
         timerSys->ctim=timerSys->tck;
         *timeLapse=(timer<=timerSys->ctim)
                    ?(timerSys->ctim-timer)
                    :(0xffffffff-timer)+timerSys->ctim+1;
+        return RESULT_OK;
+}
+
+/*------------------------------------------------------------------------------
+**  Makes a delay in timer ticks.
+*/
+Result_t
+TimerAPI_Delay(
+        TimerSys_t *timerSys,
+        uint32_t delay
+)
+{
+        Timer_t t;
+        uint32_t tl=0;
+        Result_t result;
+    
+        if(!timerSys){
+                return TIMER_ERROR_INVALID_POINTER;
+        }
+        // Start a timer.
+        TimerAPI_StartTimer(timerSys,&t);
+        // Wait as long as the time lapse is less than the delay.
+        while(tl<delay){
+                result=TimerAPI_GetTimeLapse(timerSys,t,&tl);
+                if(!SUCCESSFUL(result)){
+                        return result;
+                }
+        }
         return RESULT_OK;
 }
 

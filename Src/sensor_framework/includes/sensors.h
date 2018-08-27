@@ -8,12 +8,14 @@
 **  @file       sensors.h
 **  @ingroup    sensor_framework
 **  @brief      List of sensors supported by the application.
-**  @copyright  (C) 2012-2018 Tuomas Terho
+**  @copyright  Copyright (C) 2012-2018 Tuomas Terho. All rights reserved.
 **
 **  A user-configurable list of sensors supported by the target application.
 **
 *******************************************************************************/
 /*
+**  BSD 3-Clause License
+**
 **  COPYRIGHT (c) 2012-2018, Tuomas Terho
 **  All rights reserved.
 **
