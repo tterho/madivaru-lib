@@ -3,10 +3,12 @@
 **  @file       sensor_api.c
 **  @ingroup    sensor_framework
 **  @brief      Sensor framework implementation
-**  @copyright  (C) 2012-2018 Tuomas Terho
+**  @copyright  Copyright (C) 2012-2018 Tuomas Terho. All rights reserved.
 **
 *******************************************************************************/
 /*
+**  BSD 3-Clause License
+**
 **  COPYRIGHT (c) 2012-2018, Tuomas Terho
 **  All rights reserved.
 **
@@ -81,6 +83,7 @@ SensorAPI_InitDriver(
         SensorCbk_Input_t inputCallback,
         SensorCbk_Output_t outputCallback,
         SensorCbk_CtrlCmd_t ctrlCmdCallback,
+        TimerSys_t *timerSys,
         void *instance
 )
 {
@@ -109,6 +112,7 @@ SensorAPI_InitDriver(
         driver->dd.ccbk=ctrlCmdCallback;
         driver->dd.ctrl=SENSOR_DISABLE;
         driver->dd.rreq=false;
+        driver->dd.tsys=timerSys;
         driver->dd.inst=instance;
         // If the driver supports calibration, the initial calibration state is
         // false. Otherwise it is true (no calibration required).
@@ -305,19 +309,29 @@ SensorAPI_Control(
                 return;
         }
         drv->dd.ctrl=control;
-        if(control==SENSOR_ENABLE){
+        switch(control){
+        default:
+        case SENSOR_DISABLE:
+                // Reset all sensor data in the user application.
+                for(odi=0;odi<drv->ds.odc;odi++){
+                        drv->dd.ocbk(odi,od);
+                }
+                break;
+        case SENSOR_ENABLE:
                 drv->dd.rreq=true;
                 if(drv->On){
                         drv->On(drv->dd.inst);
                 }
-        }else{
+                break;
+        case SENSOR_HALT:
                 if(drv->Off){
                         drv->Off(drv->dd.inst);
                 }
-                // Reset all sensor data.
+                // Reset all sensor data in the user application.
                 for(odi=0;odi<drv->ds.odc;odi++){
                         drv->dd.ocbk(odi,od);
                 }
+                break;
         }
 }
 
@@ -332,7 +346,7 @@ SensorAPI_Status(
         SensorDrv_t *drv;
 
         if(!sensorHndl){
-                return SENSOR_DISABLE;
+                return SENSOR_HALT;
         }
         drv=(SensorDrv_t*)sensorHndl;
         return drv->dd.ctrl;
@@ -351,6 +365,7 @@ SensorAPI_Run(
         uint8_t idi;
         Sensor_Output_t *od;
         uint8_t odi;
+        uint32_t tl;
 
         if(!sensorHndl){
                 return;
@@ -360,6 +375,10 @@ SensorAPI_Run(
                 // Driver hasn't been initialized correctly.
                 return;
         }
+        // If the sensor is halted, do nothing.
+        if(drv->dd.ctrl==SENSOR_HALT){
+                return;
+        }        
         // Go through the input data set and request data for each item
         // in the set.
         for(idi=0;idi<drv->ds.idc;idi++){
@@ -384,12 +403,14 @@ SensorAPI_Run(
                 if(od->rc){
                         // Output refresh cycle is in use.
                         // Check the cycle timer.
-                        if(Timer_Diff(od->tim)<od->rc){
+                        TimerAPI_GetTimeLapse(drv->dd.tsys,od->tim,&tl);
+                        if(tl<od->rc){
                                 // Timer is still running.
                                 continue;
                         }
-                        // Cycle timer timeout.
-                        od->tim=Timer_Get();
+                        // Cycle timer timeout occurred. 
+                        // Restart the timer.
+                        TimerAPI_StartTimer(drv->dd.tsys,&od->tim);
                 }
                 // Check sensor data status.
                 if(od->st!=SENSOR_DATA_OK){
