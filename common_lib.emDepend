@@ -1,0 +1,52 @@
+# depslib dependency file v1.0
+1535397262 source:c:\workfiles\libraries\common_lib\setup\startup.s
+
+1535397662 source:c:\workfiles\libraries\common_lib\src\main.c
+
+1535397262 source:c:\workfiles\libraries\common_lib\src\sensor_framework\api\sensor_api.c
+	"sensor_api.h"
+	<string.h>
+
+1535397262 c:\workfiles\libraries\common_lib\src\sensor_framework\includes\sensor_api.h
+	"types.h"
+	"timer.h"
+	"sensors.h"
+
+1535397262 c:\workfiles\libraries\common_lib\src\types.h
+	<stdio.h>
+	<inttypes.h>
+
+1535397262 c:\workfiles\libraries\common_lib\src\utils\includes\timer.h
+	"types.h"
+
+1535397262 c:\workfiles\libraries\common_lib\src\sensor_framework\includes\sensors.h
+
+1535397262 source:c:\workfiles\libraries\common_lib\src\utils\src\average16.c
+	"average16.h"
+
+1535397262 c:\workfiles\libraries\common_lib\src\utils\includes\average16.h
+	"types.h"
+
+1535397262 source:c:\workfiles\libraries\common_lib\src\utils\src\crc16.c
+	"crc16.h"
+
+1535397262 c:\workfiles\libraries\common_lib\src\utils\includes\crc16.h
+	"types.h"
+
+1535397262 source:c:\workfiles\libraries\common_lib\src\utils\src\crc32.c
+	"crc32.h"
+
+1535397262 c:\workfiles\libraries\common_lib\src\utils\includes\crc32.h
+	"types.h"
+
+1535397262 source:c:\workfiles\libraries\common_lib\src\utils\src\fifo.c
+	"types.h"
+	"fifo.h"
+	<string.h>
+
+1535397262 c:\workfiles\libraries\common_lib\src\utils\includes\fifo.h
+	"types.h"
+
+1535397262 source:c:\workfiles\libraries\common_lib\src\utils\src\timer.c
+	"timer.h"
+
