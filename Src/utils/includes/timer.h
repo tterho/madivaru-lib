@@ -49,22 +49,6 @@
 
 /******************************************************************************\
 **
-**  MACROS
-**
-\******************************************************************************/
-
-/// @brief Invokation limit to detect whether the timer is alive or not.
-///
-/// This limit specifies how many times the @ref TimerAPI_GetTimeLapse function
-/// can be invoked without increase in the timer tick value before the system
-/// gets tired. Adjust this value depends on the ratio between the system clock 
-/// and the timer tick frequency. Too small limit value causes the timer to
-/// get tired accidentally. However, keeping this as small as possible enhances
-/// the system response on error situations.
-#define TIMER_INVOKATION_LIMIT 100000
-
-/******************************************************************************\
-**
 **  ERROR CODES
 **
 \******************************************************************************/
@@ -101,6 +85,8 @@ TimerSys_t{
         Timer_t tck;
         /// Invokation counter.
         uint32_t icnt;
+        /// Invokation limit.
+        uint32_t ilim;
 } TimerSys_t;
 
 /******************************************************************************\
@@ -113,13 +99,21 @@ TimerSys_t{
 **  @brief Initializes the timer system.
 **
 **  @param[in] timerSys Timer system to be initialized.
+**  @param[in] timerInvokationLimit This limit specifies how many times the @ref
+**      TimerAPI_GetTimeLapse function can be invoked without increase in the 
+**      timer tick value before the system gets tired. Set this value depending 
+**      on the ratio between the system clock and the timer tick frequency. Too 
+**      small limit value causes the timer to  get tired accidentally. However, 
+**      keeping this as small as possible enhances the system response on error
+**      situations.
 **
 **  @retval RESULT_OK Initialization successful.
 **  @retval TIMER_ERROR_INVALID_POINTER The timerSys points to null.
 */
 Result_t 
 TimerAPI_Init(
-        TimerSys_t *timerSys
+        TimerSys_t *timerSys,
+        uint32_t timerInvokationLimit
 );
 
 /*-------------------------------------------------------------------------*//** 
