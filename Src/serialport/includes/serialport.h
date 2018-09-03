@@ -12,6 +12,10 @@
 **  Common serial port interface which can be easily ported for different 
 **  platforms without need to change the control interface.
 **
+**  This interface doesn't support port enumeration which is typically used in
+**  Windows environment to find hot-pluggable devices, such as USB-to-serial 
+**  port adapters.
+**
 *******************************************************************************/
 /*
 **  BSD 3-Clause License
@@ -50,6 +54,7 @@
 #ifndef serialport_H
 #define serialport_H
 
+#include "fifo.h"
 #include "timer.h"
 
 /******************************************************************************\
@@ -95,11 +100,39 @@
 /// The operation has been timed out.
 #define SP_ERROR_TIMEOUT -7
 
+/// @brief Configuration is invalid.
+///
+/// One of the configuration parameters is not supported by the hardware.
+#define SP_ERROR_INVALID_CONFIGURATION -8
+
 /******************************************************************************\
 **
-**  TYPE DEFINITIONS
+**  DATA TYPE DEFINITIONS
 **
 \******************************************************************************/
+
+/*-------------------------------------------------------------------------*//** 
+**  @brief COM ports
+**
+**  These values are used to access serial ports. The availability of the ports 
+**  depends on the system implementation.
+**
+**  In embedded systems the port COM1 is usually associated with the UART0, COM2
+**  with UART1 etc. In Linux the COM1 stands for ttyS0, COM2 ttyS1 etc.
+*/
+typedef enum 
+SP_COMPort_t{
+        /// @brief COM1 port
+        SP_COM1=0,
+        /// @brief COM2 port
+        SP_COM2,
+        /// @brief COM3 port
+        SP_COM3,
+        /// @brief COM4 port
+        SP_COM4,
+        /// @brief Maximum ports available in the system.
+        SP_MAX_PORTS 
+} SP_COMPort_t;
 
 /*-------------------------------------------------------------------------*//** 
 **  @brief Most common baud rate values.
@@ -232,29 +265,16 @@ SP_Config_t{
         SP_FlowControl_t FlowControl;
 } SP_Config_t;
 
-/*-------------------------------------------------------------------------*//**
-**  @brief Transfer completion callback.
-**
-**  @param[in] result Result of the transfer.
-**
-**  This callback is invoked by the driver within asynchronous transmission / 
-**  reception operations.
-*/
-typedef void
-(*SP_TransferCompletedCbk)(
-        Result_t result
-);
-
 /******************************************************************************\
 **
-**  DRIVER API FUNCTIONS
+**  DRIVER FUNCTION API
 **
 \******************************************************************************/
 
 /*-------------------------------------------------------------------------*//** 
 **  @brief Initializes the serial port driver.
 **
-**  Initializes the serial port hardware I/O.
+**  Initializes the serial port hardware I/O and FIFOs.
 **
 **  @return The result of the initialization.
 */
@@ -302,8 +322,7 @@ Result_t
 **  @param[out] data Pointer to an output buffer.
 **  @param[out] bytesRead Pointer to a variable for received data length. This
 **      parameter is optional and can be null.
-**  @param[in] timeout Maximum time between two consecutive bytes or an initial 
-**      wait timeout.
+**  @param[in] timeout Maximum time between two bytes or initial wait timeout.
 **
 **  @retval RESULT_OK Read successful.
 **  @return On error returns a negative error value specified by the driver
@@ -328,8 +347,7 @@ Result_t
 **  @param[in] data Pointer to a data buffer.
 **  @param[out] bytesWritten Pointer to a variable for transmitted data 
 **      length. This parameter is optional and can be null.
-**  @param[in] timeout Maximum time between two consecutive bytes or an initial
-**      wait timeout.
+**  @param[in] timeout Maximum time between two bytes or initial wait timeout.
 **
 **  @retval RESULT_OK Write successful.
 **  @return On error returns a negative error value specified by the driver
@@ -395,7 +413,7 @@ Result_t
 **  This structure is a common interface for serial port drivers.
 */
 typedef struct 
-SP_COMPort_t{
+SPDrv_t{
         /// Initializes the driver.
         SPDrv_Init_t Init;        
         /// Opens the serial port.
@@ -412,13 +430,13 @@ SP_COMPort_t{
         SPDrv_PutChar_t PutChar; 
         /// Serial port configuration data.
         SP_Config_t cfg;
+        /// TX (output) buffer.
+        FIFO_t txb;
+        /// RX (input) buffer.
+        FIFO_t rxb;
         /// Timer system to use.
         TimerSys_t *tsys;
-        /// Reception completed callback.
-        SP_TransferCompletedCbk rxccbk;
-        /// Transmission completed callback.
-        SP_TransferCompletedCbk txccbk;
-} SP_COMPort_t;
+} SPDrv_t;
 
 /******************************************************************************\
 **
@@ -438,28 +456,25 @@ extern const SP_Config_t SP_DefaultConfig;
 \******************************************************************************/
 
 /*-------------------------------------------------------------------------*//** 
-**  @brief Initializes a serial port driver.
+**  @brief Maps a driver to a serial port number.
 **
-**  @param[out] port Serial port driver to initialize.
-**  @param[in] rxCompleted RX completed callback for asynchronous read
-**      operations. Set to null for synchronous reads.
-**  @param[in] txCompleted TX completed callback for asynchronous write 
-**      operations. Set to null for synchronous writes.
-**  @param[in] timerSys Timer system to use.
+**  @param[in] port Serial port number where to map the driver.
+**  @param[in] driver Pointer to a driver being mapped.
 **
-**  @retval RESULT_OK Successful.
-**  @retval SP_ERROR_INVALID_POINTER The port parameter points to null.
+**  @retval RESULT_OK Mapping successful.
+**  @retval SP_ERROR_INVALID_POINTER The driver parameter points to null.
+**  @retval SP_ERROR_INVALID_PARAMETER The port parameter value is invalid, or 
+**      the port number is already in use.
 **  @return On another error returns a negative error code.
 **
 **  Tries to initialize the serial port hardware by using driver's 
-**  initialization method. 
+**  initialization method. If successful, maps the driver to the given serial 
+**  port number.
 */
 Result_t
-SP_InitPort(
-        SP_COMPort_t *port,
-        SP_TransferCompletedCbk rxCompleted,
-        SP_TransferCompletedCbk txCompleted,
-        TimerSys_t *timerSys
+SP_MapDriver(
+        SP_COMPort_t port,
+        SPDrv_t *driver
 );
 
 /*-------------------------------------------------------------------------*//** 
@@ -470,12 +485,12 @@ SP_InitPort(
 **      information will be copied.
 **
 **  @retval RESULT_OK Configuration got successfully.
-**  @return SP_ERROR_INVALID_POINTER The port or config parameter points to 
-**      null.
+**  @return SP_ERROR_INVALID_POINTER The configuration parameter points to null.
+**  @return SP_ERROR_INVALID_PARAMETER The port parameter is invalid.
 */
 Result_t
 SP_GetCurrentConfig(
-        SP_COMPort_t *port, 
+        SP_COMPort_t port, 
         SP_Config_t *config
 );
 
@@ -483,54 +498,57 @@ SP_GetCurrentConfig(
 **  @brief Opens a serial port.
 **
 **  @param[in] port Serial port to open.
-**  @param[in] config Pointer to a configuration structure.
+**  @param[in] configuration Pointer to a configuration structure.
 **  @param[out] handle Pointer to a variable where the serial port handle will
 **      be stored.
 **
 **  @retval RESULT_OK Open successful.
-**  @retval SP_ERROR_INVALID_POINTER The port, config or handle parameter points 
-**      to null.
+**  @retval SP_ERROR_INVALID_POINTER The configuration parameter or the handle
+**      parameter points to null.
+**  @retval SP_ERROR_INVALID_PARAMETER The port parameter is invalid.
 **
 **  Opens a serial port using the given configuration. Returns a port handle as
 **  an output parameter.
 */
 Result_t
 SP_Open(
-        SP_COMPort_t *port,
+        SP_COMPort_t port,
         SP_Config_t *config,
-        Handle_t *handle
+        void **handle
 );
 
 /*-------------------------------------------------------------------------*//** 
 **  @brief Closes a serial port.
 **
-**  @param[out] handle Pointer to the handle of the port being closed.
+**  @param[in,out] handle Pointer to the handle of the port being closed.
 **
 **  @retval RESULT_OK Closed successfully.
 **  @retval SP_ERROR_INVALID_POINTER The handle parameter points to null.
+**  @retval SP_ERROR_INVALID_PARAMETER The handle is invalid.
 **
 **  Closes a serial port and resets the given port handle.
 */
 Result_t
 SP_Close(
-        Handle_t *handle
+        void **handle
 );
 
 /*-------------------------------------------------------------------------*//** 
 **  @brief Changes serial port's configuration.
 **
 **  @param[in] handle Serial port handle.
-**  @param[in] config Pointer to a configuration structure.
+**  @param[in] configuration Pointer to a configuration structure.
 **
 **  @retval RESULT_OK Successful
-**  @retval SP_ERROR_INVALID_POINTER The config parameter points to null.
+**  @retval SP_ERROR_INVALID_POINTER One or more of the pointer parameters      
+**      handle and configuration points to null.
 **  @retval SP_ERROR_INVALID_PARAMETER The handle is invalid.
 **
 **  Closes a serial port and re-opens it with the new configuration values.
 */
 Result_t
 SP_ChangeConfig(
-        Handle_t handle,
+        void *handle,
         SP_Config_t *config
 );
 
@@ -545,17 +563,17 @@ SP_ChangeConfig(
 **  @param[in] timeout Maximum time between two bytes or initial wait timeout.
 **
 **  @retval RESULT_OK Read successful.
-**  @retval SP_ERROR_INVALID_POINTER The data or bytesRead parameter points to
-**      null.
+**  @retval SP_ERROR_INVALID_POINTER One or more of the pointer parameters
+**      handle and data points to null.
 **  @retval SP_ERROR_INVALID_PARAMETER The handle is invalid.
 **  @retval SP_ERROR_TIMEOUT Reception timed out.
 **
-**  Reads a chunk of data from the serial port. If not enough data received
-**  within the given timeout time, returns an error.
+**  Reads a chunk of data from the RX buffer. If the buffer is empty or not
+**  enough data received within the given timeout time, returns an error.
 */
 Result_t
 SP_Read(
-        Handle_t handle,
+        void *handle,
         uint32_t length,
         uint8_t *data,
         uint32_t *bytesRead,
@@ -601,8 +619,8 @@ SP_Write(
 **  @retval SP_ERROR_INVALID_PARAMETER The handle is invalid.
 **  @retval SP_ERROR_RX_BUFFER_EMPTY The RX buffer is empty.
 **
-**  Gets a single character from the serial port. If the RX buffer is empty, 
-**  returns an error without waiting.
+**  Gets a single character from the RX buffer. If the buffer is empty, returns
+**  an error without waiting.
 */
 Result_t
 SP_GetChar(
