@@ -48,24 +48,21 @@
 **
 \******************************************************************************/
 
-/*------------------------------------------------------------------------------
-**  Initializes the timer system.
-*/
 Result_t
 TimerAPI_Init(
-        TimerSys_t *timerSys
+        TimerSys_t *timerSys,
+        uint32_t timerInvokationLimit
 )
 {
         if(!timerSys){
                 return TIMER_ERROR_INVALID_POINTER;
         }  
         timerSys->tck=0;
+        timerSys->icnt=0;
+        timerSys->ilim=timerInvokationLimit;
         return RESULT_OK;
 }
 
-/*------------------------------------------------------------------------------
-**  Starts a new timer.
-*/
 Result_t
 TimerAPI_StartTimer(
         TimerSys_t *timerSys,
@@ -103,7 +100,7 @@ TimerAPI_GetTimeLapse(
         }
         // If the invokation counter has reached the timer invokation limit,
         // the timer is not running properly.
-        if(timerSys->icnt>TIMER_INVOKATION_LIMIT){
+        if(timerSys->icnt>timerSys->ilim){
                 return TIMER_ERROR_TIMER_NOT_RUNNING;
         }
         // Store the running tick counter and compare it to the given timer.

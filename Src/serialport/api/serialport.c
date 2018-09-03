@@ -1,16 +1,9 @@
 /***************************************************************************//**
 **
-**  @file       SerialPort.c
+**  @file       serialport.c
 **  @ingroup    serialcomm
 **  @brief      Serial port API.
 **  @copyright  Copyright (C) 2012-2018 Tuomas Terho. All rights reserved.
-**
-**  Common serial port interface which can be easily ported for different 
-**  platforms without need to change the control interface.
-**
-**  This interface doesn't support port enumeration which is typically used in
-**  Windows environment to find hot-pluggable devices, such as USB-to-serial 
-**  port adapters.
 **
 *******************************************************************************/
 /*
@@ -56,51 +49,20 @@
 \******************************************************************************/
 
 /*-------------------------------------------------------------------------*//**
-**  Driver mapping table.
+**  @brief Default configuration for serial ports.
 */
-SPDrv_t *spDrvMap[SP_MAX_PORTS]={0};
-
-/******************************************************************************\
-**
-**  PRIVATE FUNCTION DECLARATIONS
-**
-\******************************************************************************/
-
-/*------------------------------------------------------------------------------
-**  Checks validity of a serial port handle.
-*/
-static Result_t
-spIsHandleValid(
-        void *handle
-)
-{
-        uint8_t i;
-        
-        if(!handle){
-                return SP_ERROR_INVALID_POINTER;
-        }
-        // Handle check using driver mapping table.
-        for(i=0;i<SP_MAX_PORTS;i++){
-                if(spDrvMap[i]==(SPDrv_t*)handle){
-                        return RESULT_OK;
-                }
-        }
-        return SP_ERROR_INVALID_PARAMETER;
-}
-
-/******************************************************************************\
-**
-**  PUBLIC DATA DECLARATIONS
-**
-\******************************************************************************/
-
 const SP_Config_t 
-SP_DefaultConfig={
-        SP_BR_9600, // .BaudRate
-        SP_DB_8,    // .DataBits
-        SP_PA_NONE, // .Parity
-        SP_SB_ONE,  // .StopBits
-        SP_FC_NONE, // .FlowControl
+spDefaultConfig={
+        /// Baud rate = 9600 bps.
+        SP_BR_9600,
+        /// Data bits = 8 data bits.
+        SP_DB_8,
+        /// Parity = NONE.
+        SP_PA_NONE,
+        /// Stop bits = One stop bit.
+        SP_SB_ONE,
+        /// Flow control = NONE.
+        SP_FC_NONE,
 };
 
 /******************************************************************************\
@@ -109,148 +71,105 @@ SP_DefaultConfig={
 **
 \******************************************************************************/
 
-/*------------------------------------------------------------------------------
-**  Maps a driver to a serial port number.
-*/
 Result_t
-SP_MapDriver(
-        SP_COMPort_t port,
-        SPDrv_t *driver
+SP_InitPort(
+        SP_COMPort_t *port,
+        SP_TransferCompletedCbk rxCallback,
+        SP_TransferCompletedCbk txCallback,
+        TimerSys_t *timerSys
 )
 {
         Result_t result;
         
-        if(!driver){
+        if(!port){
                 return SP_ERROR_INVALID_POINTER;
         }        
-        // Check the port range.
-        if(port>=SP_MAX_PORTS)
-        {
-                return SP_ERROR_INVALID_PARAMETER;
-        }        
-        // Check port existence.
-        if(spDrvMap[port]){
-                return SP_ERROR_INVALID_PARAMETER;
-        }
+        // Set the callbacks.
+        port->rxccbk=rxCallback;
+        port->txccbk=txCallback;
+        // Set default configuration.
+        port->cfg=spDefaultConfig;
+        // Set the timer system.
+        port->tsys=timerSys;
         // Initialize the driver.
-        result=driver->Init();        
-        if(!SUCCESSFUL(result)){
-                return result;
-        }        
-        // Map the driver.
-        spDrvMap[port]=driver;
-        return RESULT_OK;
+        return port->Init();        
 }
 
-/*------------------------------------------------------------------------------
-**  Returns the current configuration of the given serial port.
-*/
 Result_t
 SP_GetCurrentConfiguration(
-        SP_COMPort_t port,
+        SP_COMPort_t *port,
         SP_Config_t *config
 )
 {
-        SPDrv_t *drv;
-        
-        if(!config){
+        if(!port||!config){
                 return SP_ERROR_INVALID_POINTER;
         }
-        // Check the port range.
-        if(port>=SP_MAX_PORTS){
-                return SP_ERROR_INVALID_PARAMETER;
-        }        
-        // Find the driver.
-        drv=spDrvMap[port];
-        if(!drv){
-                return SP_ERROR_INVALID_PARAMETER;
-        }
         // Configuration data output.
-        *config=drv->cfg;
+        *config=port->cfg;
         return RESULT_OK;
 }
 
-/*------------------------------------------------------------------------------
-**  Opens a serial port.
-*/
 Result_t
 SP_Open(
-        SP_COMPort_t port,
+        SP_COMPort_t *port,
         SP_Config_t *config,
-        void **handle
+        Handle_t *handle
 )
 {
         Result_t result;
-        SPDrv_t *drv;
         
-        if(!config||!handle){
+        if(!port||!config||!handle){
                 return SP_ERROR_INVALID_POINTER;
-        }        
-        // Check the port range.
-        if(port>=SP_MAX_PORTS){
-                return SP_ERROR_INVALID_PARAMETER;
         }
-        // Check the handle (it should be free).
-        if(SUCCESSFUL(spIsHandleValid(*handle))){
+        // Check the handle (it should be null).
+        if(*handle){
                 return SP_ERROR_RESOURCE_IN_USE;
         }
-        // Find the driver.
-        drv=spDrvMap[port];        
-        if(!drv){
-                return SP_ERROR_INVALID_PARAMETER;
-        }
         // Configure and open the port.
-        drv->cfg=*config;
-        result=drv->Open();
+        port->cfg=*config;
+        result=port->Open();
         if(!SUCCESSFUL(result)){
                 return result;
         }
         // Handle output.
-        *handle=(void*)drv;
+        *handle=(Handle_t)port;
         return RESULT_OK;
 }
 
-/*------------------------------------------------------------------------------
-**  Closes a serial port.
-*/
 Result_t
 SP_Close(
-        void **handle
+        Handle_t *handle
 )
 {
         Result_t result;
-        SPDrv_t *drv;
+        SP_COMPort_t *port;
         
         if(!handle){
                 return SP_ERROR_INVALID_POINTER;
         }        
         // Check the handle.
-        if(!SUCCESSFUL(spIsHandleValid(*handle))){
+        if(!*handle){
                 return SP_ERROR_INVALID_PARAMETER;
         }
-        // Port access.
-        drv=(SPDrv_t*)(*handle);
-        // Port closing.
-        result=drv->Close();
+        port=(SP_COMPort_t*)*handle;
+        // Close the port.
+        result=port->Close();
         if(!SUCCESSFUL(result)){
                 return result;
         }
         // Handle reset.
-        *handle=(void*)0;                
+        *handle=(Handle_t)0;            
         return RESULT_OK;
 }
 
-/*------------------------------------------------------------------------------
-**  Changes serial port's configuration.
-*/
 Result_t
 SP_ChangeConfig(
-        void *handle,
+        Handle_t handle,
         SP_Config_t *config
 )
 {
         Result_t result;
-        SPDrv_t *drv;
+        SP_COMPort_t *port;
         
         if(!config){
                 return SP_ERROR_INVALID_POINTER;
@@ -260,31 +179,28 @@ SP_ChangeConfig(
                 return SP_ERROR_INVALID_PARAMETER;
         }
         // Port access.
-        drv=(SPDrv_t*)handle;
+        port=(SP_COMPort_t*)handle;
         // Close the port.
-        result=drv->Close();
+        result=port->Close();
         if(!SUCCESSFUL(result)){
                 return result;
         }
         // Port re-configuration and re-opening.
-        drv->cfg=*config;
-        return drv->Open();
+        port->cfg=*config;
+        return port->Open();
 }
 
-/*------------------------------------------------------------------------------
-**  Reads data from the serial port.
-*/
 Result_t
 SP_Read(
-        void *handle,
+        Handle_t handle,
         uint32_t length,
         uint8_t *data,
         uint32_t *bytesRead,
         uint32_t timeout
 )
 {
+        SP_COMPort_t *port;
         Result_t result;
-        SPDrv_t *drv;
         Timer_t tmr;
         uint32_t time;
         
@@ -292,7 +208,7 @@ SP_Read(
                 return SP_ERROR_INVALID_POINTER;
         }
         // Check the handle.
-        if(!SUCCESSFUL(spIsHandleValid(handle))){
+        if(!handle){
                 return SP_ERROR_INVALID_PARAMETER;
         }
         // Reset the length output parameter.
@@ -304,21 +220,21 @@ SP_Read(
                 return RESULT_OK;
         }        
         // Port access.
-        drv=(SPDrv_t*)handle;
+        port=(SP_COMPort_t*)handle;
         // Invoke the driver implementation if existing.
-        if(drv->Read){
-                return drv->Read(length,data,bytesRead,timeout);
+        if(port->Read){
+                return port->Read(length,data,bytesRead,timeout);
         }
         // Local implementation.
         // Initialize the timer.
-        result=TimerAPI_StartTimer(drv->tsys,&tmr);        
+        result=TimerAPI_StartTimer(port->tsys,&tmr);        
         if(!SUCCESSFUL(result)){
                 return SP_ERROR_DRIVER_INTERNAL_ERROR;
         }
         // Receive data.
         while(length){
                 // Read data from port.
-                result=drv->GetChar(data);
+                result=port->GetChar(data);
                 // Data received.
                 if(SUCCESSFUL(result)){
                         data++;
@@ -327,7 +243,7 @@ SP_Read(
                                 (*bytesRead)++;
                         }
                         // Restart the timeout timer.
-                        TimerAPI_StartTimer(drv->tsys,&tmr);
+                        TimerAPI_StartTimer(port->tsys,&tmr);
                         continue;
                 }
                 // An error occurred, or the Rx buffer is empty and timeout has
@@ -336,7 +252,7 @@ SP_Read(
                         return result;
                 }
                 // Rx buffer is empty. Check the timeout.
-                TimerAPI_GetTimeLapse(drv->tsys,tmr,&time);
+                TimerAPI_GetTimeLapse(port->tsys,tmr,&time);
                 if(time>timeout){
                         return SP_ERROR_TIMEOUT;
                 }
@@ -344,19 +260,16 @@ SP_Read(
         return RESULT_OK;
 }
 
-/*------------------------------------------------------------------------------
-**  Writes data to the serial port.
-*/
 Result_t
 SP_Write(
-        void *handle,
+        Handle_t handle,
         uint32_t length,
         uint8_t *data,
         uint32_t *bytesWritten,
         uint32_t timeout
 )
 {
-        SPDrv_t *drv;
+        SP_COMPort_t *port;
         Result_t result;
         Timer_t tmr;
         uint32_t time;
@@ -365,7 +278,7 @@ SP_Write(
                 return SP_ERROR_INVALID_POINTER;
         }
         // Check the port handle.
-        if(!SUCCESSFUL(spIsHandleValid(handle))){
+        if(!handle){
                 return SP_ERROR_INVALID_PARAMETER;
         }
         // Check the data length (nothing to send if zero).
@@ -377,20 +290,20 @@ SP_Write(
                 *bytesWritten=0;
         }
         // Port access.
-        drv=(SPDrv_t*)handle;
+        port=(SP_COMPort_t*)handle;
         // Invoke the driver implementation if existing.
-        if(drv->Write){
-                return drv->Write(length,data,bytesWritten,timeout);
+        if(port->Write){
+                return port->Write(length,data,bytesWritten,timeout);
         }
         // Initialize the timer.
-        result=TimerAPI_StartTimer(drv->tsys,&tmr);
+        result=TimerAPI_StartTimer(port->tsys,&tmr);
         if(!SUCCESSFUL(result)){
                 return SP_ERROR_DRIVER_INTERNAL_ERROR;
         }
         // Data transmission.
         while(length){
                 // Write data to the port.
-                result=drv->PutChar(*data);
+                result=port->PutChar(*data);
                 // Data sent.
                 if(SUCCESSFUL(result)){
                         data++;
@@ -399,7 +312,7 @@ SP_Write(
                                 (*bytesWritten)++;
                         }
                         // Restart the timer.
-                        TimerAPI_StartTimer(drv->tsys,&tmr);
+                        TimerAPI_StartTimer(port->tsys,&tmr);
                         continue;
                 }                
                 // An error occurred, or buffer is full and timeout has not
@@ -408,7 +321,7 @@ SP_Write(
                         return result;
                 }                        
                 // Buffer is full. Check the timeout.
-                TimerAPI_GetTimeLapse(drv->tsys,tmr,&time);
+                TimerAPI_GetTimeLapse(port->tsys,tmr,&time);
                 if(time>timeout){
                         return SP_ERROR_TIMEOUT;
                 }
@@ -416,49 +329,43 @@ SP_Write(
         return RESULT_OK;
 }
 
-/*------------------------------------------------------------------------------
-**  Gets a single character from a serial port.
-*/
 Result_t
 SP_GetChar(
-        void *handle,
+        Handle_t handle,
         uint8_t *data
 )
 {
-        SPDrv_t *drv;
+        SP_COMPort_t *port;
         
         if(!data){
                 return SP_ERROR_INVALID_POINTER;
         }
         // Check the handle.
-        if(!SUCCESSFUL(spIsHandleValid(handle))){
+        if(!handle){
                 return SP_ERROR_INVALID_PARAMETER;
         }
         // Port access.
-        drv=(SPDrv_t*)handle;
+        port=(SP_COMPort_t*)handle;
         // Read data.
-        return drv->GetChar(data);
+        return port->GetChar(data);
 }
 
-/*------------------------------------------------------------------------------
-**  Puts a single character to a serial port.
-*/
 Result_t
 SP_PutChar(
-        void *handle,
+        Handle_t handle,
         uint8_t data
 )
 {
-        SPDrv_t *drv;
+        SP_COMPort_t *port;
 
         // Check the handle.
-        if(!SUCCESSFUL(spIsHandleValid(handle))){
+        if(!handle){
                 return SP_ERROR_INVALID_PARAMETER;
         }
         // Port access.
-        drv=(SPDrv_t*)handle;
+        port=(SP_COMPort_t*)handle;
         // Write data.
-        return drv->PutChar(data);
+        return port->PutChar(data);
 }
 
 /* EOF */

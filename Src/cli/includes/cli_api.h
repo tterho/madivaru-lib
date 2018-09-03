@@ -44,13 +44,60 @@
 #ifndef cli_api_H
 #define cli_api_H
 
-#include "cli_cfg.h"
+#include "types.h"
+
+/******************************************************************************\
+**
+**  ERROR CODES
+**
+\******************************************************************************/
 
 /// @brief At least one of the pointer parameters is invalid.
 #define CLI_ERROR_INVALID_POINTER -1
 
 /// @brief At least one of the value parameters is invalid.
 #define CLI_ERROR_INVALID_PARAMETER -2
+
+/******************************************************************************\
+**
+**  CONSTANTS
+**
+\******************************************************************************/
+
+/*-------------------------------------------------------------------------*//**
+**  @brief The amount of the commands supported by this application.
+**
+**  This value can be overridden by a user.
+*/
+#ifndef CLI_CMDID_COUNT
+        #define CLI_CMDID_COUNT 2
+#endif // CLI_CMDID_COUNT
+
+/*-------------------------------------------------------------------------*//**
+**  @brief Declares the maximum amount of parameters for one command. Keep this
+**  as small as possible to save memory.
+**
+**  This value can be overridden by a user.
+*/
+#ifndef CLI_MAX_PARAM_COUNT
+        #define CLI_MAX_PARAM_COUNT 2
+#endif // CLI_MAX_PARAM_COUNT
+
+/*-------------------------------------------------------------------------*//**
+**  @brief Declares the maximum length of one console input line. Keep this as
+**  small as possible to save memory.
+**
+**  This value can be overridden by a user.
+*/
+#ifndef CLI_MAX_PARSER_INPUT_LENGTH
+        #define CLI_MAX_PARSER_INPUT_LENGTH 128
+#endif // CLI_MAX_PARSER_INPUT_LENGTH
+
+/******************************************************************************\
+**
+**  TYPES
+**
+\******************************************************************************/
 
 /*-------------------------------------------------------------------------*//**
 **  @brief Console command callback type.
@@ -69,11 +116,53 @@
 */
 typedef void
 (*CLI_CmdCbk_t)(
-        CLI_CmdId_t cmdId,
+        uint8_t cmdId,
         uint8_t paramCount,
         uint8_t paramIds[CLI_MAX_PARAM_COUNT],
         var_t params[CLI_MAX_PARAM_COUNT]
 );
+
+/*-------------------------------------------------------------------------*//**
+**  @brief A descriptor for a command.
+*/
+typedef struct
+struct_CLI_CmdDescr_t{
+        /// The name of the command.
+        char *Cmd;
+        /// A callback that handles the command.
+        CLI_CmdCbk_t Cbk;
+} CLI_CmdDescr_t;
+
+/*-------------------------------------------------------------------------*//**
+**  @brief Parameter types.
+**
+**  These types specify how the console treats a parameter.
+*/
+typedef enum
+enum_CLI_ParamType_t{
+        /// The parameter is optional.
+        CLI_PARAMTYPE_OPTIONAL=0,
+        /// The parameter is required. A missing parameter causes an error.
+        CLI_PARAMTYPE_REQUIRED,
+        /// The parameter is an alternative. At least one alternative parameter
+        /// must exist in the command line.
+        CLI_PARAMTYPE_ALTERNATIVE
+} CLI_ParamType_t;
+
+/*-------------------------------------------------------------------------*//**
+**  @brief A descriptor for a parameter.
+*/
+typedef struct
+struct_CLI_ParamDescr_t{
+        /// The type of the parameter (optional/required).
+        CLI_ParamType_t Type;
+        /// The name of the parameter.
+        char *Param;
+        /// Indicates whether the parameter should have a value or not.
+        bool HasValue;
+        /// Type of the parameter value.
+        vartype_t VarType;
+} CLI_ParamDescr_t;
 
 /*-------------------------------------------------------------------------*//**
 **  @brief Echo callback type.
@@ -94,17 +183,19 @@ typedef void
 **  @brief Parser structure.
 */
 typedef struct
-CLI_Parser_t{
+struct_CLI_Parser_t{
+        /// User defined list of commands line commands.
+        const CLI_CmdDescr_t *clicmd;
+        /// User defined list of command line parameters.
+        const CLI_ParamDescr_t **cliparam;
         /// The current command line input.
         char i[CLI_MAX_PARSER_INPUT_LENGTH];
         /// Input write pointer.
         char *iptr;
         /// Input count.
         uint16_t icnt;
-        /// Command callback register.
-        CLI_CmdCbk_t cmdCbk[CLI_CMDID_Count];
         /// The current command id (parser intermediate output).
-        CLI_CmdId_t cmdId;
+        uint8_t cmdId;
         /// The current parameter count (parser intermediate output).
         uint8_t pcnt;
         /// The current parameter identifiers (parser intermediate output).
@@ -119,10 +210,20 @@ CLI_Parser_t{
         bool pena;
 } CLI_Parser_t;
 
+/******************************************************************************\
+**
+**  API FUNCTIONS
+**
+\******************************************************************************/
+
 /*-------------------------------------------------------------------------*//**
 **  @brief Initializes the console parser.
 **
-**  @param[in] parser A parser to initialize.
+**  @param[out] parser A parser to initialize.
+**  @param[in] clicmd User defined list of commands supported by the 
+**      application.
+**  @param[in] cliparam User defined list of parameters supported by the
+**      commands.
 **  @param[in] echo A callback for command line echo.
 **
 **  @return No return value.
@@ -130,34 +231,9 @@ CLI_Parser_t{
 Result_t
 CLI_Init(
         CLI_Parser_t *parser,
+        const CLI_CmdDescr_t *clicmd,
+        const CLI_ParamDescr_t **cliparam,
         CLI_EchoCbk_t echo
-);
-
-/*-------------------------------------------------------------------------*//**
-**  @brief Registers a command callback for a command identifier.
-**
-**  @param[in] parser The parser to use.
-**  @param[in] cmdId The identifier of the command to register.
-**  @param[in] cmdCbk The callback that serves the command.
-**
-**  @retval RESULT_OK Successful.
-**  @retval CLI_ERROR_INVALID_POINTER The parser parameter points to null.
-**  @retval CLI_ERROR_INVALID_PARAMETER The cmdId is out of range or the
-**      cmdCbk points to null.
-**
-**  Each command has a separated command callback that is invoked when the
-**  parser detects the particular command in the command line. However, the
-**  commands can be served by a single callback implementation because all the
-**  command information, including the command identifier, is passed to the
-**  callback function parameters. If using a single callback function
-**  implementation, use a switch-case inside the function to serve each command
-**  separately.
-*/
-Result_t
-CLI_RegisterCmdCbk(
-        CLI_Parser_t *parser,
-        CLI_CmdId_t cmdId,
-        CLI_CmdCbk_t cmdCbk
 );
 
 /*-------------------------------------------------------------------------*//**

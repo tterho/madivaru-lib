@@ -85,6 +85,9 @@ cpapi_ParseInput(
         CLI_Parser_t *parser
 )
 {
+        uint16_t i;
+
+        
         // TODO: Implement the parser.
 }
 
@@ -94,6 +97,8 @@ cpapi_ParseInput(
 Result_t
 CLI_Init(
         CLI_Parser_t *parser,
+        const CLI_CmdDescr_t *clicmd,
+        const CLI_ParamDescr_t **cliparam,
         CLI_EchoCbk_t echo
 )
 {
@@ -103,6 +108,9 @@ CLI_Init(
         memset(parser,0,sizeof(CLI_Parser_t));
         // Enable the parser by default.
         parser->pena=true;
+        // Set the command line commands and their parameters.
+        parser->clicmd=clicmd;
+        parser->cliparam=cliparam;
         // Setup and enable the echo.
         if(echo){
                 parser->ecbk=echo;
@@ -111,26 +119,6 @@ CLI_Init(
         // Set the command line input pointer to the beginning of the input
         // buffer.
         parser->iptr=&parser->i[0];
-        return RESULT_OK;
-}
-
-/*------------------------------------------------------------------------------
-**  Registers a command callback for a command identifier.
-*/
-Result_t
-CLI_RegisterCmdCbk(
-        CLI_Parser_t *parser,
-        CLI_CmdId_t cmdId,
-        CLI_CmdCbk_t cmdCbk
-)
-{
-        if(!parser){
-                return CLI_ERROR_INVALID_POINTER;
-        }
-        if(cmdId>=CLI_CMDID_Count){
-                return CLI_ERROR_INVALID_PARAMETER;
-        }
-        parser->cmdCbk[cmdId]=cmdCbk;
         return RESULT_OK;
 }
 
@@ -147,6 +135,7 @@ CLI_EnableParser(
                 return CLI_ERROR_INVALID_POINTER;
         }
         parser->pena=enable;
+        return RESULT_OK;
 }
 
 /*------------------------------------------------------------------------------
@@ -162,6 +151,7 @@ CLI_EnableEcho(
                 return CLI_ERROR_INVALID_POINTER;
         }
         parser->eena=enable;
+        return RESULT_OK;
 }
 
 /*------------------------------------------------------------------------------
