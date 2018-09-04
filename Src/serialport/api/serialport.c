@@ -84,9 +84,18 @@ SP_InitPort(
         if(!port){
                 return SP_ERROR_INVALID_POINTER;
         }        
-        // Set the callbacks.
-        port->rxccbk=rxCallback;
-        port->txccbk=txCallback;
+        // Initialize the rx descriptor.
+        port->rx.len=0;
+        port->rx.ton=0;
+        port->rx.xlen=0;
+        port->rx.cmpl=0;
+        port->rx.cbk=rxCallback;
+        // Initialize the tx descriptor.
+        port->tx.len=0;
+        port->tx.ton=0;
+        port->tx.xlen=0;
+        port->tx.cmpl=0;
+        port->tx.cbk=txCallback;
         // Set default configuration.
         port->cfg=spDefaultConfig;
         // Set the timer system.
@@ -175,7 +184,7 @@ SP_ChangeConfig(
                 return SP_ERROR_INVALID_POINTER;
         }
         // Check the handle.
-        if(!SUCCESSFUL(spIsHandleValid(handle))){
+        if(!handle){
                 return SP_ERROR_INVALID_PARAMETER;
         }
         // Port access.
@@ -225,6 +234,11 @@ SP_Read(
         if(port->Read){
                 return port->Read(length,data,bytesRead,timeout);
         }
+        // If the Read function is not implemented, the GetChar function is
+        // a requirement.
+        if(!port->GetChar){
+                return SP_ERROR_DRIVER_INTERNAL_ERROR;
+        }        
         // Local implementation.
         // Initialize the timer.
         result=TimerAPI_StartTimer(port->tsys,&tmr);        
@@ -295,6 +309,11 @@ SP_Write(
         if(port->Write){
                 return port->Write(length,data,bytesWritten,timeout);
         }
+        // If the Write function is not implemented, the PutChar function is
+        // a requirement.
+        if(!port->PutChar){
+                return SP_ERROR_DRIVER_INTERNAL_ERROR;
+        }        
         // Initialize the timer.
         result=TimerAPI_StartTimer(port->tsys,&tmr);
         if(!SUCCESSFUL(result)){
