@@ -95,6 +95,11 @@
 /// The operation has been timed out.
 #define SP_ERROR_TIMEOUT -7
 
+/// @brief Invalid configuration.
+///
+/// One or more of the configuration values are not supported by the driver.
+#define SP_ERROR_INVALID_CONFIGURATION -8
+
 /******************************************************************************\
 **
 **  TYPE DEFINITIONS
@@ -237,13 +242,37 @@ SP_Config_t{
 **
 **  @param[in] result Result of the transfer.
 **
-**  This callback is invoked by the driver within asynchronous transmission / 
+**  This callback is invoked by the driver within asynchronous transmission and 
 **  reception operations.
 */
 typedef void
 (*SP_TransferCompletedCbk)(
         Result_t result
 );
+
+/*-------------------------------------------------------------------------*//**
+**  @brief Asynchronous transfer descriptor.
+**
+**  This structure holds the parameters used to asynchronous transmission and
+**  reception operations.
+*/
+typedef struct
+SP_AsyncTransferDescr_t{
+        struct{
+                /// Transfer on flag.
+                uint8_t ton:1;
+                /// Transfer completed flag.
+                uint8_t cmpl:1;
+        };
+        /// Data length in bytes.
+        uint32_t len;
+        /// Bytes transferred during the operation.
+        uint32_t *xlen;
+        /// Transfer timeout in timer frequency value.
+        uint32_t tout;
+        /// Transfer completed callback.
+        SP_TransferCompletedCbk cbk;
+} SP_AsyncTransferDescr_t;
 
 /******************************************************************************\
 **
@@ -414,10 +443,10 @@ SP_COMPort_t{
         SP_Config_t cfg;
         /// Timer system to use.
         TimerSys_t *tsys;
-        /// Reception completed callback.
-        SP_TransferCompletedCbk rxccbk;
-        /// Transmission completed callback.
-        SP_TransferCompletedCbk txccbk;
+        /// Reception descriptor.
+        SP_AsyncTransferDescr_t rx;
+        /// Transmission descriptor.
+        SP_AsyncTransferDescr_t tx;
 } SP_COMPort_t;
 
 /******************************************************************************\
