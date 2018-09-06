@@ -45,13 +45,11 @@
 
 #include "spi_api.h"
 
-/*------------------------------------------------------------------------------
-**  Opens a SPI port.
-*/
 Result_t
 SPI_Open(
         SPIDrv_t *driver,
         SPI_Config_t *config,
+        SPI_TransferCompletedCbk_t callback,
         Handle_t *handle
 )
 {
@@ -67,6 +65,8 @@ SPI_Open(
         }
         // Store the port configuration.
         driver->cfg=*config;
+        // Set the transfer completion callback.
+        driver->cbk=callback;
         // Open the port.
         driver->Open();
         // Set the handle to point to the driver.
@@ -74,9 +74,6 @@ SPI_Open(
         return RESULT_OK;
 }
 
-/*------------------------------------------------------------------------------
-**  Closes a SPI port.
-*/
 Result_t
 SPI_Close(
         Handle_t *handle
@@ -99,9 +96,6 @@ SPI_Close(
         return RESULT_OK;
 }
 
-/*------------------------------------------------------------------------------
-**  Selects a slave for communication.
-*/
 Result_t
 SPI_SelectSlave(
         Handle_t handle,
@@ -127,11 +121,8 @@ SPI_SelectSlave(
         return RESULT_OK;
 }
 
-/*------------------------------------------------------------------------------
-**  Transmits data in both directions.
-*/
 Result_t
-SPI_Transmit(
+SPI_Transfer(
         Handle_t handle,
         uint8_t *dout,
         uint16_t outsz,
@@ -151,10 +142,10 @@ SPI_Transmit(
         }
         // Get an access to the driver.
         drv=(SPIDrv_t*)handle;
-        // Check if the driver is capable of to transmit all data at once.
-        if(drv->Transmit){
-                // Transmit data.
-                result=drv->Transmit(dout,outsz,din,insz);
+        // Check if the driver is capable of to transfer all data at once.
+        if(drv->Transfer){
+                // Transfer data.
+                result=drv->Transfer(dout,outsz,din,insz);
                 // If the driver doesn't support inequal buffer sizes, it 
                 // returns this error code.
                 if(result==SPI_ERROR_INVALID_BUFFER_SIZE){
@@ -166,14 +157,14 @@ SPI_Transmit(
                 }
                 return RESULT_OK;
         }        
-        // Both Transmit and TransmitByte implementations are missing. This is 
+        // Both Transfer and TransferByte implementations are missing. This is 
         // an initialization error.
-        if(!drv->TransmitByte){
+        if(!drv->TransferByte){
                 return SPI_ERROR_DRIVER_INITIALIZATION_FAILED;
         }
-        // Transmit all bi-directional data.
+        // Transfer all bi-directional data.
         while(outsz&&insz){
-                if(!SUCCESSFUL(drv->TransmitByte(*dout,din))){
+                if(!SUCCESSFUL(drv->TransferByte(*dout,din))){
                         return SPI_ERROR_TRANSMISSION_FAILED;
                 }
                 dout++;
@@ -181,17 +172,17 @@ SPI_Transmit(
                 outsz--;
                 insz--;
         }
-        // Transmit remaining output data (if any).
+        // Transfer remaining output data (if any).
         while(outsz){
-                if(!SUCCESSFUL(drv->TransmitByte(*dout,&tmp))){
+                if(!SUCCESSFUL(drv->TransferByte(*dout,&tmp))){
                         return SPI_ERROR_TRANSMISSION_FAILED;
                 }
                 dout++;
                 outsz--;
         }
-        // Transmit remaining input data (if any).
+        // Transfer remaining input data (if any).
         while(insz){
-                if(!SUCCESSFUL(drv->TransmitByte(tmp,din))){
+                if(!SUCCESSFUL(drv->TransferByte(tmp,din))){
                         return SPI_ERROR_TRANSMISSION_FAILED;
                 }
                 din++;

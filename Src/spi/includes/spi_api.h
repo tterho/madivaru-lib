@@ -208,7 +208,7 @@ Result_t
 );
 
 /*-------------------------------------------------------------------------*//**
-**  @brief Transmits one byte of data in both directions.
+**  @brief Transfers one byte of data in both directions.
 **
 **  @param[in] dout Data to send. If there is no data to send out, set to zero.
 **  @param[out] din Data to receive. If there is no data to receive, set to 
@@ -217,18 +217,18 @@ Result_t
 **  @retval RESULT_OK Transmission successful.
 **
 **  @remarks Implement this function if the driver is capable of to transmit one 
-**  byte at the time. Otherwise, implement the function @ref SPIDrv_Transmit_t 
+**  byte at the time. Otherwise, implement the function @ref SPIDrv_Transfer_t 
 **  function.
 */
 typedef
 Result_t
-(*SPIDrv_TransmitByte_t)(
+(*SPIDrv_TransferByte_t)(
         uint8_t dout,
         uint8_t *din
 );
 
 /*-------------------------------------------------------------------------*//**
-**  @brief Transmits data in both directions.
+**  @brief Transfers data in both directions.
 **
 **  @param[in] dout Data to send. If there is no data to send out, set to zero.
 **  @param[out] din Data to receive. If there is no data to receive, set to 
@@ -238,15 +238,26 @@ Result_t
 **
 **  @remarks Implement this function if the driver is capable of to transmit 
 **  multiple bytes at the time. Otherwise, implement the function 
-**  @ref SPIDrv_TransmitByte_t.
+**  @ref SPIDrv_TransferByte_t.
 */
 typedef
 Result_t
-(*SPIDrv_Transmit_t)(
+(*SPIDrv_Transfer_t)(
         uint8_t *dout,
         uint16_t outsz,
         uint8_t *din,
         uint16_t insz
+);
+
+/*-------------------------------------------------------------------------*//**
+**  @brief Transfer completion callback.
+**
+**  This callback is invoked by the driver on the completion of an asynchronous
+**  transfer.
+*/
+typedef void
+(*SPI_TransferCompletedCbk_t)(
+        void
 );
 
 /******************************************************************************\
@@ -260,20 +271,22 @@ Result_t
 */
 typedef struct
 SPIDrv_t{
-        /// @brief Initializes the driver.
+        /// Initializes the driver.
         SPIDrv_Init_t Init;
-        /// @brief Opens the driver.
+        /// Opens the driver.
         SPIDrv_Open_t Open;
-        /// @brief Closes the driver.
+        /// @brief 
         SPIDrv_Close_t Close;
-        /// @brief Selects a slave for communication.
+        /// Selects a slave for communication.
         SPIDrv_SelectSlave_t SelectSlave;
-        /// @brief Transmits one byte in both directions.
-        SPIDrv_TransmitByte_t TransmitByte;
-        /// @brief Transmits data in both directions.
-        SPIDrv_Transmit_t Transmit;
-        /// @brief Stores the port configuration.
+        /// Transfers one byte in both directions.
+        SPIDrv_TransferByte_t TransferByte;
+        /// Transfers data in both directions.
+        SPIDrv_Transfer_t Transfer;
+        /// Stores the port configuration.
         SPI_Config_t cfg;
+        /// Transfer completion callback.
+        SPI_TransferCompletedCbk_t cbk;
 } SPIDrv_t;
 
 /******************************************************************************\
@@ -287,6 +300,8 @@ SPIDrv_t{
 **
 **  @param[in] driver Driver to initialize.
 **  @param[in] config SPI port configuration.
+**  @param[in] callback Callback for asynchronous transfer completed events.
+**      This parameter is optional and can be set to null.
 **  @param[out] handle Handle to the opened port.
 **
 **  @retval RESULT_OK Port opened successfully.
@@ -299,6 +314,7 @@ Result_t
 SPI_Open(
         SPIDrv_t *driver,
         SPI_Config_t *config,
+        SPI_TransferCompletedCbk_t callback,
         Handle_t *handle
 );
 
@@ -335,7 +351,7 @@ SPI_SelectSlave(
 );                
 
 /*-------------------------------------------------------------------------*//**
-**  @brief Transmits data in both directions.
+**  @brief Transfers data in both directions.
 **
 **  @param[in] handle Handle to a port.
 **  @param[in] dout Data to be sent out.
@@ -350,7 +366,7 @@ SPI_SelectSlave(
 **  @retval SPI_ERROR_INVALID_BUFFER_SIZE The driver doesn't support inequal
 **      buffer sizes.
 **
-**  Transmits equal amount of data in both directions. If the transmission 
+**  Transfers equal amount of data in both directions. If the transmission 
 **  buffer size is smaller than the reception buffer size, the function
 **  transmits nulls until all input data has been received. If the reception
 **  buffer size is smaller than the transmission buffer size, all bytes are
@@ -361,7 +377,7 @@ SPI_SelectSlave(
 **  an error.
 */
 Result_t
-SPI_Transmit(
+SPI_Transfer(
         Handle_t handle,
         uint8_t *dout,
         uint16_t outsz,
