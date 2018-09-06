@@ -74,8 +74,8 @@ spDefaultConfig={
 Result_t
 SP_InitPort(
         SP_COMPort_t *port,
-        SP_TransferCompletedCbk rxCallback,
-        SP_TransferCompletedCbk txCallback,
+        SP_TransferCompletedCbk_t rxCallback,
+        SP_TransferCompletedCbk_t txCallback,
         TimerSys_t *timerSys
 )
 {

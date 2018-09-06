@@ -242,24 +242,24 @@ SP_Config_t{
 **
 **  @param[in] result Result of the transfer.
 **
-**  This callback is invoked by the driver within asynchronous transmission and 
-**  reception operations.
+**  This callback is invoked by the driver on the completion of an asynchronous
+**  transfer.
 */
 typedef void
-(*SP_TransferCompletedCbk)(
+(*SP_TransferCompletedCbk_t)(
         Result_t result
 );
 
 /*-------------------------------------------------------------------------*//**
 **  @brief Asynchronous transfer descriptor.
 **
-**  This structure holds the parameters used to asynchronous transmission and
-**  reception operations.
+**  This structure holds the parameters used by an asynchronous transfer 
+**  operation.
 */
 typedef struct
 SP_AsyncTransferDescr_t{
         struct{
-                /// Transfer on flag.
+                /// Transfer ongoing flag.
                 uint8_t ton:1;
                 /// Transfer completed flag.
                 uint8_t cmpl:1;
@@ -271,7 +271,7 @@ SP_AsyncTransferDescr_t{
         /// Transfer timeout in timer frequency value.
         uint32_t tout;
         /// Transfer completed callback.
-        SP_TransferCompletedCbk cbk;
+        SP_TransferCompletedCbk_t cbk;
 } SP_AsyncTransferDescr_t;
 
 /******************************************************************************\
@@ -486,8 +486,8 @@ extern const SP_Config_t SP_DefaultConfig;
 Result_t
 SP_InitPort(
         SP_COMPort_t *port,
-        SP_TransferCompletedCbk rxCompleted,
-        SP_TransferCompletedCbk txCompleted,
+        SP_TransferCompletedCbk_t rxCompleted,
+        SP_TransferCompletedCbk_t txCompleted,
         TimerSys_t *timerSys
 );
 
