@@ -43,6 +43,7 @@
 
 #include "cli_api.h"
 #include <string.h>
+#include <ctype.h>
 
 /*-------------------------------------------------------------------------*//**
 **  @brief Echoes an input.
@@ -78,17 +79,65 @@ cpapi_Echo(
 **
 **  @param[in] parser Parser to use.
 **
-**  @return No return value.
+**  @return Returns RESULT_OK when line parsed successfully.
+**  @return On a parser error returns a negative error code. See the error code
+**      descriptions for detailed information.
 */
-void
+Result_t
 cpapi_ParseInput(
         CLI_Parser_t *parser
 )
 {
         uint16_t i;
+        uint16_t cmdl;
+        uint8_t j;
 
-        
-        // TODO: Implement the parser.
+        // Check the first character (must be a-z or A-Z).
+        if(!isalpha(parser->inp[0])){
+                return CLI_ERROR_PARSER_INVALID_COMMAND;
+        }
+        // Find the first space from the command line.
+        for(i=0;i<CLI_MAX_PARSER_INPUT_LENGTH;i++){
+                if(parser->inp[i]==32){
+                        cmdl=i;
+                        break;
+                }
+        }
+        // No spaces found. The command is invalid.
+        if(i==CLI_MAX_PARSER_INPUT_LENGTH){
+                return CLI_ERROR_PARSER_INVALID_COMMAND;
+        }
+        // Search for the similar length commands. On a match, compare the 
+        // strings together to find an exact match.
+        for(j=0;j<CLI_CMD_COUNT;j++){
+                if(strlen(parser->clicmd[j].Cmd)==i){
+                        if(strncmp(parser->clicmd[j].Cmd,parser->inp[0],i)){
+                                // Command found.
+                                parser->cmdId=j;
+                                break;
+                        }
+                }
+        }
+        // Command not found.
+        if(j==CLI_CMD_COUNT){
+                return CLI_ERROR_PARSER_UNKNOWN_COMMAND;
+        }
+
+
+        // TODO: Finalize the parser.
+
+        // The command handler must exist.
+        if(!parser->clicmd[parser->cmdId].Cbk){
+                return CLI_ERROR_INVALID_COMMAND_HANDLER;
+        }
+        // Send the parser result to the user application.
+        parser->clicmd[parser->cmdId].Cbk(
+                parser->cmdId,
+                parser->pcnt,
+                parser->pids,
+                parser->pval
+        );
+        return RESULT_OK;
 }
 
 /*------------------------------------------------------------------------------
@@ -118,7 +167,7 @@ CLI_Init(
         }
         // Set the command line input pointer to the beginning of the input
         // buffer.
-        parser->iptr=&parser->i[0];
+        parser->iptr=&parser->inp[0];
         return RESULT_OK;
 }
 
@@ -189,9 +238,18 @@ CLI_InputChar(
         }
         // Handle special command input.
         switch(input){
-        // For unsupported commands do nothing.
+        // For unsupported special commands do nothing.
         default:
                 break;
+        // Interrupt process command (Ctrl+C).
+        case 3:
+                // Clears the input and send an echo. Then return the value
+                // CLI_ERROR_INTERRUPT_PROCESS to indicate that the user 
+                // interrupted the operation.
+                parser->iptr=&parser->inp[0];
+                parser->icnt=0;
+                cpapi_Echo(parser,"\r\n^C\r\n",2);
+                return CLI_ERROR_INTERRUPT_PROCESS;
         // Backspace command.
         case 8:
                 // Check the input buffer pointer.
@@ -208,12 +266,17 @@ CLI_InputChar(
         case 13:
                 // The enter command starts parsing of the input.
                 // If there is nothing to parse, echo a line feed.
-                cpapi_ParseInput(parser);
-                break;
+                if(!parser->icnt){
+                        // Input buffer is empty. Echo a line feed.
+                        cpapi_Echo(parser,"\r\n",2);
+                        break;
+                }
+                // Parse the input and return the result.
+                return cpapi_ParseInput(parser);
         // Escape command.
         case 27:
                 // Escape command clears the input.
-                parser->iptr=&parser->i[0];
+                parser->iptr=&parser->inp[0];
                 parser->icnt=0;
                 cpapi_Echo(parser,"\r\n",2);
                 break;

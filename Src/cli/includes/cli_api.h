@@ -58,6 +58,49 @@
 /// @brief At least one of the value parameters is invalid.
 #define CLI_ERROR_INVALID_PARAMETER -2
 
+/// @brief User sent an interrupt process command (Crtl+C).
+#define CLI_ERROR_INTERRUPT_PROCESS -10
+
+/// @brief A command handler is invalid.
+#define CLI_ERROR_INVALID_COMMAND_HANDLER -11
+
+/// @brief A CLI command is invalid.
+///
+/// The command must begin with a-z or A-Z (case sensitive).
+#define CLI_ERROR_PARSER_INVALID_COMMAND -20
+
+/// @brief A CLI command is not recognized.
+///
+/// The command is not supported by the application.
+#define CLI_ERROR_PARSER_UNKNOWN_COMMAND -21
+
+/// @brief A CLI parameter is invalid.
+///
+/// The parameter must begin with - or / and it must contain a single character 
+/// from the range a-z or A-Z (case sensitive).
+#define CLI_ERROR_PARSER_INVALID_PARAMETER -22
+
+/// @brief A CLI parameter is not recognized.
+///
+/// The parameter is not supported by the command.
+#define CLI_ERROR_PARSER_UNKNOWN_PARAMETER -23
+
+/// @brief A CLI parameter value is missing.
+///
+/// The parameter requires a value, but no value specified on the command line.
+#define CLI_ERROR_PARSER_MISSING_PARAMETER_VALUE -24
+
+/// @brief A CLI parameter value is invalid.
+///
+/// The parameter value is in invalid format (e.g. expected an integer, got a 
+/// string).
+#define CLI_ERROR_PARSER_INVALID_PARAMETER_VALUE -25
+
+/// @brief A CLI parameter value is out of range.
+///
+/// The parameter value is out of the expected range.
+#define CLI_ERROR_PARSER_PARAMETER_VALUE_OUT_OF_RANGE -26
+
 /******************************************************************************\
 **
 **  CONSTANTS
@@ -69,9 +112,9 @@
 **
 **  This value can be overridden by a user.
 */
-#ifndef CLI_CMDID_COUNT
-        #define CLI_CMDID_COUNT 2
-#endif // CLI_CMDID_COUNT
+#ifndef CLI_CMD_COUNT
+        #define CLI_CMD_COUNT 2
+#endif // CLI_CMD_COUNT
 
 /*-------------------------------------------------------------------------*//**
 **  @brief Declares the maximum amount of parameters for one command. Keep this
@@ -118,8 +161,8 @@ typedef void
 (*CLI_CmdCbk_t)(
         uint8_t cmdId,
         uint8_t paramCount,
-        uint8_t paramIds[CLI_MAX_PARAM_COUNT],
-        var_t params[CLI_MAX_PARAM_COUNT]
+        uint8_t *paramIds,
+        var_t *params
 );
 
 /*-------------------------------------------------------------------------*//**
@@ -189,10 +232,10 @@ struct_CLI_Parser_t{
         /// User defined list of command line parameters.
         const CLI_ParamDescr_t **cliparam;
         /// The current command line input.
-        char i[CLI_MAX_PARSER_INPUT_LENGTH];
+        char inp[CLI_MAX_PARSER_INPUT_LENGTH];
         /// Input write pointer.
         char *iptr;
-        /// Input count.
+        /// Input character count.
         uint16_t icnt;
         /// The current command id (parser intermediate output).
         uint8_t cmdId;
@@ -276,6 +319,8 @@ CLI_EnableEcho(
 **
 **  @retval RESULT_OK Successful.
 **  @retval CLI_ERROR_INVALID_POINTER The parser parameter points to null.
+**  @return On parser errors returns negative error codes. See the error
+**      descriptions for more information.
 */
 Result_t
 CLI_InputChar(
