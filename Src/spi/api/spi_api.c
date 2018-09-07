@@ -50,6 +50,7 @@ SPI_Open(
         SPIDrv_t *driver,
         SPI_Config_t *config,
         SPI_TransferCompletedCbk_t callback,
+        void *userData,
         Handle_t *handle
 )
 {
@@ -65,8 +66,9 @@ SPI_Open(
         }
         // Store the port configuration.
         driver->cfg=*config;
-        // Set the transfer completion callback.
+        // Set the transfer completion callback and user data.
         driver->cbk=callback;
+        driver->ud=userData;
         // Open the port.
         driver->Open();
         // Set the handle to point to the driver.

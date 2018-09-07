@@ -403,7 +403,12 @@ SensorAPI_Run(
                 if(od->rc){
                         // Output refresh cycle is in use.
                         // Check the cycle timer.
-                        TimerAPI_GetTimeLapse(drv->dd.tsys,od->tim,&tl);
+                        TimerAPI_GetTimeLapse(  
+                            drv->dd.tsys,
+                            od->tim,
+                            TIMER_TU_MS,
+                            &tl
+                        );
                         if(tl<od->rc){
                                 // Timer is still running.
                                 continue;

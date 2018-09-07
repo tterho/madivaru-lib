@@ -266,7 +266,7 @@ SP_Read(
                         return result;
                 }
                 // Rx buffer is empty. Check the timeout.
-                TimerAPI_GetTimeLapse(port->tsys,tmr,&time);
+                TimerAPI_GetTimeLapse(port->tsys,tmr,TIMER_TU_MS,&time);
                 if(time>timeout){
                         return SP_ERROR_TIMEOUT;
                 }
@@ -340,7 +340,7 @@ SP_Write(
                         return result;
                 }                        
                 // Buffer is full. Check the timeout.
-                TimerAPI_GetTimeLapse(port->tsys,tmr,&time);
+                TimerAPI_GetTimeLapse(port->tsys,tmr,TIMER_TU_MS,&time);
                 if(time>timeout){
                         return SP_ERROR_TIMEOUT;
                 }
