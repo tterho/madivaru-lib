@@ -87,7 +87,24 @@ TimerSys_t{
         uint32_t icnt;
         /// Invokation limit.
         uint32_t ilim;
+        /// Time base of the timer (in microseconds).
+        uint32_t tb;
 } TimerSys_t;
+
+/*-------------------------------------------------------------------------*//** 
+**  @brief Time units.
+*/
+typedef enum
+Timer_TimeUnit_t{
+        // Time unit equals to one timer tick.
+        TIMER_TU_TIMERTICK=0,
+        // Time is in microseconds.
+        TIMER_TU_US,
+        // Time is in milliseconds.
+        TIMER_TU_MS,
+        // Time is in seconds.
+        TIMER_TU_S        
+} Timer_TimeUnit_t;
 
 /******************************************************************************\
 **
@@ -99,6 +116,9 @@ TimerSys_t{
 **  @brief Initializes the timer system.
 **
 **  @param[in] timerSys Timer system to be initialized.
+**  @param[in] timeBase Time base in microseconds. This value specifies how many
+**      microseconds one timer tick takes time. This timer system doesn't 
+**      support timers faster than one microsecond.
 **  @param[in] timerInvokationLimit This limit specifies how many times the @ref
 **      TimerAPI_GetTimeLapse function can be invoked without increase in the 
 **      timer tick value before the system gets tired. Set this value depending 
@@ -113,6 +133,7 @@ TimerSys_t{
 Result_t 
 TimerAPI_Init(
         TimerSys_t *timerSys,
+        uint32_t timeBase,
         uint32_t timerInvokationLimit
 );
 
@@ -137,19 +158,18 @@ TimerAPI_StartTimer(
 **
 **  @param[in] timerSys Timer system to use.
 **  @param[in] timer Timer to get the time lapse.
+**  @param[in] timeUnit Time units to use.
 **  @param[out] timeLapse Time lapse from the timer start.
 **
 **  @retval RESULT_OK Got time lapse successfully.
 **  @retval TIMER_ERROR_INVALID_POINTER Either the timerSys or the timeLapse
 **      points to null.
-**
-**  @remarks The frequency of the timer ticks is declared by the invokation 
-**  frequency of the function @ref TimerAPI_TimerTick().
 */
 Result_t
 TimerAPI_GetTimeLapse(
         TimerSys_t *timerSys,
         Timer_t timer,
+        Timer_TimeUnit_t timeUnit,
         uint32_t *timeLapse
 );
 
@@ -157,6 +177,7 @@ TimerAPI_GetTimeLapse(
 **  @brief Makes a delay in timer ticks.
 **
 **  @param[in] timerSys Timer system to use.
+**  @param[in] timeUnit Time units to use.
 **  @param[in] delay Delay time in timer ticks.
 **
 **  @retval RESULT_OK Successful.
@@ -165,6 +186,7 @@ TimerAPI_GetTimeLapse(
 Result_t
 TimerAPI_Delay(
         TimerSys_t *timerSys,
+        Timer_TimeUnit_t timeUnit,
         uint32_t delay
 );
 

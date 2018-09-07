@@ -252,12 +252,15 @@ Result_t
 /*-------------------------------------------------------------------------*//**
 **  @brief Transfer completion callback.
 **
+**  @param[in] userData A pointer to user specified data to be passed to the 
+**      callback handler.
+**
 **  This callback is invoked by the driver on the completion of an asynchronous
 **  transfer.
 */
 typedef void
 (*SPI_TransferCompletedCbk_t)(
-        void
+        void *userData
 );
 
 /******************************************************************************\
@@ -287,6 +290,8 @@ SPIDrv_t{
         SPI_Config_t cfg;
         /// Transfer completion callback.
         SPI_TransferCompletedCbk_t cbk;
+        /// A pointer to user specified data.
+        void *ud;
 } SPIDrv_t;
 
 /******************************************************************************\
@@ -302,6 +307,8 @@ SPIDrv_t{
 **  @param[in] config SPI port configuration.
 **  @param[in] callback Callback for asynchronous transfer completed events.
 **      This parameter is optional and can be set to null.
+**  @param[in] userData A pointer to optiona user specified data to be passed to
+**      the transfer completed callback handler.
 **  @param[out] handle Handle to the opened port.
 **
 **  @retval RESULT_OK Port opened successfully.
@@ -315,6 +322,7 @@ SPI_Open(
         SPIDrv_t *driver,
         SPI_Config_t *config,
         SPI_TransferCompletedCbk_t callback,
+        void *userData,
         Handle_t *handle
 );
 

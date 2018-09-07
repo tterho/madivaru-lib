@@ -51,6 +51,7 @@
 Result_t
 TimerAPI_Init(
         TimerSys_t *timerSys,
+        uint32_t timeBase,
         uint32_t timerInvokationLimit
 )
 {
@@ -59,6 +60,7 @@ TimerAPI_Init(
         }  
         timerSys->tck=0;
         timerSys->icnt=0;
+        timerSys->tb=timeBase;
         timerSys->ilim=timerInvokationLimit;
         return RESULT_OK;
 }
@@ -84,9 +86,12 @@ Result_t
 TimerAPI_GetTimeLapse(
         TimerSys_t *timerSys,
         Timer_t timer,
+        Timer_TimeUnit_t timeUnit,
         uint32_t *timeLapse
 )
 {
+        uint32_t tl;
+    
         if(!timerSys||!timeLapse){
                 return TIMER_ERROR_INVALID_POINTER;
         }
@@ -107,9 +112,26 @@ TimerAPI_GetTimeLapse(
         // Handle a wrap-around of the tick counter. Store the difference to the 
         // output parameter.
         timerSys->ctim=timerSys->tck;
-        *timeLapse=(timer<=timerSys->ctim)
-                   ?(timerSys->ctim-timer)
-                   :(0xffffffff-timer)+timerSys->ctim+1;
+        tl=(timer<=timerSys->ctim)
+           ?(timerSys->ctim-timer)
+           :(0xffffffff-timer)+timerSys->ctim+1;
+        // Calculate the time lapse based on the time base and the requested 
+        // time units.
+        switch(timeUnit){
+        default:
+        case TIMER_TU_TIMERTICK:
+                // The timeLapse value is in correct units. Nothing to do.
+                break;
+        case TIMER_TU_US:
+                tl=(tl*timerSys->tb);
+        case TIMER_TU_MS:
+                tl=(tl*timerSys->tb)/1000;
+                break;
+        case TIMER_TU_S:
+                tl=(tl*timerSys->tb)/1000000;
+                break;
+        }
+        *timeLapse=tl;
         return RESULT_OK;
 }
 
@@ -119,6 +141,7 @@ TimerAPI_GetTimeLapse(
 Result_t
 TimerAPI_Delay(
         TimerSys_t *timerSys,
+        Timer_TimeUnit_t timeUnit,
         uint32_t delay
 )
 {
@@ -133,7 +156,7 @@ TimerAPI_Delay(
         TimerAPI_StartTimer(timerSys,&t);
         // Wait as long as the time lapse is less than the delay.
         while(tl<delay){
-                result=TimerAPI_GetTimeLapse(timerSys,t,&tl);
+                result=TimerAPI_GetTimeLapse(timerSys,t,timeUnit,&tl);
                 if(!SUCCESSFUL(result)){
                         return result;
                 }

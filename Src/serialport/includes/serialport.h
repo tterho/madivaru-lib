@@ -241,13 +241,16 @@ SP_Config_t{
 **  @brief Transfer completion callback.
 **
 **  @param[in] result Result of the transfer.
+**  @param[in] userData A pointer to user specified data to be passed to the 
+**      callback handler.
 **
 **  This callback is invoked by the driver on the completion of an asynchronous
 **  transfer.
 */
 typedef void
 (*SP_TransferCompletedCbk_t)(
-        Result_t result
+        Result_t result,
+        void *userData
 );
 
 /*-------------------------------------------------------------------------*//**
@@ -447,6 +450,8 @@ SP_COMPort_t{
         SP_AsyncTransferDescr_t rx;
         /// Transmission descriptor.
         SP_AsyncTransferDescr_t tx;
+        /// A pointer to user specified data passed to the Rx and Tx callbacks.
+        void *ud;
 } SP_COMPort_t;
 
 /******************************************************************************\
@@ -571,7 +576,8 @@ SP_ChangeConfig(
 **  @param[out] data Pointer to an output buffer.
 **  @param[out] bytesRead Pointer to a variable for received data length. This
 **      parameter is optional and can be null.
-**  @param[in] timeout Maximum time between two bytes or initial wait timeout.
+**  @param[in] timeout Maximum time in milliseconds between two bytes or an 
+**      initial wait timeout.
 **
 **  @retval RESULT_OK Read successful.
 **  @retval SP_ERROR_INVALID_POINTER The data or bytesRead parameter points to
@@ -599,7 +605,8 @@ SP_Read(
 **  @param[in] data Pointer to a data buffer.
 **  @param[out] bytesWritten Pointer to a variable for transmitted data 
 **      length. This parameter is optional and can be null.
-**  @param[in] timeout Maximum time between two bytes or initial wait timeout.
+**  @param[in] timeout Maximum time in milliseconds between two bytes or an 
+**      initial wait timeout.
 **
 **  @retval RESULT_OK Write successful.
 **  @retval SP_ERROR_INVALID_POINTER One or more of the pointer parameters
