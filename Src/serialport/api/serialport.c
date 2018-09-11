@@ -105,7 +105,7 @@ SP_InitPort(
 }
 
 Result_t
-SP_GetCurrentConfiguration(
+SP_GetCurrentConfig(
         SP_COMPort_t *port,
         SP_Config_t *config
 )

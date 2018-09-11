@@ -119,13 +119,13 @@ Timer_TimeUnit_t{
 **  @param[in] timeBase Time base in microseconds. This value specifies how many
 **      microseconds one timer tick takes time. This timer system doesn't 
 **      support timers faster than one microsecond.
-**  @param[in] timerInvokationLimit This limit specifies how many times the @ref
+**  @param[in] timerInvocationLimit This limit specifies how many times the @ref
 **      TimerAPI_GetTimeLapse function can be invoked without increase in the 
-**      timer tick value before the system gets tired. Set this value depending 
-**      on the ratio between the system clock and the timer tick frequency. Too 
-**      small limit value causes the timer to  get tired accidentally. However, 
-**      keeping this as small as possible enhances the system response on error
-**      situations.
+**      timer tick value before the system stops waiting. Set this value
+**      depending on the ratio between the system clock and the timer tick 
+**      frequency. Too small limit value causes the timer to  get tired 
+**      accidentally. However, keeping this as small as possible enhances the 
+**      system response on error situations.
 **
 **  @retval RESULT_OK Initialization successful.
 **  @retval TIMER_ERROR_INVALID_POINTER The timerSys points to null.
@@ -134,7 +134,7 @@ Result_t
 TimerAPI_Init(
         TimerSys_t *timerSys,
         uint32_t timeBase,
-        uint32_t timerInvokationLimit
+        uint32_t timerInvocationLimit
 );
 
 /*-------------------------------------------------------------------------*//** 

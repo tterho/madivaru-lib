@@ -52,7 +52,7 @@ Result_t
 TimerAPI_Init(
         TimerSys_t *timerSys,
         uint32_t timeBase,
-        uint32_t timerInvokationLimit
+        uint32_t timerInvocationLimit
 )
 {
         if(!timerSys){
@@ -61,7 +61,7 @@ TimerAPI_Init(
         timerSys->tck=0;
         timerSys->icnt=0;
         timerSys->tb=timeBase;
-        timerSys->ilim=timerInvokationLimit;
+        timerSys->ilim=timerInvocationLimit;
         return RESULT_OK;
 }
 

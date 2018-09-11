@@ -45,6 +45,14 @@
 #include <string.h>
 #include <ctype.h>
 
+#include <stdio.h>
+
+/******************************************************************************\
+**
+**  LOCAL FUNCTIONS
+**
+\******************************************************************************/
+
 /*-------------------------------------------------------------------------*//**
 **  @brief Echoes an input.
 **
@@ -54,7 +62,7 @@
 **
 **  @return No return value.
 */
-void
+static void
 cpapi_Echo(
         CLI_Parser_t *parser,
         char *str,
@@ -66,12 +74,214 @@ cpapi_Echo(
         if(!parser->ecbk||!parser->eena){
                 return;
         }
-        // Echo all characters.
-        while(sz){
-                parser->ecbk(*str);
-                ++str;
-                --sz;
+        parser->ecbk(str,sz,parser->ud);
+}
+
+/*-------------------------------------------------------------------------*//**
+**  @brief Begins a new line.
+**
+**  @param[in] parser Parser to use.
+**
+**  @return No return value.
+*/
+static void
+cpapi_NewLine(
+        CLI_Parser_t *parser
+)
+{
+        cpapi_Echo(parser,"\r\n> ",4);
+}
+
+/*-------------------------------------------------------------------------*//**
+**  @brief Parses a parameter from the command line.
+**
+**  @param[in] parser Parser to use.
+**  @param[in] i Current index.
+**
+**  @retval RESULT_OK Successful.
+**  @return On an error returns a negative error code.
+*/
+static Result_t
+cpapi_ParseParam(
+        CLI_Parser_t *parser,
+        uint16_t *i
+)
+{
+        uint8_t j;
+        uint8_t len=0;
+        const CLI_ParamDescr_t *p=0;
+        bool pf=false;
+        bool chars=false;
+        var_t *val=0;
+
+        // EOL found.
+        if(*i==parser->icnt){
+                return 1;
         }
+        // Bypass preceding spaces.
+        while(parser->inp[*i]==32){
+                (*i)++;
+                // EOL found.
+                if(*i==parser->icnt){
+                        return 1;
+                }
+        }
+        // Other than a '-' found: return an error.
+        if(parser->inp[*i]!='-'){
+                return CLI_ERROR_PARSER_INVALID_PARAMETER;
+        }
+        (*i)++;
+        // EOL found, but not expected: return an error.
+        if(*i==parser->icnt){
+                return CLI_ERROR_PARSER_UNEXPECTED_EOL;
+        }
+        // The parameter doesn't begin with a letter: return an error.
+        if(!((parser->inp[*i]>='a'&&parser->inp[*i]<='z')||
+             (parser->inp[*i]>='A'&&parser->inp[*i]<='A'))){
+                return CLI_ERROR_PARSER_INVALID_PARAMETER;
+        }
+        // Find the end of the parameter name.
+        while(parser->inp[*i]!=32&&parser->inp[*i]!='='){
+                len++;
+                (*i)++;
+                if(*i==parser->icnt){
+                        break;
+                }
+        }
+        // Find the parameter from the parameter list.
+        (*i)-=len;
+        for(j=0;j<parser->pcntmax;j++){
+                p=&parser->cliparam[parser->pcntmax*parser->cmdId+j];
+                if(strlen(p->Param)==len){
+                        if(!strncmp(p->Param,&parser->inp[*i],len)){
+                                // Parameter found.
+                                parser->pids[parser->pcnt]=j;
+                                val=&parser->pval[parser->pcnt];
+                                parser->pcnt++;
+                                pf=true;
+                                break;
+                        }
+                }
+        }
+        // Parameter not found from the list: return an error.
+        if(!pf){
+                return CLI_ERROR_PARSER_UNKNOWN_PARAMETER;
+        }
+        // Check the support of the parameter value type.
+        switch(p->VarType){
+        case VARTYPE_F32PTR:
+        case VARTYPE_U32PTR:
+        case VARTYPE_S32PTR:
+        case VARTYPE_U16PTR:
+        case VARTYPE_S16PTR:
+        case VARTYPE_U8PTR:
+        case VARTYPE_BOOLPTR:
+                return CLI_ERROR_UNSUPPORTED_PARAMETER_VALUE_TYPE;
+        default:
+                break;
+        }
+        // Continue the process from the end of the parameter name.
+        (*i)+=len;
+        // An EOL or a space found. Check whether the parameter should have had 
+        // a value or not. If yes, return an error. Otherwise, return RESULT_OK
+        // to continue parsing.
+        if(*i==parser->icnt||parser->inp[*i]==32){
+                if(p->VarType!=VARTYPE_NONE){
+                        return CLI_ERROR_PARSER_MISSING_PARAMETER_VALUE;
+                }
+                else{
+                        return RESULT_OK;
+                }
+        }
+        // A '=' found. Check whether the parameter should have had a value or 
+        // not. If not, return an error.
+        if(p->VarType==VARTYPE_NONE){
+                return CLI_ERROR_PARSER_UNEXPECTED_PARAMETER_VALUE;
+        }
+        (*i)++;
+        // EOL found, but not expected: return an error.
+        if(*i==parser->icnt){
+                return CLI_ERROR_PARSER_UNEXPECTED_EOL;
+        }
+        // Get the value.
+        len=0;
+        while(parser->inp[*i]!=32){
+                (*i)++;
+                len++;
+                // An EOL found.
+                if(*i==parser->icnt){
+                        break;
+                }
+        }
+        // No value found. Return an error.
+        if(!len){
+                return CLI_ERROR_PARSER_MISSING_PARAMETER_VALUE;
+        }
+        // Check the value type.
+        (*i)-=len;
+        for(j=0;j<len;j++){
+                if(!((parser->inp[(*i)+j]>='0'&&
+                      parser->inp[(*i)+j]<='9')||
+                     parser->inp[(*i)+j]=='.'||
+                     parser->inp[(*i)+j]=='-')){
+                        chars=true;
+                }
+        }
+        // The value contains characters when it shouldn't. Return an error.
+        switch(p->VarType){
+        default:
+        case VARTYPE_F32:
+        case VARTYPE_U32:
+        case VARTYPE_S32:
+        case VARTYPE_U16:
+        case VARTYPE_S16:
+        case VARTYPE_U8:
+                if(chars){
+                        return CLI_ERROR_PARSER_INVALID_PARAMETER_VALUE;
+                }
+                break;
+        case VARTYPE_S8:
+        case VARTYPE_S8PTR:
+        case VARTYPE_BOOL:
+        case VARTYPE_ENUM:
+                break;
+        }
+        // Convert the variable depending on its type.
+        switch(p->VarType){
+        default:
+                break;
+        case VARTYPE_F32:
+                break;
+        case VARTYPE_U32:
+                break;
+        case VARTYPE_S32:
+                break;
+        case VARTYPE_U16:
+                break;
+        case VARTYPE_S16:
+                break;
+        case VARTYPE_U8:
+                break;
+        case VARTYPE_S8:
+                break;
+        case VARTYPE_S8PTR:
+                break;
+        case VARTYPE_BOOL:
+                if(len==1&&parser->inp[*i]=='1'||
+                   len==4&&!strncmp(&parser->inp[*i],"true",4)){
+                        val->Bool=true;
+                }else if((len==1&&parser->inp[*i]=='0')||
+                        len==5&&!strncmp(&parser->inp[*i],"false",5)){
+                        val->Bool=false;
+                }else{
+                        return CLI_ERROR_PARSER_INVALID_PARAMETER_VALUE;
+                }
+                break;
+        case VARTYPE_ENUM:
+                break;
+        }
+        (*i)+=len;
+        return RESULT_OK;
 }
 
 /*-------------------------------------------------------------------------*//**
@@ -91,27 +301,29 @@ cpapi_ParseInput(
         uint16_t i;
         uint16_t cmdl;
         uint8_t j;
+        Result_t result;
 
         // Check the first character (must be a-z or A-Z).
-        if(!isalpha(parser->inp[0])){
+        if(!(parser->inp[0]>='a'&&parser->inp[0]<='z'||
+             parser->inp[0]>='A'&&parser->inp[0]<='A')){
                 return CLI_ERROR_PARSER_INVALID_COMMAND;
         }
         // Find the first space from the command line.
-        for(i=0;i<CLI_MAX_PARSER_INPUT_LENGTH;i++){
+        for(i=0;i<parser->icnt;i++){
                 if(parser->inp[i]==32){
                         cmdl=i;
                         break;
                 }
         }
         // No spaces found. The command is invalid.
-        if(i==CLI_MAX_PARSER_INPUT_LENGTH){
+        if(i==parser->inl){
                 return CLI_ERROR_PARSER_INVALID_COMMAND;
         }
-        // Search for the similar length commands. On a match, compare the 
+        // Search for the matching length commands. On a match, compare the 
         // strings together to find an exact match.
-        for(j=0;j<CLI_CMD_COUNT;j++){
+        for(j=0;j<parser->cmdcnt;j++){
                 if(strlen(parser->clicmd[j].Cmd)==i){
-                        if(strncmp(parser->clicmd[j].Cmd,parser->inp[0],i)){
+                        if(!strncmp(parser->clicmd[j].Cmd,parser->inp,i)){
                                 // Command found.
                                 parser->cmdId=j;
                                 break;
@@ -119,61 +331,89 @@ cpapi_ParseInput(
                 }
         }
         // Command not found.
-        if(j==CLI_CMD_COUNT){
+        if(j==parser->cmdcnt){
                 return CLI_ERROR_PARSER_UNKNOWN_COMMAND;
         }
-
-
-        // TODO: Finalize the parser.
-
+        // Command found. Reset the parameter count and parse parameters.
+        parser->pcnt=0;
+        do{
+                result=cpapi_ParseParam(parser,&i);
+        } while(result==RESULT_OK);
+        // Parsing failed. Return an error.
+        if(!SUCCESSFUL(result)){
+                return result;
+        }
         // The command handler must exist.
         if(!parser->clicmd[parser->cmdId].Cbk){
                 return CLI_ERROR_INVALID_COMMAND_HANDLER;
         }
         // Send the parser result to the user application.
-        parser->clicmd[parser->cmdId].Cbk(
+        return parser->clicmd[parser->cmdId].Cbk(
                 parser->cmdId,
                 parser->pcnt,
                 parser->pids,
-                parser->pval
+                parser->pval,
+                parser->ud
         );
-        return RESULT_OK;
 }
 
-/*------------------------------------------------------------------------------
-**  Initializes the console parser.
-*/
+/******************************************************************************\
+**
+**  API FUNCTIONS
+**
+\******************************************************************************/
+
 Result_t
-CLI_Init(
-        CLI_Parser_t *parser,
-        const CLI_CmdDescr_t *clicmd,
-        const CLI_ParamDescr_t **cliparam,
-        CLI_EchoCbk_t echo
+CLI_CreateParser(
+        char *inputBuffer,
+        uint16_t inputBufferLength,
+        uint8_t cmdCount,
+        uint8_t maxParams,
+        const CLI_CmdDescr_t *cliCmds,
+        const CLI_ParamDescr_t *cliParams,
+        uint8_t *paramIds,
+        var_t *paramValues,
+        CLI_EchoCbk_t echo,
+        void *userData,
+        CLI_Parser_t *parser
 )
 {
-        if(!parser){
+        if(!inputBuffer||
+           !cliCmds||
+           !cliParams||
+           !paramIds||
+           !paramValues||
+           !parser){
                 return CLI_ERROR_INVALID_POINTER;
         }
+        // Reset the parser structure.
         memset(parser,0,sizeof(CLI_Parser_t));
-        // Enable the parser by default.
-        parser->pena=true;
-        // Set the command line commands and their parameters.
-        parser->clicmd=clicmd;
-        parser->cliparam=cliparam;
+        // Setup the input buffer.
+        parser->inp=inputBuffer;
+        parser->inl=inputBufferLength;
+        // Setup the command line commands and their parameters.
+        parser->cmdcnt=cmdCount;
+        parser->pcntmax=maxParams;
+        parser->clicmd=cliCmds;
+        parser->cliparam=cliParams;
+        // Setup temporary parameter buffers.
+        parser->pids=paramIds;
+        parser->pval=paramValues;
         // Setup and enable the echo.
         if(echo){
                 parser->ecbk=echo;
                 parser->eena=true;
         }
+        // Set user data.
+        parser->ud=userData;
         // Set the command line input pointer to the beginning of the input
         // buffer.
         parser->iptr=&parser->inp[0];
+        // Enable the parser by default.
+        parser->pena=true;
         return RESULT_OK;
 }
 
-/*------------------------------------------------------------------------------
-**  Enables and disables the command line parser.
-*/
 Result_t
 CLI_EnableParser(
         CLI_Parser_t *parser,
@@ -187,9 +427,6 @@ CLI_EnableParser(
         return RESULT_OK;
 }
 
-/*------------------------------------------------------------------------------
-**  Enables and disables the command line echo.
-*/
 Result_t
 CLI_EnableEcho(
         CLI_Parser_t *parser,
@@ -200,30 +437,25 @@ CLI_EnableEcho(
                 return CLI_ERROR_INVALID_POINTER;
         }
         parser->eena=enable;
+        cpapi_NewLine(parser);
         return RESULT_OK;
 }
 
-/*------------------------------------------------------------------------------
-**  Puts an ASCII character to the parser, or executes an action on a command
-**      character.
-*/
 Result_t
 CLI_InputChar(
         CLI_Parser_t *parser,
-        char input
+        uint8_t input
 )
 {
+        Result_t result=RESULT_OK;
+
         if(!parser){
                 return CLI_ERROR_INVALID_POINTER;
-        }
-        // Check that the input is in the valid range.
-        if(input<0||input>126){
-                return CLI_ERROR_INVALID_PARAMETER;
         }
         // Handle character input.
         if(input>=32){
                 // Check the input buffer capacity.
-                if(parser->icnt>=CLI_MAX_PARSER_INPUT_LENGTH){
+                if(parser->icnt>=parser->inl){
                         // Input buffer is full. Nothing to do.
                         return RESULT_OK;
                 }
@@ -248,15 +480,17 @@ CLI_InputChar(
                 // interrupted the operation.
                 parser->iptr=&parser->inp[0];
                 parser->icnt=0;
-                cpapi_Echo(parser,"\r\n^C\r\n",2);
+                cpapi_Echo(parser," ^C",3);
                 return CLI_ERROR_INTERRUPT_PROCESS;
         // Backspace command.
         case 8:
                 // Check the input buffer pointer.
                 if(!parser->icnt){
                         // Input buffer is empty. Nothing to do.
-                        return RESULT_OK;
+                        break;
                 }
+                // Echo the input.
+                cpapi_Echo(parser,"\x08 \x08",3);
                 // Move the input buffer pointer backwards and decrease the
                 // counter.
                 --parser->iptr;
@@ -268,21 +502,27 @@ CLI_InputChar(
                 // If there is nothing to parse, echo a line feed.
                 if(!parser->icnt){
                         // Input buffer is empty. Echo a line feed.
-                        cpapi_Echo(parser,"\r\n",2);
+                        cpapi_NewLine(parser);
                         break;
                 }
                 // Parse the input and return the result.
-                return cpapi_ParseInput(parser);
+                result=cpapi_ParseInput(parser);
+                // Clear the input.
+                parser->iptr=&parser->inp[0];
+                parser->icnt=0;
+                if(SUCCESSFUL(result)){
+                        cpapi_NewLine(parser);
+                }
+                break;
         // Escape command.
         case 27:
                 // Escape command clears the input.
                 parser->iptr=&parser->inp[0];
                 parser->icnt=0;
-                cpapi_Echo(parser,"\r\n",2);
+                cpapi_NewLine(parser);
                 break;
-
         }
-        return RESULT_OK;
+        return result;
 }
 
 /* EOF */
