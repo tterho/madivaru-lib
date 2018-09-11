@@ -230,9 +230,11 @@ Result_t
 /*-------------------------------------------------------------------------*//**
 **  @brief Transfers data in both directions.
 **
-**  @param[in] dout Data to send. If there is no data to send out, set to zero.
+**  @param[in] dout Data to send. If there is no data to send out, set to null.
+**  @param[in] outsz Size of the output data.
 **  @param[out] din Data to receive. If there is no data to receive, set to 
 **      null.
+**  @param[in] dinsz Size of the input data.
 **
 **  @retval RESULT_OK Transmission successful.
 **

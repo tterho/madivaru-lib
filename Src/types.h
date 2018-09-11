@@ -84,7 +84,8 @@ vartype_t{
         VARTYPE_S16,    VARTYPE_S16PTR,
         VARTYPE_U8,     VARTYPE_U8PTR,
         VARTYPE_S8,     VARTYPE_S8PTR,
-        VARTYPE_BOOL,   VARTYPE_BOOLPTR
+        VARTYPE_BOOL,   VARTYPE_BOOLPTR,
+        VARTYPE_ENUM
 } vartype_t;
 
 /*-------------------------------------------------------------------------*//**
@@ -121,6 +122,8 @@ var_t{
                 int8_t   S8,    *S8Ptr;
                 /// Boolean.
                 bool     Bool,  *BoolPtr;
+                /// Enumeration.
+                uint16_t Enum;
         };
 } var_t;
 
