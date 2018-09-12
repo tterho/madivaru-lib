@@ -125,6 +125,10 @@
 /// Found a parameter value which was not expected.
 #define CLI_ERROR_PARSER_UNEXPECTED_PARAMETER_VALUE -30
 
+/// @brief A duplicated parameter.
+///
+/// Found a parameter which already exists in the list.
+#define CLI_ERROR_PARSER_DUPLICATED_PARAMETER -31
 
 /******************************************************************************\
 **
