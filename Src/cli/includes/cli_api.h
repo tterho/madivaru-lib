@@ -109,15 +109,15 @@
 /// The parameter value is out of the expected range.
 #define CLI_ERROR_PARSER_PARAMETER_VALUE_OUT_OF_RANGE -27
 
-/// @brief Extra parameters on the command line.
+/// @brief An extra parameter in the command line.
 ///
-/// There is one or more extra parameters n the command line.
-#define CLI_ERROR_PARSER_EXTRA_PARAMETERS -28
+/// There is at least one extra parameter in the command line.
+#define CLI_ERROR_PARSER_EXTRA_PARAMETER -28
 
 /// @brief An unexpected end of line.
 ///
-/// Found a parameter or parameter value specifier, but not the parameter or the
-/// value.
+/// Found a parameter or a parameter value specifier, but not the parameter or 
+/// the value.
 #define CLI_ERROR_PARSER_UNEXPECTED_EOL -29
 
 /// @brief An unexpected parameter value.
@@ -133,13 +133,22 @@
 \******************************************************************************/
 
 /*-------------------------------------------------------------------------*//**
+**  @brief A container for the parsed parameter ID and value.
+*/
+typedef struct
+CLI_Param_t{
+        /// The ID of the parameter.
+        uint8_t id;
+        /// The value of the parameter.
+        var_t val;
+} CLI_Param_t;
+
+/*-------------------------------------------------------------------------*//**
 **  @brief Console command callback type.
 **
 **  @param[in] cmdId Command identifier (application specific).
-**  @param[in] paramCount The amount of parameters in the command line.
-**  @param[in] paramIds The list of the parameter identifiers in the command
-**      line.
-**  @param[in] params The list of the parameter values in the command line.
+**  @param[in] params The list of the parsed parameters.
+**  @param[in] paramCount The amount of parsed parameters in the list.
 **  @param[in] userData A pointer to user specified data.
 **
 **  @retval RESULT_OK Successful.
@@ -154,9 +163,8 @@
 typedef Result_t
 (*CLI_CmdCbk_t)(
         uint8_t cmdId,
+        CLI_Param_t *params,
         uint8_t paramCount,
-        uint8_t *paramIds,
-        var_t *params,
         void *userData
 );
 
@@ -232,30 +240,33 @@ typedef void
 */
 typedef struct
 CLI_Parser_t{
-        /// User defined list of command line commands.
+        /// A user defined list of command line commands.
         const CLI_CmdDescr_t *clicmd;
-        /// User defined list of command line parameters.
-        const CLI_ParamDescr_t *cliparam;
-        /// Maximum parser input length.
-        uint16_t inl;
-        /// The current command line input.
+        /// The amount of the commands in the list.
+        uint8_t cliccnt;
+        /// A user defined list of command line parameters.
+        const CLI_ParamDescr_t *cliprm;
+        /// A pointer to an external buffer for parsed parameters.
+        CLI_Param_t *pprm;
+        /// The maximum amount of parameters per command.
+        uint8_t clipcnt;
+        /// A user defined list of enumerated value names for the parameter 
+        /// values.
+        const char **clienu;
+        /// The amount of enumerated value names in the list.
+        uint16_t cliecnt;
+        /// A pointer to an external buffer for the command line input.
         char *inp;
+        /// The length of the input buffer.
+        uint16_t inl;
         /// Input write pointer.
         char *iptr;
         /// Input character count.
         uint16_t icnt;
-        /// The amount of the command line commands in the list.
-        uint8_t cmdcnt;
-        /// The maximum amount of parameters per command.
-        uint8_t pcntmax;
-        /// The current command id (parser intermediate output).
-        uint8_t cmdId;
-        /// The current parameter count (parser intermediate output).
+        /// The parsed command id.
+        uint8_t pcmd;
+        /// The parsed parameter count.
         uint8_t pcnt;
-        /// The current parameter identifiers (parser intermediate output).
-        uint8_t *pids;
-        /// The current parameter values (parser intermediate output).
-        var_t *pval;
         /// A callback to echo the command line input.
         CLI_EchoCbk_t ecbk;
         /// Echo enable.
@@ -278,16 +289,18 @@ CLI_Parser_t{
 **  @param[in] inputBuffer A pointer to a buffer where the input data is 
 **      received.
 **  @param[in] inputBufferLength The length of the input buffer.
-**  @param[in] cmdCount The amount of commands in supported by the application.
-**  @param[in] maxParams The maximum amount of parameters per command.
-**  @param[in] cliCmds User defined list of commands supported by the 
+**  @param[in] cliCmds A user defined list of commands supported by the 
 **      application. The list must contain at least cmdCount items.
-**  @param[in] cliParams User defined list of parameters supported by the
+**  @param[in] cliCmdCount The amount of commands in supported by the 
+**      application.
+**  @param[in] cliParams A user defined list of parameters supported by the
 **      commands. The list must contain at least cmdCount * maxParams items.
-**  @param[in] paramIds A pointer to a temporary list of parameter IDs. The list
-**      must contain at least maxParams items.
-**  @param[in] paramValues A pointer to a temporary list of parameter values.
-**      The list must contain at least maxParams items.
+**  @param[in] parsedParams A pointer to an external buffer for parsed 
+**      parameters. The list must contain at least maxParams items.
+**  @param[in] cliMaxParams The maximum amount of parameters per command.
+**  @param[in] cliEnums A user defined list of enumerated value names for the 
+**      parameter values.
+**  @param[in] cliEnumCount The amount of enumerated value names in the list.
 **  @param[in] echo A callback for command line echo.
 **  @param[in] userData A pointer to user specified data.
 **  @param[out] parser A pointer to a parser to create.
@@ -300,12 +313,13 @@ Result_t
 CLI_CreateParser(
         char *inputBuffer,
         uint16_t inputBufferLength,
-        uint8_t cmdCount,
-        uint8_t maxParams,
         const CLI_CmdDescr_t *cliCmds,
+        uint8_t cliCmdCount,
         const CLI_ParamDescr_t *cliParams,
-        uint8_t *paramIds,
-        var_t *paramValues,
+        CLI_Param_t *parsedParams,
+        uint8_t cliMaxParams,
+        const char **cliEnums,
+        uint16_t cliEnumCount,
         CLI_EchoCbk_t echo,
         void *userData,
         CLI_Parser_t *parser

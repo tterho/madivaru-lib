@@ -480,6 +480,7 @@ extern const SP_Config_t SP_DefaultConfig;
 **  @param[in] txCompleted TX completed callback for asynchronous write 
 **      operations. Set to null for synchronous writes.
 **  @param[in] timerSys Timer system to use.
+**  @param[in] userData A pointer to user specified data.
 **
 **  @retval RESULT_OK Successful.
 **  @retval SP_ERROR_INVALID_POINTER The port parameter points to null.
@@ -493,7 +494,8 @@ SP_InitPort(
         SP_COMPort_t *port,
         SP_TransferCompletedCbk_t rxCompleted,
         SP_TransferCompletedCbk_t txCompleted,
-        TimerSys_t *timerSys
+        TimerSys_t *timerSys,
+        void *userData
 );
 
 /*-------------------------------------------------------------------------*//** 
@@ -618,7 +620,7 @@ SP_Read(
 */
 Result_t
 SP_Write(
-        void *handle,
+        Handle_t handle,
         uint32_t length,
         uint8_t *data,
         uint32_t *bytesWritten,
@@ -642,7 +644,7 @@ SP_Write(
 */
 Result_t
 SP_GetChar(
-        void *handle,
+        Handle_t handle,
         uint8_t *data
 );
 
@@ -662,7 +664,7 @@ SP_GetChar(
 */
 Result_t
 SP_PutChar(
-        void *handle,
+        Handle_t handle,
         uint8_t data
 );
 
