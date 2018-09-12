@@ -97,6 +97,7 @@ vartype_t{
 typedef struct
 var_t{
         vartype_t type;
+        uint16_t sz;
         union{
 #ifdef USE_64BIT_VAR_T
                 /// 64-bit floating point value.

@@ -43,9 +43,7 @@
 
 #include "cli_api.h"
 #include <string.h>
-#include <ctype.h>
-
-#include <stdio.h>
+#include <stdlib.h>
 
 /******************************************************************************\
 **
@@ -108,6 +106,7 @@ cpapi_ParseParam(
 )
 {
         uint16_t j;
+        uint8_t k;
         uint8_t len=0;
         const CLI_ParamDescr_t *p=0;
         bool found=false;
@@ -115,7 +114,7 @@ cpapi_ParseParam(
         var_t *val=0;
 
         // EOL found.
-        if(*i==parser->icnt){
+        if(*i>=parser->icnt){
                 return 1;
         }
         // Bypass preceding spaces.
@@ -154,26 +153,37 @@ cpapi_ParseParam(
                 p=&parser->cliprm[parser->clipcnt*parser->pcmd+j];
                 if(strlen(p->Param)==len){
                         if(!strncmp(p->Param,&parser->inp[*i],len)){
-                                // Parameter found. Parameter count exceeds the
-                                // maximum amount of parameters per command.
+                                // A parameter found, but the parameter count 
+                                // exceeds the maximum amount of parameters per 
+                                // command.
                                 if (parser->pcnt == parser->clipcnt)
                                 {
                                     return CLI_ERROR_PARSER_EXTRA_PARAMETER;
                                 }
-                                // Parameter found. Put it into the list.
-                                parser->pprm[parser->pcnt].id=j;
+                                // A parameter found. Put it into the list and
+                                // reset its value.
+                                parser->pprm[parser->pcnt].id=(uint8_t)j;
                                 val=&parser->pprm[parser->pcnt].val;
+                                val->type=VARTYPE_NONE;
+                                val->U32=0;
+                                val->sz=0;
                                 parser->pcnt++;
                                 found=true;
                                 break;
                         }
                 }
         }
-        // Parameter not found from the list: return an error.
+        // Parameter not found in the list: return an error.
         if(!found){
                 return CLI_ERROR_PARSER_UNKNOWN_PARAMETER;
         }
-        // Check the support of the parameter value type.
+        // Check for duplicates.
+        for(k=0;k<parser->pcnt-1;k++){
+                if(parser->pprm[k].id==(uint8_t)j){
+                        return CLI_ERROR_PARSER_DUPLICATED_PARAMETER;
+                }
+        }
+        // These parameter value types are not supported by this parser.
         switch(p->VarType){
         case VARTYPE_F32PTR:
         case VARTYPE_U32PTR:
@@ -223,6 +233,8 @@ cpapi_ParseParam(
         if(!len){
                 return CLI_ERROR_PARSER_MISSING_PARAMETER_VALUE;
         }
+        // Set the character at i to null for a null-terminated string.
+        parser->inp[*i]=0;
         // Check the value type.
         (*i)-=len;
         for(j=0;j<len;j++){
@@ -236,7 +248,6 @@ cpapi_ParseParam(
         }
         // The value contains characters when it shouldn't. Return an error.
         switch(p->VarType){
-        default:
         case VARTYPE_F32:
         case VARTYPE_U32:
         case VARTYPE_S32:
@@ -247,31 +258,39 @@ cpapi_ParseParam(
                         return CLI_ERROR_PARSER_INVALID_PARAMETER_VALUE;
                 }
                 break;
-        case VARTYPE_S8:
-        case VARTYPE_S8PTR:
-        case VARTYPE_BOOL:
-        case VARTYPE_ENUM:
+        default:
                 break;
         }
         // Convert the variable depending on its type.
         switch(p->VarType){
         default:
+                // This type is beyond the VARTYPE enumeration.
+                return CLI_ERROR_UNSUPPORTED_PARAMETER_VALUE_TYPE;
                 break;
         case VARTYPE_F32:
+                val->F32=atof(&parser->inp[*i]);
+                val->type=p->VarType;
+                val->sz=1;
                 break;
         case VARTYPE_U32:
-                break;
         case VARTYPE_S32:
-                break;
         case VARTYPE_U16:
-                break;
         case VARTYPE_S16:
-                break;
         case VARTYPE_U8:
+                val->S32=atoi(&parser->inp[*i]);
+                val->type=p->VarType;
+                val->sz=1;
                 break;
         case VARTYPE_S8:
+                if(len>1){
+                        return CLI_ERROR_PARSER_INVALID_PARAMETER_VALUE;
+                }
+                val->S8=parser->inp[*i];
                 break;
         case VARTYPE_S8PTR:
+                val->S8Ptr=&parser->inp[*i];
+                val->type=p->VarType;
+                val->sz=len;
                 break;
         case VARTYPE_BOOL:
                 if(len==1&&parser->inp[*i]=='1'||
@@ -300,7 +319,7 @@ cpapi_ParseParam(
                 }
                 break;
         }
-        (*i)+=len;
+        (*i)+=len+1;
         return RESULT_OK;
 }
 
@@ -363,6 +382,9 @@ cpapi_ParseInput(
         if(!SUCCESSFUL(result)){
                 return result;
         }
+
+        // TODO: Check MANDATORY, OPTIONAL and ALTERNATIVE parameters.
+
         // The command handler must exist.
         if(!parser->clicmd[parser->pcmd].Cbk){
                 return CLI_ERROR_INVALID_COMMAND_HANDLER;
