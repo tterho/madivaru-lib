@@ -107,10 +107,10 @@ cpapi_ParseParam(
         uint16_t *i
 )
 {
-        uint8_t j;
+        uint16_t j;
         uint8_t len=0;
         const CLI_ParamDescr_t *p=0;
-        bool pf=false;
+        bool found=false;
         bool chars=false;
         var_t *val=0;
 
@@ -150,21 +150,27 @@ cpapi_ParseParam(
         }
         // Find the parameter from the parameter list.
         (*i)-=len;
-        for(j=0;j<parser->pcntmax;j++){
-                p=&parser->cliparam[parser->pcntmax*parser->cmdId+j];
+        for(j=0;j<parser->clipcnt;j++){
+                p=&parser->cliprm[parser->clipcnt*parser->pcmd+j];
                 if(strlen(p->Param)==len){
                         if(!strncmp(p->Param,&parser->inp[*i],len)){
-                                // Parameter found.
-                                parser->pids[parser->pcnt]=j;
-                                val=&parser->pval[parser->pcnt];
+                                // Parameter found. Parameter count exceeds the
+                                // maximum amount of parameters per command.
+                                if (parser->pcnt == parser->clipcnt)
+                                {
+                                    return CLI_ERROR_PARSER_EXTRA_PARAMETER;
+                                }
+                                // Parameter found. Put it into the list.
+                                parser->pprm[parser->pcnt].id=j;
+                                val=&parser->pprm[parser->pcnt].val;
                                 parser->pcnt++;
-                                pf=true;
+                                found=true;
                                 break;
                         }
                 }
         }
         // Parameter not found from the list: return an error.
-        if(!pf){
+        if(!found){
                 return CLI_ERROR_PARSER_UNKNOWN_PARAMETER;
         }
         // Check the support of the parameter value type.
@@ -225,6 +231,7 @@ cpapi_ParseParam(
                      parser->inp[(*i)+j]=='.'||
                      parser->inp[(*i)+j]=='-')){
                         chars=true;
+                        break;
                 }
         }
         // The value contains characters when it shouldn't. Return an error.
@@ -278,6 +285,19 @@ cpapi_ParseParam(
                 }
                 break;
         case VARTYPE_ENUM:
+                found=false;
+                for(j=0;j<parser->cliecnt;j++){
+                        if(strlen(parser->clienu[j])==len){
+                                if(!strncmp(parser->clienu[j],&parser->inp[*i],len)){
+                                        val->Enum=j;
+                                        found=true;
+                                        break;
+                                }
+                        }
+                }
+                if(!found){
+                        return CLI_ERROR_PARSER_INVALID_PARAMETER_VALUE;
+                }
                 break;
         }
         (*i)+=len;
@@ -321,17 +341,17 @@ cpapi_ParseInput(
         }
         // Search for the matching length commands. On a match, compare the 
         // strings together to find an exact match.
-        for(j=0;j<parser->cmdcnt;j++){
+        for(j=0;j<parser->cliccnt;j++){
                 if(strlen(parser->clicmd[j].Cmd)==i){
                         if(!strncmp(parser->clicmd[j].Cmd,parser->inp,i)){
                                 // Command found.
-                                parser->cmdId=j;
+                                parser->pcmd=j;
                                 break;
                         }
                 }
         }
         // Command not found.
-        if(j==parser->cmdcnt){
+        if(j==parser->cliccnt){
                 return CLI_ERROR_PARSER_UNKNOWN_COMMAND;
         }
         // Command found. Reset the parameter count and parse parameters.
@@ -344,15 +364,14 @@ cpapi_ParseInput(
                 return result;
         }
         // The command handler must exist.
-        if(!parser->clicmd[parser->cmdId].Cbk){
+        if(!parser->clicmd[parser->pcmd].Cbk){
                 return CLI_ERROR_INVALID_COMMAND_HANDLER;
         }
         // Send the parser result to the user application.
-        return parser->clicmd[parser->cmdId].Cbk(
-                parser->cmdId,
+        return parser->clicmd[parser->pcmd].Cbk(
+                parser->pcmd,
+                parser->pprm,
                 parser->pcnt,
-                parser->pids,
-                parser->pval,
                 parser->ud
         );
 }
@@ -367,12 +386,13 @@ Result_t
 CLI_CreateParser(
         char *inputBuffer,
         uint16_t inputBufferLength,
-        uint8_t cmdCount,
-        uint8_t maxParams,
         const CLI_CmdDescr_t *cliCmds,
+        uint8_t cliCmdCount,
         const CLI_ParamDescr_t *cliParams,
-        uint8_t *paramIds,
-        var_t *paramValues,
+        CLI_Param_t *parsedParams,
+        uint8_t cliMaxParams,
+        const char **cliEnums,
+        uint16_t cliEnumCount,
         CLI_EchoCbk_t echo,
         void *userData,
         CLI_Parser_t *parser
@@ -381,8 +401,7 @@ CLI_CreateParser(
         if(!inputBuffer||
            !cliCmds||
            !cliParams||
-           !paramIds||
-           !paramValues||
+           !parsedParams||
            !parser){
                 return CLI_ERROR_INVALID_POINTER;
         }
@@ -392,18 +411,20 @@ CLI_CreateParser(
         parser->inp=inputBuffer;
         parser->inl=inputBufferLength;
         // Setup the command line commands and their parameters.
-        parser->cmdcnt=cmdCount;
-        parser->pcntmax=maxParams;
         parser->clicmd=cliCmds;
-        parser->cliparam=cliParams;
-        // Setup temporary parameter buffers.
-        parser->pids=paramIds;
-        parser->pval=paramValues;
+        parser->cliccnt=cliCmdCount;
+        parser->cliprm=cliParams;
+        parser->clipcnt=cliMaxParams;
+        // Setup the parsed parameter buffer.
+        parser->pprm=parsedParams;
         // Setup and enable the echo.
         if(echo){
                 parser->ecbk=echo;
                 parser->eena=true;
         }
+        // Set the user defined enumerations.
+        parser->clienu=cliEnums;
+        parser->cliecnt=cliEnumCount;
         // Set user data.
         parser->ud=userData;
         // Set the command line input pointer to the beginning of the input
@@ -460,7 +481,7 @@ CLI_InputChar(
                         return RESULT_OK;
                 }
                 // Echo the input.
-                cpapi_Echo(parser,&input,1);
+                cpapi_Echo(parser,(char*)&input,1);
                 // Set the input character to the buffer and advance the pointer
                 // and the counter.
                 *parser->iptr=input;

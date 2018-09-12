@@ -76,7 +76,8 @@ SP_InitPort(
         SP_COMPort_t *port,
         SP_TransferCompletedCbk_t rxCallback,
         SP_TransferCompletedCbk_t txCallback,
-        TimerSys_t *timerSys
+        TimerSys_t *timerSys,
+        void *userData
 )
 {
         Result_t result;
@@ -100,6 +101,8 @@ SP_InitPort(
         port->cfg=spDefaultConfig;
         // Set the timer system.
         port->tsys=timerSys;
+        // Set the user data.
+        port->ud=userData;
         // Initialize the driver.
         return port->Init();        
 }
