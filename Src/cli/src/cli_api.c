@@ -87,7 +87,108 @@ cpapi_NewLine(
         CLI_Parser_t *parser
 )
 {
-        cpapi_Echo(parser,"\r\n> ",4);
+        cpapi_Echo(parser,"\r\n",2);
+}
+
+/*-------------------------------------------------------------------------*//**
+**  @brief Begins a new input.
+**
+**  @param[in] parser Parser to use.
+**  @param[in] newLine Add new line before input.
+**
+**  @return No return value.
+*/
+static void
+cpapi_BeginNewInput(
+        CLI_Parser_t *parser,
+        bool newLine
+)
+{
+        if(newLine){
+                cpapi_NewLine(parser);
+        }
+        parser->iptr=&parser->inp[0];
+        parser->icnt=0;
+        cpapi_Echo(parser,"> ",2);
+}
+
+/*-------------------------------------------------------------------------*//**
+**  @brief Prints help about all commands.
+**
+**  @param[in] parser Parser to use.
+**
+**  @return No return value.
+*/
+static void
+cpapi_PrintAppHelp(
+        CLI_Parser_t *parser
+)
+{
+        uint8_t i;
+        const CLI_CmdDescr_t *cmd;
+
+        // Print the help header.
+        if(parser->hhdr){
+                cpapi_Echo(
+                        parser,
+                        (char*)parser->hhdr,
+                        (uint16_t)strlen(parser->hhdr)
+                );
+                cpapi_Echo(parser,"\r\n\r\n",4);
+        }
+        // Print help for all commands.
+        for(i=0;i<parser->cliccnt;i++){
+                cmd=&parser->clicmd[i];
+                cpapi_Echo(parser,"\x09",1);
+                cpapi_Echo(parser,cmd->Cmd,(uint16_t)strlen(cmd->Cmd));
+                cpapi_Echo(parser,"\x09\x09",2);
+                cpapi_Echo(parser,cmd->OptDescr,(uint16_t)strlen(cmd->OptDescr));
+                cpapi_Echo(parser,"\r\n\x09\x09\x09",5);
+                cpapi_Echo(parser,cmd->Descr,(uint16_t)strlen(cmd->Descr));
+                cpapi_Echo(parser,"\r\n\r\n",4);
+        }
+        cpapi_BeginNewInput(parser,false);
+}
+
+/*-------------------------------------------------------------------------*//**
+**  @brief Prints help about the parameters of the specific command.
+**
+**  @param[in] parser Parser to use.
+**  @param[in] cmdId A command ID.
+**
+**  @return No return value.
+*/
+static void
+cpapi_PrintCmdHelp(
+        CLI_Parser_t *parser,
+        uint8_t cmdId
+)
+{
+        uint8_t i;
+        const CLI_CmdDescr_t *cmd;
+        const CLI_ParamDescr_t *param;
+
+        // Print help for the command.
+        cmd=&parser->clicmd[cmdId];
+        cpapi_Echo(parser,cmd->Cmd,(uint16_t)strlen(cmd->Cmd));
+        cpapi_Echo(parser," ",1);
+        cpapi_Echo(parser,cmd->OptDescr,(uint16_t)strlen(cmd->OptDescr));
+        cpapi_Echo(parser,"\r\n",2);
+        cpapi_Echo(parser,cmd->Descr,(uint16_t)strlen(cmd->Descr));
+        cpapi_Echo(parser,"\r\n\r\n",4);
+        // Print help for the parameters of the command.
+        for(i=0;i<parser->clipcnt;i++){
+                param=&parser->cliprm[cmdId*parser->clipcnt+i];
+                if(param->Type==CLI_PARAMTYPE_NONE){
+                        continue;
+                }
+                cpapi_Echo(parser,"\x09-",2);
+                cpapi_Echo(parser,param->Param,(uint16_t)strlen(param->Param));
+                cpapi_Echo(parser,"\x09\x09",2);
+                cpapi_Echo(parser,param->Descr,(uint16_t)strlen(param->Descr));
+                cpapi_Echo(parser,"\r\n",2);
+        }
+        cpapi_BeginNewInput(parser,false);
 }
 
 /*-------------------------------------------------------------------------*//**
@@ -115,14 +216,14 @@ cpapi_ParseParam(
 
         // EOL found.
         if(*i>=parser->icnt){
-                return 1;
+                return CLI_RESULT_PARSING_FINISHED;
         }
         // Bypass preceding spaces.
         while(parser->inp[*i]==32){
                 (*i)++;
                 // EOL found.
                 if(*i==parser->icnt){
-                        return 1;
+                        return CLI_RESULT_PARSING_FINISHED;
                 }
         }
         // Other than a '-' found: return an error.
@@ -147,8 +248,16 @@ cpapi_ParseParam(
                         break;
                 }
         }
-        // Find the parameter from the parameter list.
+        // Go to the beginning of the parameter.
         (*i)-=len;
+        // Check if the parameter is a help request.
+        if(len==4){
+                if(!strncmp(&parser->inp[*i],"help",4)){
+                        cpapi_PrintCmdHelp(parser,parser->pcmd);
+                        return CLI_RESULT_HELP_PRINTED;
+                }
+        }
+        // Find the parameter from the list.
         for(j=0;j<parser->clipcnt;j++){
                 p=&parser->cliprm[parser->clipcnt*parser->pcmd+j];
                 if(strlen(p->Param)==len){
@@ -268,7 +377,7 @@ cpapi_ParseParam(
                 return CLI_ERROR_UNSUPPORTED_PARAMETER_VALUE_TYPE;
                 break;
         case VARTYPE_F32:
-                val->F32=atof(&parser->inp[*i]);
+                val->F32=(float)atof(&parser->inp[*i]);
                 val->type=p->VarType;
                 val->sz=1;
                 break;
@@ -354,9 +463,16 @@ cpapi_ParseInput(
                         break;
                 }
         }
-        // No spaces found. The command is invalid.
+        // No spaces found from the whole input buffer. The command is invalid.
         if(i==parser->inl){
                 return CLI_ERROR_PARSER_INVALID_COMMAND;
+        }
+        // Check if the command is a help request.
+        if(i==4){
+                if(!strncmp(parser->inp,"help",4)){
+                        cpapi_PrintAppHelp(parser);
+                        return CLI_RESULT_HELP_PRINTED;
+                }
         }
         // Search for the matching length commands. On a match, compare the 
         // strings together to find an exact match.
@@ -382,6 +498,10 @@ cpapi_ParseInput(
         if(!SUCCESSFUL(result)){
                 return result;
         }
+        // The help printed out. Nothing more to do.
+        if(result==CLI_RESULT_HELP_PRINTED){
+                return RESULT_OK;
+        }
 
         // TODO: Check MANDATORY, OPTIONAL and ALTERNATIVE parameters.
 
@@ -390,12 +510,16 @@ cpapi_ParseInput(
                 return CLI_ERROR_INVALID_COMMAND_HANDLER;
         }
         // Send the parser result to the user application.
-        return parser->clicmd[parser->pcmd].Cbk(
+        result=parser->clicmd[parser->pcmd].Cbk(
                 parser->pcmd,
                 parser->pprm,
                 parser->pcnt,
                 parser->ud
         );
+        if(SUCCESSFUL(result)){
+                cpapi_BeginNewInput(parser,true);
+        }
+        return result;
 }
 
 /******************************************************************************\
@@ -416,6 +540,7 @@ CLI_CreateParser(
         const char **cliEnums,
         uint16_t cliEnumCount,
         CLI_EchoCbk_t echo,
+        const char *helpHeader,
         void *userData,
         CLI_Parser_t *parser
 )
@@ -454,33 +579,69 @@ CLI_CreateParser(
         parser->iptr=&parser->inp[0];
         // Enable the parser by default.
         parser->pena=true;
+        // Set the help header.
+        parser->hhdr=helpHeader;
         return RESULT_OK;
 }
 
 Result_t
 CLI_EnableParser(
-        CLI_Parser_t *parser,
-        bool enable
+        CLI_Parser_t *parser
 )
 {
         if(!parser){
                 return CLI_ERROR_INVALID_POINTER;
         }
-        parser->pena=enable;
+        parser->pena=true;
+        return RESULT_OK;
+}
+
+Result_t
+CLI_DisableParser(
+        CLI_Parser_t *parser
+)
+{
+        if(!parser){
+                return CLI_ERROR_INVALID_POINTER;
+        }
+        parser->pena=false;
         return RESULT_OK;
 }
 
 Result_t
 CLI_EnableEcho(
-        CLI_Parser_t *parser,
-        bool enable
+        CLI_Parser_t *parser
 )
 {
         if(!parser){
                 return CLI_ERROR_INVALID_POINTER;
         }
-        parser->eena=enable;
-        cpapi_NewLine(parser);
+        parser->eena=true;
+        return RESULT_OK;
+}
+
+Result_t
+CLI_BeginNewInput(
+        CLI_Parser_t *parser,
+        bool newLine
+)
+{
+        if(!parser){
+                return CLI_ERROR_INVALID_POINTER;
+        }
+        cpapi_BeginNewInput(parser,newLine);
+        return RESULT_OK;
+}
+
+Result_t
+CLI_DisableEcho(
+        CLI_Parser_t *parser
+)
+{
+        if(!parser){
+                return CLI_ERROR_INVALID_POINTER;
+        }
+        parser->eena=false;
         return RESULT_OK;
 }
 
@@ -518,12 +679,11 @@ CLI_InputChar(
                 break;
         // Interrupt process command (Ctrl+C).
         case 3:
-                // Clears the input and send an echo. Then return the value
+                // Clear the input and send an echo. Then return the value
                 // CLI_ERROR_INTERRUPT_PROCESS to indicate that the user 
                 // interrupted the operation.
-                parser->iptr=&parser->inp[0];
-                parser->icnt=0;
                 cpapi_Echo(parser," ^C",3);
+                cpapi_BeginNewInput(parser,true);
                 return CLI_ERROR_INTERRUPT_PROCESS;
         // Backspace command.
         case 8:
@@ -532,7 +692,7 @@ CLI_InputChar(
                         // Input buffer is empty. Nothing to do.
                         break;
                 }
-                // Echo the input.
+                // Echo the backspace.
                 cpapi_Echo(parser,"\x08 \x08",3);
                 // Move the input buffer pointer backwards and decrease the
                 // counter.
@@ -544,25 +704,21 @@ CLI_InputChar(
                 // The enter command starts parsing of the input.
                 // If there is nothing to parse, echo a line feed.
                 if(!parser->icnt){
-                        // Input buffer is empty. Echo a line feed.
-                        cpapi_NewLine(parser);
+                        // Input buffer is empty. Begin a new input.
+                        cpapi_BeginNewInput(parser,true);
                         break;
                 }
+                cpapi_NewLine(parser);
                 // Parse the input and return the result.
                 result=cpapi_ParseInput(parser);
                 // Clear the input.
                 parser->iptr=&parser->inp[0];
                 parser->icnt=0;
-                if(SUCCESSFUL(result)){
-                        cpapi_NewLine(parser);
-                }
                 break;
         // Escape command.
         case 27:
                 // Escape command clears the input.
-                parser->iptr=&parser->inp[0];
-                parser->icnt=0;
-                cpapi_NewLine(parser);
+                cpapi_BeginNewInput(parser,true);
                 break;
         }
         return result;
