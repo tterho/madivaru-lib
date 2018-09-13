@@ -48,9 +48,15 @@
 
 /******************************************************************************\
 **
-**  ERROR CODES
+**  ERROR CODES AND RESULTS
 **
 \******************************************************************************/
+
+/// @brief Parsing finished successfully.
+#define CLI_RESULT_PARSING_FINISHED 1
+
+/// @brief The help printed out and parsing stopped.
+#define CLI_RESULT_HELP_PRINTED 2
 
 /// @brief At least one of the pointer parameters is invalid.
 #define CLI_ERROR_INVALID_POINTER -1
@@ -179,7 +185,9 @@ typedef struct
 CLI_CmdDescr_t{
         /// The name of the command.
         char *Cmd;
-        /// The description of the command.
+        /// The description of the options of the command.
+        char *OptDescr;
+        /// The detailed description of the command.
         char *Descr;
         /// A callback that handles the command.
         CLI_CmdCbk_t Cbk;
@@ -277,6 +285,8 @@ CLI_Parser_t{
         bool eena;
         /// Parser enable.
         bool pena;
+        /// Help header.
+        const char *hhdr;
         /// A pointer to user specified data.
         void *ud;
 } CLI_Parser_t;
@@ -306,6 +316,7 @@ CLI_Parser_t{
 **      parameter values.
 **  @param[in] cliEnumCount The amount of enumerated value names in the list.
 **  @param[in] echo A callback for command line echo.
+**  @param[in] helpHeader A pointer to a help header text.
 **  @param[in] userData A pointer to user specified data.
 **  @param[out] parser A pointer to a parser to create.
 **
@@ -325,39 +336,76 @@ CLI_CreateParser(
         const char **cliEnums,
         uint16_t cliEnumCount,
         CLI_EchoCbk_t echo,
+        const char *helpHeader,
         void *userData,
         CLI_Parser_t *parser
 );
 
 /*-------------------------------------------------------------------------*//**
-**  @brief Enables and disables the command line parser.
+**  @brief Enables the command line parser.
 **
 **  @param[in] parser A parser to use.
-**  @param[in] enable Enable or disable.
 **
 **  @retval RESULT_OK Successful.
 **  @retval CLI_ERROR_INVALID_POINTER The parser parameter points to null.
-**
 */
 Result_t
 CLI_EnableParser(
-        CLI_Parser_t *parser,
-        bool enable
+        CLI_Parser_t *parser
 );
 
 /*-------------------------------------------------------------------------*//**
-**  @brief Enables and disables the command line echo.
+**  @brief Disables the command line parser.
 **
 **  @param[in] parser A parser to use.
-**  @param[in] enable Enable or disable.
+**
+**  @retval RESULT_OK Successful.
+**  @retval CLI_ERROR_INVALID_POINTER The parser parameter points to null.
+*/
+Result_t
+CLI_DisableParser(
+        CLI_Parser_t *parser
+);
+
+/*-------------------------------------------------------------------------*//**
+**  @brief Enables the command line echo.
+**
+**  @param[in] parser A parser to use.
 **
 **  @retval RESULT_OK Successful.
 **  @retval CLI_ERROR_INVALID_POINTER The parser parameter points to null.
 */
 Result_t
 CLI_EnableEcho(
+        CLI_Parser_t *parser
+);
+
+/*-------------------------------------------------------------------------*//**
+**  @brief Disables the command line echo.
+**
+**  @param[in] parser A parser to use.
+**
+**  @retval RESULT_OK Successful.
+**  @retval CLI_ERROR_INVALID_POINTER The parser parameter points to null.
+*/
+Result_t
+CLI_DisableEcho(
+        CLI_Parser_t *parser
+);
+
+/*-------------------------------------------------------------------------*//**
+**  @brief Begins a new input.
+**
+**  @param[in] parser A parser to use.
+**  @param[in] newLine Add new line before the input (true) or not (false).
+**
+**  @retval RESULT_OK Successful.
+**  @retval CLI_ERROR_INVALID_POINTER The parser parameter points to null.
+*/
+Result_t
+CLI_BeginNewInput(
         CLI_Parser_t *parser,
-        bool enable
+        bool newLine
 );
 
 /*-------------------------------------------------------------------------*//**
