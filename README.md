@@ -39,7 +39,7 @@ sensors.
 * serialport.h
 * serialport.c
 
-** A simple generic driver definition and API for serial port communication.**
+**A simple generic driver definition and API for serial port communication.**
 
 This library can be used to write unified interface drivers for universal 
 asynchronous receiver transmitters (UART) and to use them via a simple API. 
@@ -52,7 +52,7 @@ the serial port implementation in personal computers.
 * spi_api.h
 * spi_api.c
 
-** A simple generic driver definition and API for synchronous peripheral 
+**A simple generic driver definition and API for synchronous peripheral 
 interface (SPI) communication.**
 
 This library can be used to write unified interface drivers for SPI devices and 
@@ -106,7 +106,7 @@ continued modes. The calculation is performed by using a look-up table.
 * fifo.h
 * fifo.c
 
-** A library for creating and managing custom data first-in, first-out (FIFO) 
+**A library for creating and managing custom data first-in, first-out (FIFO) 
 buffers.**
 
 This library supports FIFOs of any type and size of data up to 65,535 bytes of 
