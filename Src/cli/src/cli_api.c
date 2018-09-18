@@ -262,8 +262,8 @@ cpapi_ParseParam(
                 p=&parser->cliprm[parser->clipcnt*parser->pcmd+j];
                 if(strlen(p->Param)==len){
                         if(!strncmp(p->Param,&parser->inp[*i],len)){
-                                // A parameter found, but the parameter count 
-                                // exceeds the maximum amount of parameters per 
+                                // A parameter found, but the parameter count
+                                // exceeds the maximum amount of parameters per
                                 // command.
                                 if (parser->pcnt == parser->clipcnt)
                                 {
@@ -272,6 +272,7 @@ cpapi_ParseParam(
                                 // A parameter found. Put it into the list and
                                 // reset its value.
                                 parser->pprm[parser->pcnt].id=(uint8_t)j;
+                                parser->pprm[parser->pcnt].t=p->Type;
                                 val=&parser->pprm[parser->pcnt].val;
                                 val->type=VARTYPE_NONE;
                                 val->U32=0;
@@ -307,7 +308,7 @@ cpapi_ParseParam(
         }
         // Continue the process from the end of the parameter name.
         (*i)+=len;
-        // An EOL or a space found. Check whether the parameter should have had 
+        // An EOL or a space found. Check whether the parameter should have had
         // a value or not. If yes, return an error. Otherwise, return RESULT_OK
         // to continue parsing.
         if(*i==parser->icnt||parser->inp[*i]==32){
@@ -318,7 +319,7 @@ cpapi_ParseParam(
                         return RESULT_OK;
                 }
         }
-        // A '=' found. Check whether the parameter should have had a value or 
+        // A '=' found. Check whether the parameter should have had a value or
         // not. If not, return an error.
         if(p->VarType==VARTYPE_NONE){
                 return CLI_ERROR_PARSER_UNEXPECTED_PARAMETER_VALUE;
@@ -397,7 +398,7 @@ cpapi_ParseParam(
                 val->S8=parser->inp[*i];
                 break;
         case VARTYPE_S8PTR:
-                val->S8Ptr=&parser->inp[*i];
+                val->S8Ptr=(int8_t*)&parser->inp[*i];
                 val->type=p->VarType;
                 val->sz=len;
                 break;
@@ -450,6 +451,8 @@ cpapi_ParseInput(
         uint16_t cmdl;
         uint8_t j;
         Result_t result;
+        uint8_t m[2]={0};
+        uint8_t a[2]={0};
 
         // Check the first character (must be a-z or A-Z).
         if(!(parser->inp[0]>='a'&&parser->inp[0]<='z'||
@@ -502,9 +505,38 @@ cpapi_ParseInput(
         if(result==CLI_RESULT_HELP_PRINTED){
                 return RESULT_OK;
         }
-
-        // TODO: Check MANDATORY, OPTIONAL and ALTERNATIVE parameters.
-
+        // Calculate the amount of mandatory and alternative parameters in the
+        // user defined list. Optional parameters doesn't need to be calculated 
+        // or checked, because... umm... they are optional.
+        i=parser->pcmd*parser->clipcnt;
+        for(j=0;j<parser->clipcnt;j++){
+                switch(parser->cliprm[i+j].Type){
+                default:break;
+                case CLI_PARAMTYPE_MANDATORY:m[0]++;break;
+                case CLI_PARAMTYPE_ALTERNATIVE:a[0]++;break;
+                }
+        }
+        // Calculate the amount of mandatory and alternative parameters in the
+        // parsed command line.
+        for(j=0;j<parser->pcnt;j++){
+                switch(parser->pprm[j].t){
+                default:
+                case CLI_PARAMTYPE_MANDATORY:m[1]++;break;
+                case CLI_PARAMTYPE_ALTERNATIVE:a[1]++;break;
+                }
+        }
+        // Check that all mandatory parameters have been found.
+        if(m[0]!=m[1]){
+                return CLI_ERROR_PARSER_PARAMETER_MISSING;
+        }
+        // Check that at least one alternative parameter has been found.
+        if(a[0]&&!a[1]){
+                return CLI_ERROR_PARSER_PARAMETER_MISSING;
+        }
+        // Check that there is no more than just one alternative parameter.
+        if(a[0]&&a[1]>1){
+                return CLI_ERROR_PARSER_EXTRA_PARAMETER;
+        }
         // The command handler must exist.
         if(!parser->clicmd[parser->pcmd].Cbk){
                 return CLI_ERROR_INVALID_COMMAND_HANDLER;
