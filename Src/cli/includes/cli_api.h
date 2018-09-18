@@ -90,7 +90,7 @@
 
 /// @brief A CLI parameter is invalid.
 ///
-/// The parameter must begin with - or / and it must contain a single character 
+/// The parameter must begin with - or / and it must contain a single character
 /// from the range a-z or A-Z (case sensitive).
 #define CLI_ERROR_PARSER_INVALID_PARAMETER -23
 
@@ -106,7 +106,7 @@
 
 /// @brief A CLI parameter value is invalid.
 ///
-/// The parameter value is in invalid format (e.g. expected an integer, got a 
+/// The parameter value is in invalid format (e.g. expected an integer, got a
 /// string).
 #define CLI_ERROR_PARSER_INVALID_PARAMETER_VALUE -26
 
@@ -122,7 +122,7 @@
 
 /// @brief An unexpected end of line.
 ///
-/// Found a parameter or a parameter value specifier, but not the parameter or 
+/// Found a parameter or a parameter value specifier, but not the parameter or
 /// the value.
 #define CLI_ERROR_PARSER_UNEXPECTED_EOL -29
 
@@ -143,6 +143,24 @@
 \******************************************************************************/
 
 /*-------------------------------------------------------------------------*//**
+**  @brief Parameter types.
+**
+**  These types specify how the console treats a parameter.
+*/
+typedef enum
+CLI_ParamType_t{
+        /// No parameter defined.
+        CLI_PARAMTYPE_NONE=0,
+        /// The parameter is optional.
+        CLI_PARAMTYPE_OPTIONAL,
+        /// The parameter is mandatory. A missing parameter causes an error.
+        CLI_PARAMTYPE_MANDATORY,
+        /// The parameter is an alternative. At least one alternative parameter
+        /// must exist in the command line.
+        CLI_PARAMTYPE_ALTERNATIVE
+} CLI_ParamType_t;
+
+/*-------------------------------------------------------------------------*//**
 **  @brief A container for the parsed parameter ID and value.
 */
 typedef struct
@@ -151,6 +169,8 @@ CLI_Param_t{
         uint8_t id;
         /// The value of the parameter.
         var_t val;
+        /// The type of the parameter.
+        CLI_ParamType_t t;
 } CLI_Param_t;
 
 /*-------------------------------------------------------------------------*//**
@@ -162,7 +182,7 @@ CLI_Param_t{
 **  @param[in] userData A pointer to user specified data.
 **
 **  @retval RESULT_OK Successful.
-**  @return On an error returns a negative error code that is passed to the 
+**  @return On an error returns a negative error code that is passed to the
 **      invoker.
 **
 **  This callback is invoked by the command interpreter once for each command
@@ -192,24 +212,6 @@ CLI_CmdDescr_t{
         /// A callback that handles the command.
         CLI_CmdCbk_t Cbk;
 } CLI_CmdDescr_t;
-
-/*-------------------------------------------------------------------------*//**
-**  @brief Parameter types.
-**
-**  These types specify how the console treats a parameter.
-*/
-typedef enum
-CLI_ParamType_t{
-        /// No parameter defined.
-        CLI_PARAMTYPE_NONE=0,
-        /// The parameter is optional.
-        CLI_PARAMTYPE_OPTIONAL,
-        /// The parameter is mandatory. A missing parameter causes an error.
-        CLI_PARAMTYPE_MANDATORY,
-        /// The parameter is an alternative. At least one alternative parameter
-        /// must exist in the command line.
-        CLI_PARAMTYPE_ALTERNATIVE
-} CLI_ParamType_t;
 
 /*-------------------------------------------------------------------------*//**
 **  @brief A descriptor for a parameter.
@@ -262,7 +264,7 @@ CLI_Parser_t{
         CLI_Param_t *pprm;
         /// The maximum amount of parameters per command.
         uint8_t clipcnt;
-        /// A user defined list of enumerated value names for the parameter 
+        /// A user defined list of enumerated value names for the parameter
         /// values.
         const char **clienu;
         /// The amount of enumerated value names in the list.
@@ -300,19 +302,19 @@ CLI_Parser_t{
 /*-------------------------------------------------------------------------*//**
 **  @brief Creates a parser for command line input.
 **
-**  @param[in] inputBuffer A pointer to a buffer where the input data is 
+**  @param[in] inputBuffer A pointer to a buffer where the input data is
 **      received.
 **  @param[in] inputBufferLength The length of the input buffer.
-**  @param[in] cliCmds A user defined list of commands supported by the 
+**  @param[in] cliCmds A user defined list of commands supported by the
 **      application. The list must contain at least cmdCount items.
-**  @param[in] cliCmdCount The amount of commands in supported by the 
+**  @param[in] cliCmdCount The amount of commands in supported by the
 **      application.
 **  @param[in] cliParams A user defined list of parameters supported by the
 **      commands. The list must contain at least cmdCount * maxParams items.
-**  @param[in] parsedParams A pointer to an external buffer for parsed 
+**  @param[in] parsedParams A pointer to an external buffer for parsed
 **      parameters. The list must contain at least maxParams items.
 **  @param[in] cliMaxParams The maximum amount of parameters per command.
-**  @param[in] cliEnums A user defined list of enumerated value names for the 
+**  @param[in] cliEnums A user defined list of enumerated value names for the
 **      parameter values.
 **  @param[in] cliEnumCount The amount of enumerated value names in the list.
 **  @param[in] echo A callback for command line echo.
