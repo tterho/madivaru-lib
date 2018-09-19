@@ -16,7 +16,6 @@ handles the callback functions and performs the actions.
 
 ## Sensor Framework
 
-* sensors.h
 * sensor_api.h
 * sensor_api.c
 
@@ -29,10 +28,6 @@ sensor I/O and management service this library forms a framework. The framework
 is flexible and can be used to manage sensors from simple ones with single input 
 and output to complex entities with multiple inputs and outputs, calibration, 
 configuration, and separate processes.
-
-The sensor process is half-automated by an internal service that manages each 
-sensor and its inputs and outputs and ensures the proper operation of the 
-sensors.
 
 ## Serial port API
 
