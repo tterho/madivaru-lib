@@ -14,28 +14,28 @@
 **
 **  Redistribution and use in source and binary forms, with or without
 **  modification, are permitted provided that the following conditions are met:
-**  
-**  * Redistributions of source code must retain the above copyright notice, 
+**
+**  * Redistributions of source code must retain the above copyright notice,
 **    this list of conditions and the following disclaimer.
-**  
+**
 **  * Redistributions in binary form must reproduce the above copyright notice,
 **    this list of conditions and the following disclaimer in the documentation
 **    and/or other materials provided with the distribution.
-**  
+**
 **  * Neither the name of the copyright holder nor the names of its
 **    contributors may be used to endorse or promote products derived from
 **    this software without specific prior written permission.
-**  
+**
 **  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 **  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-**  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
-**  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE 
-**  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR 
-**  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF 
-**  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
-**  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
-**  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
-**  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+**  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+**  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+**  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+**  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+**  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+**  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+**  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+**  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 **  POSSIBILITY OF SUCH DAMAGE.
 **
 ********************************************************************************
@@ -43,15 +43,15 @@
 **  FUNCTION REFERENCE
 **  ==================
 **
-**  Some functions are mandatory and the others are optional. The mandatory 
+**  Some functions are mandatory and the others are optional. The mandatory
 **  functions must be implemented in the user application or in the sensor
-**  driver, depending on the function. Mandatory functions are marked as [M] in 
+**  driver, depending on the function. Mandatory functions are marked as [M] in
 **  the followint list and optionals are marked as [O].
 **
 **  -----------------------------
 **  Sensor API callback functions
 **  -----------------------------
-**  These functions are implemented in the user application separately for each 
+**  These functions are implemented in the user application separately for each
 **  sensor instance.
 **
 **  [M] SensorCbk_Input_t()                Sensor input data request callback.
@@ -65,7 +65,7 @@
 **
 **  [M] SensorDrv_Init_t()                 Initializes a sensor.
 **  [O] SensorDrv_SetCalibrationParams_t() Sets calibration parameters.
-**  [O] SensorDrv_StartCalibration_t()     Starts calibration.       
+**  [O] SensorDrv_StartCalibration_t()     Starts calibration.
 **  [O] SensorDrv_GetCalibrationState_t()  Gets calibration state.
 **  [O] SensorDrv_GetCalibrationData_t()   Gets calibration data.
 **  [O] SensorDrv_SetCalibrationData_t()   Sets calibration data.
@@ -75,13 +75,13 @@
 **  [M] SensorDrv_SetInput_t()             Sets input data to the sensor.
 **  [M] SensorDrv_GetOutput_t()            Gets output data from the sensor.
 **  [O] SensorDrv_Run_t()                  Runs the driver state machine.
-**  
+**
 **  --------------------
 **  Sensor API functions
 **  --------------------
 **  These functions are implemented in the sensor_api.c and are used by
 **  the user application.
-**      
+**
 **  SensorAPI_InitDriver()                 Initializes a sensor driver.
 **  SensorAPI_GetHandle()                  Gets a handle to a sensor.
 **  SensorAPI_SetCalibrationParams()       Sets calibration parameters.
@@ -94,14 +94,13 @@
 **  SensorAPI_Control()                    Controls a sensor.
 **  SensorAPI_Status()                     Gets the driver control status.
 **  SensorAPI_Run()                        Runs a sensor.
-**  SensorAPI_RunAll()                     Runs all sensors.
-**  
+**
 **  ---------------------------
 **  Driver helper API functions
 **  ---------------------------
 **  These functions are implemented in the sensor_api.c and are used by the
 **  sensor driver.
-**  
+**
 **  SensorDrv_SetOutputStatus()            Sets output status.
 **  SensorDrv_SetOutputData()              Sets output data.
 **
@@ -112,7 +111,6 @@
 
 #include "types.h"
 #include "timer.h"
-#include "sensors.h"
 
 /******************************************************************************\
 **
@@ -120,24 +118,21 @@
 **
 \******************************************************************************/
 
-/// @brief Sensor driver not initialized.
+/// @brief Invalid pointer parameter.
 ///
-/// Trying to use a sensor, but the sensor driver has not been initialized. Use 
-/// the function @ref SensorAPI_InitDriver to initialize the driver before using
-/// it.
-#define SENSORAPI_ERROR_NOT_INITIALIZED -1
+/// At least one pointer parameter points to null.
+#define SENSORAPI_ERROR_INVALID_POINTER -1
+
+/// @brief Invalid parameter value.
+///
+/// At least one parameter value is out of range.
+#define SENSORAPI_ERROR_INVALID_PARAMETER -2
 
 /// @brief Function not implemented in the driver.
 ///
-/// Trying to use a function which is not supported by the driver (not 
+/// Trying to use a function which is not supported by the driver (not
 /// implemented). Refer to the documentation of the particular driver.
-#define SENSORAPI_ERROR_NOT_IMPLEMENTED -2
-
-/// @brief Invalid handle value.
-///
-/// Trying to use an invalid handle. Use the function @ref SensorAPI_GetHandle
-/// to retrieve a valid handle to the driver.
-#define SENSORAPI_ERROR_INVALID_HANDLE -3
+#define SENSORAPI_ERROR_NOT_IMPLEMENTED -3
 
 /******************************************************************************\
 **
@@ -152,8 +147,8 @@
 **
 **  @return The callback must always return valid input data.
 **
-**  Sensor framework uses this type of callback to retrieve raw input data from 
-**  the user application to the sensor driver for further analysis. Typically 
+**  Sensor framework uses this type of callback to retrieve raw input data from
+**  the user application to the sensor driver for further analysis. Typically
 **  this is input from sensor hardware.
 **
 **  @remarks This is a mandatory function which must be implemented in the user
@@ -173,8 +168,8 @@ var_t
 **
 **  @return No return value.
 **
-**  Sensor framework uses this type of callback to send the output of the sensor 
-**  ("the result") from the driver to the user application, whenever the output 
+**  Sensor framework uses this type of callback to send the output of the sensor
+**  ("the result") from the driver to the user application, whenever the output
 **  changes.
 **
 **  @remarks This is a mandatory function which must be implemented in the user
@@ -193,12 +188,12 @@ void
 **  @param[in] cmdId The ID of the calibration command.
 **  @param[in] data Data related to the command.
 **
-**  @return Caller may require data returned by the callback (see the 
+**  @return Caller may require data returned by the callback (see the
 **      description of the particular command for details).
 **
-**  Sensor framework invokes this type of callback when the sensor needs to have 
-**  control to a certain function in the user application, e.g. to adjust PWM, 
-**  control I/O etc. The use of this callback depends on the requirements of the 
+**  Sensor framework invokes this type of callback when the sensor needs to have
+**  control to a certain function in the user application, e.g. to adjust PWM,
+**  control I/O etc. The use of this callback depends on the requirements of the
 **  driver.
 **
 **  @remarks This is an optional function which may be implemented in the user
@@ -225,7 +220,7 @@ var_t
 typedef enum
 Sensor_Control_t{
         /// Turns a sensor off.
-        SENSOR_DISABLE=0, 
+        SENSOR_DISABLE=0,
         /// Turns a sensor on.
         SENSOR_ENABLE,
         /// Halts a sensor.
@@ -240,9 +235,9 @@ Sensor_Control_t{
 typedef enum
 Sensor_OutputStatus_t{
         /// Sensor data is not valid, for example, sensor initialization hasn't
-        /// been completed yet.   
+        /// been completed yet.
         SENSOR_DATA_UNKNOWN,
-        /// There is a failure in reading the sensor data, thus the data is not 
+        /// There is a failure in reading the sensor data, thus the data is not
         /// valid.
         SENSOR_DATA_FAILURE,
         /// Sensor data is valid.
@@ -257,19 +252,19 @@ Sensor_OutputStatus_t{
 */
 typedef struct
 Sensor_Output_t{
-        /// Status of the sensor output. 
-        /// @remarks This value is set by a sensor driver by using the function 
+        /// Status of the sensor output.
+        /// @remarks This value is set by a sensor driver by using the function
         /// @ref SensorDrv_SetOutputStatus.
-        Sensor_OutputStatus_t st; 
-        /// Indicator for changes in data and status. 
-        /// @remarks This value is set by functions 
-        /// @ref SensorDrv_SetOutputStatus and @ref SensorDrv_SetOutputData. The 
-        /// value is resetted automatically by the API when the change is 
-        /// handled in the function @ref SensorAPI_Run. Do not write this value 
+        Sensor_OutputStatus_t st;
+        /// Indicator for changes in data and status.
+        /// @remarks This value is set by functions
+        /// @ref SensorDrv_SetOutputStatus and @ref SensorDrv_SetOutputData. The
+        /// value is resetted automatically by the API when the change is
+        /// handled in the function @ref SensorAPI_Run. Do not write this value
         /// manually.
         bool ci;
-        /// Output data. 
-        /// @remarks This value is set by a sensor driver by using the function 
+        /// Output data.
+        /// @remarks This value is set by a sensor driver by using the function
         /// @ref SensorDrv_SetOutputData.
         var_t data;
         /// Data refresh cycle timer.
@@ -279,7 +274,7 @@ Sensor_Output_t{
         /// Data refresh cycle length in milliseconds.
         /// @remarks This value is used internally by the API. The value must be
         /// initialized in the sensor driver's initialization function.
-        uint16_t rc; 
+        uint16_t rc;
 } Sensor_Output_t;
 
 /******************************************************************************\
@@ -289,237 +284,248 @@ Sensor_Output_t{
 \******************************************************************************/
 
 /*-------------------------------------------------------------------------*//**
-**  @brief Initializes a driver.
+**  @brief Initializes the driver.
 **
-**  @param[in] instance Sensor specific driver instance.
+**  @param[in] userData User defined data.
 **
 **  @return No return value.
 **
-**  This function is implemented in the sensor driver and the pointer to the 
-**  function is stored into the driver instance. It must initialize the
-**  parameters of the output data set. It may initialize also the driver 
+**  This function is implemented in the sensor driver and the pointer to the
+**  function is stored into the driver instance. The function must initialize
+**  the parameters of the output data set. It may initialize also the driver
 **  specific parameters.
 **
 **  @remarks This function is mandatory and must be implemented in the driver.
 */
 typedef void
 (*SensorDrv_Init_t)(
-        void *instance
+        void *userData
 );
 
 /*-------------------------------------------------------------------------*//**
 **  @brief Sets calibration parameters.
 **
-**  @param[in] instance Sensor specific driver instance.
-**  @param[in] calibrationParams Pointer to sensor specific calibration 
+**  @param[in] calibrationParams Pointer to sensor specific calibration
 **      parameters.
+**  @param[in] userData User defined data.
 **
 **  @return No return value.
 **
 **  This function is implemented in the sensor driver and the pointer to the
-**  function is stored into the driver instance. 
-**  @remarks This function is optional. If implemented, it shall copy the 
+**  function is stored into the driver instance.
+**
+**  @remarks This function is optional. If implemented, it shall copy the
 **  calibration parameters to the instance of the driver.
 */
 typedef void
 (*SensorDrv_SetCalibrationParams_t)(
-        void *instance,
-        void *calibrationParams
+        void *calibrationParams,
+        void *userData
 );
 
 /*-------------------------------------------------------------------------*//**
 **  @brief Starts calibration.
 **
-**  @param[in] instance Sensor specific driver instance.
+**  @param[in] userData User defined data.
 **
 **  @return No return value.
-** 
+**
 **  This function is implemented in the sensor driver and the pointer to the
 **  function is stored into the driver instance.
+**
 **  @remarks This function is optional. The driver may implement this function
-**  if it supports calibration and requires initializations during calibration 
+**  if it supports calibration and requires initializations during calibration
 **  startup.
 */
 typedef void
 (*SensorDrv_StartCalibration_t)(
-        void *instance
+        void *userData
 );
 
 /*-------------------------------------------------------------------------*//**
 **  @brief Gets calibration state.
 **
-**  @param[in] instance Sensor specific driver instance.
 **  @param[out] calibrationState Pointer to sensor specific calibration state.
+**  @param[in] userData User defined data.
 **
 **  @return The result of the operation.
 **  @retval RESULT_OK Calibration state retrieved successfully.
 **  @retval <0 Calibration state retrieval failed (driver specific reason).
 **
-**  This function is implemented in the sensor driver and the pointer to the 
+**  This function is implemented in the sensor driver and the pointer to the
 **  function is stored into the driver instance.
+**
 **  @remarks This function is optional. The driver may implement this function
 **  if the calibration is performed in steps. The states are driver specific.
 */
 typedef Result_t
 (*SensorDrv_GetCalibrationState_t)(
-        void *instance,
-        void *calibrationState
+        void *calibrationState,
+        void *userData
 );
 
 /*-------------------------------------------------------------------------*//**
 **  @brief Gets calibration data.
 **
-**  @param[in] instance Sensor specific driver instance.
 **  @param[out] calibrationData Pointer to sensor specific calibration data.
+**  @param[in] userData User defined data.
 **
 **  @return No return value.
 **
-**  This function is implemented in the sensor driver and the pointer to the 
+**  This function is implemented in the sensor driver and the pointer to the
 **  function is stored into the driver instance.
+**
 **  @remarks This function is optional. The driver must implement this function
 **  if it supports calibration.
 */
 typedef void
 (*SensorDrv_GetCalibrationData_t)(
-        void *instance,
-        void *calibrationData
+        void *calibrationData,
+        void *userData
 );
 
 /*-------------------------------------------------------------------------*//**
 **  @brief Sets calibration data.
 **
-**  @param[in] instance Sensor specific driver instance.
 **  @param[in] calibrationData Pointer to sensor specific calibration data.
+**  @param[in] userData User defined data.
 **
 **  @return No return value.
 **
-**  This function is implemented in the sensor driver and the pointer to the 
+**  This function is implemented in the sensor driver and the pointer to the
 **  function is stored into the driver instance.
+**
 **  @remarks This function is optional. The driver must implement this function
 **  if it supports calibration.
 */
 typedef void
 (*SensorDrv_SetCalibrationData_t)(
-        void *instance,
-        void *calibrationData
+        void *calibrationData,
+        void *userData
 );
 
 /*-------------------------------------------------------------------------*//**
 **  @brief Sets configuration data.
 **
-**  @param[in] instance Sensor specific driver instance.
 **  @param[in] configurationData Pointer to sensor specific configuration data.
+**  @param[in] userData User defined data.
 **
 **  @return The change state of the configuration data.
 **  @retval true Configuration data has changed.
 **  @retval false Configuration data has not changed.
 **
-**  This function is implemented in the sensor driver and the pointer to the 
+**  This function is implemented in the sensor driver and the pointer to the
 **  function is stored into the driver instance.
+**
 **  @remarks This function is optional. The driver may implement this function
 **  to support configuration. The function must perform comparison between the
-**  new and old configuration data. It must return true if the configuration 
+**  new and old configuration data. It must return true if the configuration
 **  data has changed or false otherwise.
 */
 typedef bool
 (*SensorDrv_Configure_t)(
-        void *instance,
-        void *configurationData
+        void *configurationData,
+        void *userData
 );
 
 /*-------------------------------------------------------------------------*//**
 **  @brief Turns the sensor ON.
 **
-**  @param[in] instance Sensor specific driver instance.
+**  @param[in] userData User defined data.
 **
 **  @return No return value.
 **
-**  This function is implemented in the sensor driver and the pointer to the 
+**  This function is implemented in the sensor driver and the pointer to the
 **  function is stored into the driver instance.
+**
 **  @remarks This function is optional. The driver may implement this function
 **  to support on/off functionality.
 */
 typedef void
 (*SensorDrv_On_t)(
-        void *instance
+        void *userData
 );
 
 /*-------------------------------------------------------------------------*//**
 **  @brief Turns the sensor OFF.
 **
-**  @param[in] instance Sensor specific driver instance.
+**  @param[in] userData User defined data.
 **
 **  @return No return value.
 **
-**  This function is implemented in the sensor driver and the pointer to the 
+**  This function is implemented in the sensor driver and the pointer to the
 **  function is stored into the driver instance.
+**
 **  @remarks This function is optional. The driver may implement this function
 **  to support on/off functionality.
 */
 typedef void
 (*SensorDrv_Off_t)(
-        void *instance
+        void *userData
 );
 
 /*-------------------------------------------------------------------------*//**
 **  @brief Sets input data to the sensor.
 **
-**  @param[in] instance Sensor specific driver instance.
 **  @param[in] index Index of the data in the input data set.
 **  @param[in] inputData Input data.
+**  @param[in] userData User defined data.
 **
 **  @return No return value.
 **
-**  This function is implemented in the sensor driver and the pointer to the 
+**  This function is implemented in the sensor driver and the pointer to the
 **  function is stored into the driver instance.
-**  @remarks This function is mandatory. The driver must use this function to 
+**
+**  @remarks This function is mandatory. The driver must use this function to
 **  store input data to the input data set of the driver instance.
 */
 typedef void
 (*SensorDrv_SetInput_t)(
-        void *instance,
         uint8_t index,
-        var_t inputData
+        var_t inputData,
+        void *userData
 );
 
 /*-------------------------------------------------------------------------*//**
 **  @brief Gets output data from the sensor.
 **
-**  @param[in] instance Sensor specific driver instance.
 **  @param[in] index Index of the data in the output data set.
+**  @param[in] userData User defined data.
 **
 **  @return Output data.
 **
-**  This function is implemented in the sensor driver and the pointer to the 
+**  This function is implemented in the sensor driver and the pointer to the
 **  function is stored into the driver instance.
-**  @remarks This function is mandatory. The driver must use this function to 
+**
+**  @remarks This function is mandatory. The driver must use this function to
 **  return the output data from the output data set of the driver instance.
 **  The driver may use this function to produce the output data from the input
 **  data.
 */
 typedef Sensor_Output_t *
 (*SensorDrv_GetOutput_t)(
-        void *instance,
-        uint8_t index
+        uint8_t index,
+        void *userData
 );
 
 /*-------------------------------------------------------------------------*//**
 **  @brief Runs the driver state machine.
 **
-**  @param[in] instance Sensor specific driver instance.
+**  @param[in] userData User defined data.
 **
 **  @return No return value.
 **
-**  This function is implemented in the sensor driver and the pointer to the 
+**  This function is implemented in the sensor driver and the pointer to the
 **  function is stored into the driver instance.
+**
 **  @remarks This function is optional. The driver may implement this function
 **  to support a state machine.
-**  
+**
 */
 typedef
 void
 (*SensorDrv_Run_t)(
-        void *instance
+        void *userData
 );
 
 /******************************************************************************\
@@ -586,10 +592,42 @@ SensorDrv_t{
                 bool cal;
                 /// Timer system.
                 TimerSys_t *tsys;
-                /// Sensor specific driver instance.
-                void *inst;
+                /// User defined data.
+                void *ud;
         } dd;
 } SensorDrv_t;
+
+/******************************************************************************\
+**
+**  DRIVER HELPER API FUNCTIONS
+**
+\******************************************************************************/
+
+/*-------------------------------------------------------------------------*//**
+**  @brief Sets output status.
+**
+**  @param[in] output Output to set.
+**  @param[in] status New status of the output.
+**
+**  Sets output status and maintains the output changed state.
+*/
+void
+SensorDrv_SetOutputStatus(
+        Sensor_Output_t *output,
+        Sensor_OutputStatus_t status
+);
+
+/*-------------------------------------------------------------------------*//**
+**  @brief Sets output data.
+**
+**  @param[in] output Output to set.
+**  @param[in] data New output data.
+*/
+void
+SensorDrv_SetOutputData(
+        Sensor_Output_t *output,
+        var_t data
+);
 
 /******************************************************************************\
 **
@@ -603,54 +641,53 @@ SensorDrv_t{
 **  @param[in] driver Sensor driver to be initialized.
 **  @param[in] sensor Type of the sensor to be associated with the driver.
 **  @param[in] funcInit Driver function pointer (mandatory).
-**  @param[in] funcSetCalibrationParams Driver function pointer (optional, set 
+**  @param[in] funcSetCalibrationParams Driver function pointer (optional, set
 **      to null if not used).
-**  @param[in] funcStartCalibration Driver function pointer (optional, set to 
+**  @param[in] funcStartCalibration Driver function pointer (optional, set to
 **      null if not used).
-**  @param[in] funcGetCalibrationState Driver function pointer (optional, set to 
+**  @param[in] funcGetCalibrationState Driver function pointer (optional, set to
 **      null if not used).
-**  @param[in] funcGetCalibrationData Driver function pointer (optional, set to 
+**  @param[in] funcGetCalibrationData Driver function pointer (optional, set to
 **      null if not used).
 **  @param[in] funcSetCalibrationData Driver function pointer (optional, set to
 **      null if not used).
-**  @param[in] funcConfigure Driver function pointer (optional, set to null if 
+**  @param[in] funcConfigure Driver function pointer (optional, set to null if
 **      not used).
 **  @param[in] funcSetInput Driver function pointer (mandatory).
 **  @param[in] funcGetOutput Driver function pointer (mandatory).
-**  @param[in] funcOn Driver function pointer (optional, set to null if not 
+**  @param[in] funcOn Driver function pointer (optional, set to null if not
 **      used).
 **  @param[in] funcOff Driver function pointer (optional, set to null if not
 **      used).
-**  @param[in] funcRun Driver function pointer (optional, set to null if not 
+**  @param[in] funcRun Driver function pointer (optional, set to null if not
 **      used).
-**  @param[in] inputDataItemCount Item count in the input data set (driver 
+**  @param[in] inputDataItemCount Item count in the input data set (driver
 **      specific, must be greater than zero).
-**  @param[in] outputDataItemCount Item count in the output data set (driver 
+**  @param[in] outputDataItemCount Item count in the output data set (driver
 **      specific, must be greater than zero).
-**  @param[in] inputDataSet A pointer to an input data set (must point into a 
+**  @param[in] inputDataSet A pointer to an input data set (must point into a
 **      table that contains at least inputDataItemCount items).
 **  @param[in] outputDataSet A pointer to an output data set (must point into a
 **      table that contains at least outputDataItemCount items).
-**  @param[in] inputCallback Callback routine that handles raw input data 
+**  @param[in] inputCallback Callback routine that handles raw input data
 **      requests (mandatory).
 **  @param[in] outputCallback Callback routine that handles sensor data events
 **      (mandatory).
-**  @param[in] ctrlCmdCallback Callback routine for special control commands 
+**  @param[in] ctrlCmdCallback Callback routine for special control commands
 **      (optional, driver specific).
 **  @param[in] timerSys Timer system to be used for timings.
-**  @param[in] instance A pointer to a driver instance (mandatory).
+**  @param[in] userData A pointer to user defined data.
 **
 **  @return No return value.
 **
 **  Initializes and sets up a sensor driver instance. This function is usually
-**  wrapped inside a driver specific initialization function. The driver is 
+**  wrapped inside a driver specific initialization function. The driver is
 **  responsible to pass the function parameters according to their support in
 **  the particular driver.
 */
 void
 SensorAPI_InitDriver(
         SensorDrv_t *driver,
-        Sensor_t sensor,
         SensorDrv_Init_t funcInit,
         SensorDrv_SetCalibrationParams_t funcSetCalibrationParams,
         SensorDrv_StartCalibration_t funcStartCalibration,
@@ -671,13 +708,13 @@ SensorAPI_InitDriver(
         SensorCbk_Output_t outputCallback,
         SensorCbk_CtrlCmd_t ctrlCmdCallback,
         TimerSys_t *timerSys,
-        void *instance
+        void *userData
 );
 
 /*-------------------------------------------------------------------------*//**
 **  @brief Gets a handle to a sensor.
 **
-**  @param[in] sensor Type of the sensor.
+**  @param[in] driver A sensor driver.
 **  @param[out] sensorHndl Pointer to a sensor handle variable.
 **
 **  @retval RESULT_OK Handle successfully got.
@@ -685,7 +722,7 @@ SensorAPI_InitDriver(
 */
 Result_t
 SensorAPI_GetHandle(
-        Sensor_t sensor,
+        SensorDrv_t *driver,
         Handle_t *sensorHndl
 );
 
@@ -822,7 +859,7 @@ SensorAPI_Control(
 **
 **  @param[in] sensorHndl Handle to a sensor.
 **
-**  @retval Sensor control status. Returns SENSOR_DISABLE if the handle is 
+**  @retval Sensor control status. Returns SENSOR_DISABLE if the handle is
 **          invalid.
 */
 Sensor_Control_t
@@ -837,56 +874,12 @@ SensorAPI_Status(
 **
 **  @return No return value.
 **
-**  This function can be used instead of the Sensor_RunDriver if the sensors 
+**  This function can be used instead of the Sensor_RunDriver if the sensors
 **  need to be run in separate threads or processes.
 */
 void
 SensorAPI_Run(
         Handle_t sensorHndl
-);
-
-/*-------------------------------------------------------------------------*//**
-**  @brief Runs all sensors.
-**
-**  @return No return value.
-**
-**  This function uses the @ref Sensor_Run function.
-*/
-void
-SensorAPI_RunAll(
-        void
-);
-
-/******************************************************************************\
-**
-**  DRIVER HELPER API FUNCTIONS
-**
-\******************************************************************************/
-
-/*-------------------------------------------------------------------------*//**
-**  @brief Sets output status.
-**
-**  @param[in] output Output to set.
-**  @param[in] status New status of the output.
-**
-**  Sets output status and maintains the output changed state.
-*/
-void
-SensorDrv_SetOutputStatus(
-        Sensor_Output_t *output,
-        Sensor_OutputStatus_t status
-);
-
-/*-------------------------------------------------------------------------*//**
-**  @brief Sets output data.
-**
-**  @param[in] output Output to set.
-**  @param[in] data New output data.
-*/
-void
-SensorDrv_SetOutputData(
-        Sensor_Output_t *output,
-        var_t data
 );
 
 #endif // sensor_api_H
