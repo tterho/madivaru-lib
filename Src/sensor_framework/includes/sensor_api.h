@@ -69,7 +69,8 @@
 **  [O] SensorDrv_GetCalibrationState_t()  Gets calibration state.
 **  [O] SensorDrv_GetCalibrationData_t()   Gets calibration data.
 **  [O] SensorDrv_SetCalibrationData_t()   Sets calibration data.
-**  [O] SensorDrv_Configure_t()            Sets configuration data.
+**  [O] SensorDrv_GetConfiguration_t()     Gets configuration data.
+**  [O] SensorDrv_SetConfiguration_t()     Sets configuration data.
 **  [O] SensorDrv_On_t()                   Turns the sensor ON.
 **  [O] SensorDrv_Off_t()                  Turns the sensor OFF.
 **  [M] SensorDrv_SetInput_t()             Sets input data to the sensor.
@@ -90,7 +91,8 @@
 **  SensorAPI_GetCalibrationData()         Gets sensor calibration data.
 **  SensorAPI_SetCalibrationData()         Sets sensor calibration data.
 **  SensorAPI_IsCalibrated()               Gets the sensor calibration status.
-**  SensorAPI_Configure()                  Configures a sensor.
+**  SensorAPI_GetConfiguration()           Gets configuration data.
+**  SensorAPI_SetConfiguration()           Sets configuration data.
 **  SensorAPI_Control()                    Controls a sensor.
 **  SensorAPI_Status()                     Gets the driver control status.
 **  SensorAPI_Run()                        Runs a sensor.
@@ -405,6 +407,27 @@ typedef void
 );
 
 /*-------------------------------------------------------------------------*//**
+**  @brief Gets configuration data.
+**
+**  @param[in] configurationData Pointer to sensor specific configuration data.
+**  @param[in] userData User defined data.
+**
+**  @return No return value.
+**
+**  This function is implemented in the sensor driver and the pointer to the
+**  function is stored into the driver instance.
+**
+**  @remarks This function is optional. The driver may implement this function
+**  to support configuration. This function can be used to return the current
+**  configuration state as well as the default configuration.
+*/
+typedef void
+(*SensorDrv_GetConfiguration_t)(
+        void *configurationData,
+        void *userData
+);
+
+/*-------------------------------------------------------------------------*//**
 **  @brief Sets configuration data.
 **
 **  @param[in] configurationData Pointer to sensor specific configuration data.
@@ -423,7 +446,7 @@ typedef void
 **  data has changed or false otherwise.
 */
 typedef bool
-(*SensorDrv_Configure_t)(
+(*SensorDrv_SetConfiguration_t)(
         void *configurationData,
         void *userData
 );
@@ -553,8 +576,10 @@ SensorDrv_t{
         SensorDrv_GetCalibrationData_t GetCalibrationData;
         /// A function to set calibration data (optional).
         SensorDrv_SetCalibrationData_t SetCalibrationData;
-        /// A function to configure the sensor (optional).
-        SensorDrv_Configure_t Configure;
+        /// A function to get the sensor configuration data (optional).
+        SensorDrv_GetConfiguration_t GetConfiguration;
+        /// A function to set the sensor configuration data (optional).
+        SensorDrv_SetConfiguration_t SetConfiguration;
         /// A function to set sensor input data (mandatory).
         SensorDrv_SetInput_t SetInput;
         /// A function to get sensor output data (mandatory).
@@ -651,8 +676,10 @@ SensorDrv_SetOutputData(
 **      null if not used).
 **  @param[in] funcSetCalibrationData Driver function pointer (optional, set to
 **      null if not used).
-**  @param[in] funcConfigure Driver function pointer (optional, set to null if
-**      not used).
+**  @param[in] funcGetConfiguration Driver function pointer (optional, set to 
+**      null if not used).
+**  @param[in] funcSetConfiguration Driver function pointer (optional, set to 
+**      null if not used).
 **  @param[in] funcSetInput Driver function pointer (mandatory).
 **  @param[in] funcGetOutput Driver function pointer (mandatory).
 **  @param[in] funcOn Driver function pointer (optional, set to null if not
@@ -694,7 +721,8 @@ SensorAPI_InitDriver(
         SensorDrv_GetCalibrationState_t funcGetCalibrationState,
         SensorDrv_GetCalibrationData_t funcGetCalibrationData,
         SensorDrv_SetCalibrationData_t funcSetCalibrationData,
-        SensorDrv_Configure_t funcConfigure,
+        SensorDrv_GetConfiguration_t funcGetConfiguration,
+        SensorDrv_SetConfiguration_t funcSetConfiguration,
         SensorDrv_SetInput_t funcSetInput,
         SensorDrv_GetOutput_t funcGetOutput,
         SensorDrv_On_t funcOn,
@@ -718,6 +746,8 @@ SensorAPI_InitDriver(
 **  @param[out] sensorHndl Pointer to a sensor handle variable.
 **
 **  @retval RESULT_OK Handle successfully got.
+**  @retval SENSORAPI_ERROR_INVALID_POINTER The driver or the sensorHndl 
+**      pointer points to null.
 **  @retval SENSOR_ERROR_NOT_INITIALIZED Driver not initialized.
 */
 Result_t
@@ -735,6 +765,8 @@ SensorAPI_GetHandle(
 **
 **  @retval RESULT_OK Successful.
 **  @retval SENSOR_ERROR_INVALID_HANDLE Invalid sensor handle.
+**  @retval SENSORAPI_ERROR_INVALID_POINTER The calibrationParams pointer points
+**      to null.
 **  @retval SENSOR_ERROR_NOT_IMPLEMENTED Sensor doesn't feature calibration.
 */
 Result_t
@@ -765,6 +797,8 @@ SensorAPI_StartCalibration(
 **
 **  @retval RESULT_OK Successful.
 **  @retval SENSOR_ERROR_INVALID_HANDLE Invalid sensor handle.
+**  @retval SENSORAPI_ERROR_INVALID_POINTER The calibrationState pointer points
+**      to null.
 **  @retval SENSOR_ERROR_NOT_IMPLEMENTED Sensor doesn't feature calibration.
 */
 Result_t
@@ -781,6 +815,8 @@ SensorAPI_GetCalibrationState(
 **
 **  @retval RESULT_OK Successful.
 **  @retval SENSOR_ERROR_INVALID_HANDLE Invalid sensor handle.
+**  @retval SENSORAPI_ERROR_INVALID_POINTER The calibrationData pointer points
+**      to null.
 **  @retval SENSOR_ERROR_NOT_IMPLEMENTED Sensor doesn't feature calibration.
 */
 Result_t
@@ -797,6 +833,8 @@ SensorAPI_GetCalibrationData(
 **
 **  @retval RESULT_OK Successful.
 **  @retval SENSOR_ERROR_INVALID_HANDLE Invalid sensor handle.
+**  @retval SENSORAPI_ERROR_INVALID_POINTER The calibrationData pointer points
+**      to null.
 **  @retval SENSOR_ERROR_INVALID_PARAMETER Calibration data is wrong.
 **  @retval SENSOR_ERROR_NOT_IMPLEMENTED Sensor doesn't feature calibration.
 **
@@ -822,18 +860,38 @@ SensorAPI_IsCalibrated(
 );
 
 /*-------------------------------------------------------------------------*//**
-**  @brief Configures a sensor.
+**  @brief Gets the sensor configuration data.
 **
 **  @param[in] sensorHndl Handle to a sensor.
 **  @param[in] configuration Pointer to sensor specific configuration data.
 **
 **  @retval RESULT_OK Successful.
 **  @retval SENSOR_ERROR_INVALID_HANDLE Invalid sensor handle.
+**  @retval SENSORAPI_ERROR_INVALID_POINTER The configuration pointer points to
+**      null.
+**  @retval SENSOR_ERROR_NOT_IMPLEMENTED Sensor doesn't feature configuration.
+*/
+Result_t
+SensorAPI_GetConfiguration(
+        Handle_t sensorHndl,
+        void *configuration
+);
+
+/*-------------------------------------------------------------------------*//**
+**  @brief Sets the sensor configuration data.
+**
+**  @param[in] sensorHndl Handle to a sensor.
+**  @param[in] configuration Pointer to sensor specific configuration data.
+**
+**  @retval RESULT_OK Successful.
+**  @retval SENSOR_ERROR_INVALID_HANDLE Invalid sensor handle.
+**  @retval SENSORAPI_ERROR_INVALID_POINTER The configuration pointer points to
+**      null.
 **  @retval SENSOR_ERROR_INVALID_PARAMETER Configuration data is wrong.
 **  @retval SENSOR_ERROR_NOT_IMPLEMENTED Sensor doesn't feature configuration.
 */
 Result_t
-SensorAPI_Configure(
+SensorAPI_SetConfiguration(
         Handle_t sensorHndl,
         void *configuration
 );
