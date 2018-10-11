@@ -97,7 +97,8 @@ SensorAPI_InitDriver(
         SensorDrv_GetCalibrationState_t funcGetCalibrationState,
         SensorDrv_GetCalibrationData_t funcGetCalibrationData,
         SensorDrv_SetCalibrationData_t funcSetCalibrationData,
-        SensorDrv_Configure_t funcConfigure,
+        SensorDrv_GetConfiguration_t funcGetConfiguration,
+        SensorDrv_SetConfiguration_t funcSetConfiguration,
         SensorDrv_SetInput_t funcSetInput,
         SensorDrv_GetOutput_t funcGetOutput,
         SensorDrv_On_t funcOn,
@@ -121,7 +122,8 @@ SensorAPI_InitDriver(
         driver->GetCalibrationState=funcGetCalibrationState;
         driver->GetCalibrationData=funcGetCalibrationData;
         driver->SetCalibrationData=funcSetCalibrationData;
-        driver->Configure=funcConfigure;
+        driver->GetConfiguration=funcGetConfiguration;
+        driver->SetConfiguration=funcSetConfiguration;
         driver->SetInput=funcSetInput;
         driver->GetOutput=funcGetOutput;
         driver->On=funcOn;
@@ -152,7 +154,7 @@ SensorAPI_GetHandle(
         Handle_t *sensorHndl
 )
 {
-        if(!driver){
+        if(!driver||!sensorHndl){
                 return SENSORAPI_ERROR_INVALID_POINTER;
         }
         *sensorHndl=(Handle_t)driver;
@@ -169,6 +171,9 @@ SensorAPI_SetCalibrationParams(
 
         if(!sensorHndl){
                 return SENSORAPI_ERROR_INVALID_PARAMETER;
+        }
+        if(!calibrationParams){
+                return SENSORAPI_ERROR_INVALID_POINTER;
         }
         drv=(SensorDrv_t*)sensorHndl;
         if(!drv->SetCalibrationParams){
@@ -207,6 +212,9 @@ SensorAPI_GetCalibrationState(
         if(!sensorHndl){
                 return SENSORAPI_ERROR_INVALID_PARAMETER;
         }
+        if(!calibrationState){
+                return SENSORAPI_ERROR_INVALID_POINTER;
+        }
         drv=(SensorDrv_t*)sensorHndl;
         if(!drv->GetCalibrationState){
                 return SENSORAPI_ERROR_NOT_IMPLEMENTED;
@@ -224,6 +232,9 @@ SensorAPI_GetCalibrationData(
 
         if(!sensorHndl){
                 return SENSORAPI_ERROR_INVALID_PARAMETER;
+        }
+        if(!calibrationData){
+                return SENSORAPI_ERROR_INVALID_POINTER;
         }
         drv=(SensorDrv_t*)sensorHndl;
         if(!drv->GetCalibrationData){
@@ -243,6 +254,9 @@ SensorAPI_SetCalibrationData(
 
         if(!sensorHndl){
                 return SENSORAPI_ERROR_INVALID_PARAMETER;
+        }
+        if(!calibrationData){
+                return SENSORAPI_ERROR_INVALID_POINTER;
         }
         drv=(SensorDrv_t*)sensorHndl;
         if(!drv->SetCalibrationData){
@@ -268,7 +282,7 @@ SensorAPI_IsCalibrated(
 }
 
 Result_t
-SensorAPI_Configure(
+SensorAPI_GetConfiguration(
         Handle_t sensorHndl,
         void *configuration
 )
@@ -278,11 +292,36 @@ SensorAPI_Configure(
         if(!sensorHndl){
                 return SENSORAPI_ERROR_INVALID_PARAMETER;
         }
+        if(!configuration){
+                return SENSORAPI_ERROR_INVALID_POINTER;
+        }
         drv=(SensorDrv_t*)sensorHndl;
-        if(!drv->Configure){
+        if(!drv->GetConfiguration){
                 return SENSORAPI_ERROR_NOT_IMPLEMENTED;
         }
-        drv->dd.rreq=drv->Configure(configuration,drv->dd.ud);
+        drv->dd.rreq=drv->GetConfiguration(configuration,drv->dd.ud);
+        return RESULT_OK;
+}
+
+Result_t
+SensorAPI_SetConfiguration(
+        Handle_t sensorHndl,
+        void *configuration
+)
+{
+        SensorDrv_t *drv;
+
+        if(!sensorHndl){
+                return SENSORAPI_ERROR_INVALID_PARAMETER;
+        }
+        if(!configuration){
+                return SENSORAPI_ERROR_INVALID_POINTER;
+        }
+        drv=(SensorDrv_t*)sensorHndl;
+        if(!drv->SetConfiguration){
+                return SENSORAPI_ERROR_NOT_IMPLEMENTED;
+        }
+        drv->dd.rreq=drv->SetConfiguration(configuration,drv->dd.ud);
         return RESULT_OK;
 }
 
