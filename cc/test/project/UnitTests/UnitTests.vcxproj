@@ -36,8 +36,16 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\..\src\cli\cli.cc" />
+    <ClCompile Include="..\..\..\src\sensor_framework\sensor_drv.cc" />
     <ClCompile Include="..\..\..\src\utils\timer.cc" />
     <ClCompile Include="..\..\main.cc" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\src\cli\cli.h" />
+    <ClInclude Include="..\..\..\src\sensor_framework\sensor_drv.h" />
+    <ClInclude Include="..\..\..\src\types.h" />
+    <ClInclude Include="..\..\..\src\utils\timer.h" />
   </ItemGroup>
   <ItemDefinitionGroup />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
@@ -54,7 +62,7 @@
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <WarningLevel>Level3</WarningLevel>
-      <AdditionalIncludeDirectories>$(MSBuildThisFileDirectory)include;%(AdditionalIncludeDirectories);../../../src</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MSBuildThisFileDirectory)include;%(AdditionalIncludeDirectories);../../../src;../../../src/utils</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>

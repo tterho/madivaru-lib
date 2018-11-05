@@ -1,5 +1,4 @@
 #include "timer.h"
-#include <assert.h>
 
 CTimerSys::CTimerSys(
         uint32_t timeBase,
@@ -9,8 +8,13 @@ CTimerSys::CTimerSys(
         _tb(timeBase),
         _ilim(timerInvocationLimit)
 {
-        assert(_tb);
-        assert(timerInvocationLimit);
+        if(!_tb){
+                _tb=1;
+        }
+
+        if(!_ilim){
+                _ilim=1000000;
+        }
 }
 
 void CTimerSys::Count(
@@ -38,6 +42,15 @@ uint32_t CTimerSys::GetTimeBase(
         return _tb;
 }
 
+CTimer::CTimer()
+        :
+        _tsys(0),
+        _t(0),
+        _icnt(0),
+        _ctcnt(0)
+{
+}
+
 CTimer::CTimer(
         CTimerSys *timerSys
 ):
@@ -46,12 +59,22 @@ CTimer::CTimer(
         _icnt(0),
         _ctcnt(0)
 {
-        assert(timerSys);
+}
+
+void CTimer::SetTimerSys(
+        CTimerSys *timerSys
+)
+{
+        _tsys=timerSys;
 }
 
 void CTimer::Start(
 )
 {
+        if(!_tsys){
+                throw(TIMER_ERROR_NO_TIMER_SYSTEM);
+        }
+
         // Get the current tick counter value and reset the invocation counter
         // and the current tick counter helper value.
         _t=_tsys->GetCount();
@@ -66,6 +89,10 @@ Result_t CTimer::IsTimeout(
 {
         uint32_t t;
         uint32_t tl;
+
+        if(!_tsys){
+                throw(TIMER_ERROR_NO_TIMER_SYSTEM);
+        }
 
         t=_tsys->GetCount();
         if(_ctcnt==t){

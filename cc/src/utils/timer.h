@@ -56,8 +56,14 @@
 /// @brief Timer timeout.
 #define TIMER_RESULT_TIMEOUT 1
 
+/// @brief The parameter value is invalid.
+#define TIMER_ERROR_INVALID_PARAMETER -1
+
+/// @brief No timer system specified.
+#define TIMER_ERROR_NO_TIMER_SYSTEM -2
+
 /// @brief Timer tick counter is not running.
-#define TIMER_ERROR_TIMER_NOT_RUNNING -1
+#define TIMER_ERROR_TIMER_NOT_RUNNING -3
 
 /******************************************************************************\
 **
@@ -70,14 +76,16 @@
 */
 typedef enum
 Timer_Units_t{
-        // Time unit equals to one timer tick.
+        /// Time unit equals to one timer tick.
         TIMER_UNITS_TIMERTICK=0,
-        // Time is in microseconds.
+        /// Time is in microseconds.
         TIMER_UNITS_US,
-        // Time is in milliseconds.
+        /// Time is in milliseconds.
         TIMER_UNITS_MS,
-        // Time is in seconds.
-        TIMER_UNITS_S
+        /// Time is in seconds.
+        TIMER_UNITS_S,
+        /// The amount of different time unit options.
+        TIMER_UNITS_COUNT
 } Timer_Units_t;
 
 /******************************************************************************\
@@ -89,9 +97,10 @@ Timer_Units_t{
 /*-------------------------------------------------------------------------*//**
 **  @brief Timer system class.
 */
-class 
-CTimerSys{
+class CTimerSys
+{
         public:
+
         /**
         **  @brief Constructor of the timer system class.
         **
@@ -158,15 +167,32 @@ CTimerSys{
 /*-------------------------------------------------------------------------*//**
 **  @brief Timer class.
 */
-class CTimer{
+class CTimer
+{
         public:
+
+        /**
+        **  @brief Default constructor.
+        */
+        CTimer();
 
         /**
         **  @brief Constructor of the CTimer class.
         **
         **  @param[in] timerSys Timer system the timer uses.
         */
-        CTimer(CTimerSys *timerSys);
+        CTimer(
+                CTimerSys *timerSys
+        );
+
+        /**
+        **  @brief Sets the timer system.
+        **
+        **  @param[in] timerSys Timer system the timer uses.
+        */
+        void SetTimerSys(
+                CTimerSys *timerSys
+        );
 
         /**
         **  @brief Starts the timer.
@@ -218,6 +244,6 @@ class CTimer{
         uint32_t _ctcnt;
 };
 
-#endif // timer_H
+#endif // ifndef timer_H
 
 /* EOF */
