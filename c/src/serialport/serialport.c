@@ -42,6 +42,8 @@
 
 #include "serialport.h"
 
+#include <string.h>
+
 /******************************************************************************\
 **
 **  DATA DECLARATIONS
@@ -62,14 +64,278 @@ spDefaultConfig={
         /// Stop bits = One stop bit.
         SP_SB_ONE,
         /// Flow control = NONE.
-        SP_FC_NONE,
+        SP_FC_NONE
 };
 
 /******************************************************************************\
 **
-**  PUBLIC FUNCTION DECLARATIONS
+**  LOCAL FUNCTION DECLARATIONS
 **
 \******************************************************************************/
+
+/*-------------------------------------------------------------------------*//**
+**  @brief Initializes a transfer.
+**
+**  @param[out] tfer A pointer to a transfer descriptor.
+**  @param[in] length Data length.
+**  @param[in] data A pointer to data.
+**  @param[in] plen A pointer to a variable for transferred data length.
+**  @param[in] timeout A timeout value.
+**
+**  @return No return value.
+**
+**  Marks the transfer incompleted and resets all the required values.
+*/
+static void
+spInitTransfer(
+        SP_Transfer_t *tfer,
+        uint32_t length,
+        uint8_t *data,
+        uint32_t *plen,
+        uint32_t timeout
+)
+{
+        tfer->t_on=1;
+        tfer->len=length;
+        tfer->data=data;
+        tfer->plen=plen;
+        tfer->tout=timeout;
+        tfer->tleft=length;
+        tfer->ptleft=0;
+        // Reset the transferred data length output.
+        if(tfer->plen){
+                *tfer->plen=0;
+        }
+        // Start the timeout timer.
+        if(tfer->tout){
+                TimerAPI_StartTimer(tfer->tsys,&tfer->tmr);
+        }
+}
+
+/*-------------------------------------------------------------------------*//**
+**  @brief Completes a transfer.
+**
+**  @param[out] tfer A pointer to a transfer descriptor.
+**  @param[in] result Result of the transfer.
+**
+**  @return No return value.
+**
+**  Marks the transfer completed and invokes a callback if the callback has been
+**  set.
+*/
+static void
+spTransferCompleted(
+        SP_Transfer_t *tfer,
+        Result_t result
+)
+{
+        tfer->t_on=0;
+
+        // Set the transferred data length output.
+        if(tfer->plen){
+                *tfer->plen=tfer->len-tfer->tleft;
+        }
+        // Invoke the callback.
+        if(tfer->cbk){
+                tfer->cbk(result,tfer->ud);
+        }
+}
+
+/*-------------------------------------------------------------------------*//**
+**  @brief Cancels a possibly ongoing asynchronous transfer.
+**
+**  @param[out] tfer A pointer to a transfer descriptor.
+**
+**  @return No return value.
+**
+**  Marks the transfer completed and invokes a callback if the callback has been
+**  set.
+*/
+static void
+spCancelTransfer(
+        SP_Transfer_t *tfer
+)
+{
+        if(!tfer->t_on){
+                // No ongoing transfer. Nothing to do.
+                return;
+        }
+
+        spTransferCompleted(tfer,SP_ERROR_ASYNC_TRANSFER_CANCELLED);
+}
+
+/*-------------------------------------------------------------------------*//**
+**  @brief Performs an asynchronous transfer.
+**
+**  @param[in] tferFunc Driver Read/Write operation.
+**  @param[in] tfer A pointer to a transfer descriptor.
+**
+**  @retval RESULT_OK Successful.
+**  @retval SP_ERROR_TIMEOUT Timeout.
+*/
+static Result_t
+spAsyncTransfer(
+        SPDrv_Func_Transfer_t tferFunc,
+        SP_Transfer_t *tfer
+)
+{
+        Result_t result=RESULT_OK;
+        uint32_t time;
+
+        // If there is no transfer ongoing, do nothing.
+        if(!tfer->t_on){
+                return RESULT_OK;
+        }
+        // Retrieve data.
+        result=tferFunc(tfer);
+        if(!SUCCESSFUL(result)&&
+           result!=SP_ERROR_RX_BUFFER_EMPTY&&
+           result!=SP_ERROR_TX_BUFFER_FULL){
+                // Something went wrong.
+                spTransferCompleted(tfer,result);
+                return result;
+        }
+        // Check the length of data to be transferred.
+        if(!tfer->tleft){
+                // All data retrieved. Complete the transfer with successful
+                // result.
+                spTransferCompleted(tfer,result);
+                return RESULT_OK;
+        }
+        // If timeout not specified, continue infinitely.
+        if(!tfer->tout){
+                return RESULT_OK;
+        }
+        // If some data got transferred, reset the timeout timer and continue
+        // reception.
+        if(tfer->tleft!=tfer->ptleft){
+                tfer->ptleft=tfer->tleft;
+                TimerAPI_StartTimer(tfer->tsys,&tfer->tmr);
+                return RESULT_OK;
+        }
+        // Check the timeout.
+        TimerAPI_GetTimeLapse(tfer->tsys,tfer->tmr,tfer->tu,&time);
+        if(time>tfer->tout){
+                result=SP_ERROR_TIMEOUT;
+                spTransferCompleted(tfer,result);
+                return result;
+        }
+        // Nothing happened, but transfer is still in progress.
+        return RESULT_OK;
+}
+
+/*-------------------------------------------------------------------------*//**
+**  @brief Performs a synchronous transfer.
+**
+**  @param[in] tferFunc Driver Read/Write operation.
+**  @param[in] tfer A pointer to a transfer descriptor.
+**
+**  @retval RESULT_OK Successful.
+**  @retval SP_ERROR_TIMEOUT Timeout.
+*/
+static Result_t
+spSyncTransfer(
+        SPDrv_Func_Transfer_t tferFunc,
+        SP_Transfer_t *tfer
+)
+{
+        Result_t result;
+
+        // Loop until the transfer completed.
+        while(tfer->t_on){
+                // Use the asynchronous transfer function to retrieve data
+                // and manage timeouts.
+                result=spAsyncTransfer(tferFunc,tfer);
+                if(!SUCCESSFUL(result)){
+                        return result;
+                }
+        }
+        return RESULT_OK;
+}
+/*-------------------------------------------------------------------------*//**
+**  @brief Transfers data to/from serial port.
+**
+**  @param[in] tferFunc Driver Read/Write function.
+**  @param[in] tfer A pointer to a transfer descriptor.
+**  @param[in] length Data length;
+**  @param[in] data A pointer to data.
+**  @param[in] plen A pointer to transferred data length.
+**  @param[in] timeout Timeout time in milliseconds.
+**
+**  @retval RESULT_OK Successful.
+**  @retval SP_ERROR_TIMEOUT Timeout.
+*/
+static Result_t
+spTransfer(
+        SPDrv_Func_Transfer_t tferFunc,
+        SP_Transfer_t *tfer,
+        uint32_t length,
+        uint8_t *data,
+        uint32_t *plen,
+        uint32_t timeout
+)
+{
+        // Check if transfer is already in progress.
+        if(tfer->t_on){
+                return SP_ERROR_ASYNC_TRANSFER_IN_PROGRESS;
+        }
+        // Init transfer.
+        spInitTransfer(
+                tfer,
+                length,
+                data,
+                plen,
+                timeout
+        );
+        // Check the data length (nothing to transfer if zero).
+        if(!tfer->len){
+                spTransferCompleted(tfer,RESULT_OK);
+                return RESULT_OK;
+        }
+        if(!tfer->cbk){
+                // No callback defined. Use synchronous transfer.
+                return spSyncTransfer(tferFunc,tfer);
+        }
+        else{
+                return spAsyncTransfer(tferFunc,tfer);
+        }
+
+        return RESULT_OK;
+}
+
+/******************************************************************************\
+**
+**  API FUNCTION DECLARATIONS
+**
+\******************************************************************************/
+
+Result_t
+SP_SetupDriverInterface(
+        SP_COMPort_t *port,
+        SPDrv_Func_Init_t funcInit,
+        SPDrv_Func_Open_t funcOpen,
+        SPDrv_Func_Close_t funcClose,
+        SPDrv_Func_Transfer_t funcRead,
+        SPDrv_Func_Transfer_t funcWrite,
+        SPDrv_Func_RunDriver_t funcRunDriver
+)
+{
+        if(!port){
+                return SP_ERROR_INVALID_POINTER;
+        }
+
+        if(!funcInit||!funcOpen||!funcClose||!funcRead||!funcWrite){
+                return SP_ERROR_INVALID_PARAMETER;
+        }
+
+        port->drvfuncInit=funcInit;
+        port->drvfuncOpen=funcOpen;
+        port->drvfuncClose=funcClose;
+        port->drvfuncRead=funcRead;
+        port->drvfuncWrite=funcWrite;
+        port->drvfuncRunDriver=funcRunDriver;
+        return RESULT_OK;
+}
 
 Result_t
 SP_InitPort(
@@ -77,34 +343,34 @@ SP_InitPort(
         SP_TransferCompletedCbk_t rxCallback,
         SP_TransferCompletedCbk_t txCallback,
         TimerSys_t *timerSys,
+        Timer_TimeUnit_t timeUnit,
         void *userData
 )
 {
-        Result_t result;
-        
         if(!port){
                 return SP_ERROR_INVALID_POINTER;
-        }        
+        }
+        if(!port->drvfuncInit){
+                return SP_ERROR_NO_DRIVER_INTERFACE;
+        }
         // Initialize the rx descriptor.
-        port->rx.len=0;
-        port->rx.ton=0;
-        port->rx.xlen=0;
-        port->rx.cmpl=0;
-        port->rx.cbk=rxCallback;
+        memset(&port->rxd,0,sizeof(SP_Transfer_t));
+        port->rxd.tsys=timerSys;
+        port->rxd.tu=timeUnit;
+        port->rxd.cbk=rxCallback;
+        port->rxd.ud=userData;
         // Initialize the tx descriptor.
-        port->tx.len=0;
-        port->tx.ton=0;
-        port->tx.xlen=0;
-        port->tx.cmpl=0;
-        port->tx.cbk=txCallback;
+        memset(&port->txd,0,sizeof(SP_Transfer_t));
+        port->txd.tsys=timerSys;
+        port->txd.tu=timeUnit;
+        port->txd.cbk=txCallback;
+        port->txd.ud=userData;
         // Set default configuration.
         port->cfg=spDefaultConfig;
-        // Set the timer system.
-        port->tsys=timerSys;
-        // Set the user data.
-        port->ud=userData;
+        // Set initialization status.
+        port->init=bTrue;
         // Initialize the driver.
-        return port->Init();        
+        return port->drvfuncInit();        
 }
 
 Result_t
@@ -116,6 +382,7 @@ SP_GetCurrentConfig(
         if(!port||!config){
                 return SP_ERROR_INVALID_POINTER;
         }
+
         // Configuration data output.
         *config=port->cfg;
         return RESULT_OK;
@@ -129,7 +396,7 @@ SP_Open(
 )
 {
         Result_t result;
-        
+
         if(!port||!config||!handle){
                 return SP_ERROR_INVALID_POINTER;
         }
@@ -137,9 +404,13 @@ SP_Open(
         if(*handle){
                 return SP_ERROR_RESOURCE_IN_USE;
         }
+        // Check the port initialization status.
+        if(!port->init){
+                return SP_ERROR_PORT_NOT_INITIALIZED;
+        }
         // Configure and open the port.
         port->cfg=*config;
-        result=port->Open();
+        result=port->drvfuncOpen(&port->cfg);
         if(!SUCCESSFUL(result)){
                 return result;
         }
@@ -148,6 +419,7 @@ SP_Open(
         return RESULT_OK;
 }
 
+
 Result_t
 SP_Close(
         Handle_t *handle
@@ -155,22 +427,22 @@ SP_Close(
 {
         Result_t result;
         SP_COMPort_t *port;
-        
+
+        // Check the handle.
         if(!handle){
                 return SP_ERROR_INVALID_POINTER;
-        }        
-        // Check the handle.
-        if(!*handle){
-                return SP_ERROR_INVALID_PARAMETER;
         }
         port=(SP_COMPort_t*)*handle;
+        // Cancel possibly ongoing asynchronous transfers.
+        spCancelTransfer(&port->rxd);
+        spCancelTransfer(&port->txd);
         // Close the port.
-        result=port->Close();
+        result=port->drvfuncClose();
         if(!SUCCESSFUL(result)){
                 return result;
         }
         // Handle reset.
-        *handle=(Handle_t)0;            
+        *handle=(Handle_t)0;
         return RESULT_OK;
 }
 
@@ -180,9 +452,9 @@ SP_ChangeConfig(
         SP_Config_t *config
 )
 {
-        Result_t result;
         SP_COMPort_t *port;
-        
+        Result_t result;
+
         if(!config){
                 return SP_ERROR_INVALID_POINTER;
         }
@@ -192,14 +464,17 @@ SP_ChangeConfig(
         }
         // Port access.
         port=(SP_COMPort_t*)handle;
+        // Cancel possibly ongoing asynchronous transfers.
+        spCancelTransfer(&port->rxd);
+        spCancelTransfer(&port->txd);
         // Close the port.
-        result=port->Close();
+        result=port->drvfuncClose();
         if(!SUCCESSFUL(result)){
                 return result;
         }
         // Port re-configuration and re-opening.
         port->cfg=*config;
-        return port->Open();
+        return port->drvfuncOpen(&port->cfg);
 }
 
 Result_t
@@ -213,68 +488,25 @@ SP_Read(
 {
         SP_COMPort_t *port;
         Result_t result;
-        Timer_t tmr;
-        uint32_t time;
-        
+
         if(!data){
                 return SP_ERROR_INVALID_POINTER;
         }
-        // Check the handle.
+        // Check the port handle.
         if(!handle){
                 return SP_ERROR_INVALID_PARAMETER;
         }
-        // Reset the length output parameter.
-        if(bytesRead){
-                *bytesRead=0;
-        }
-        // Check the data length (nothing to receive if zero).
-        if(!length){
-                return RESULT_OK;
-        }        
         // Port access.
         port=(SP_COMPort_t*)handle;
-        // Invoke the driver implementation if existing.
-        if(port->Read){
-                return port->Read(length,data,bytesRead,timeout);
-        }
-        // If the Read function is not implemented, the GetChar function is
-        // a requirement.
-        if(!port->GetChar){
-                return SP_ERROR_DRIVER_INTERNAL_ERROR;
-        }        
-        // Local implementation.
-        // Initialize the timer.
-        result=TimerAPI_StartTimer(port->tsys,&tmr);        
-        if(!SUCCESSFUL(result)){
-                return SP_ERROR_DRIVER_INTERNAL_ERROR;
-        }
-        // Receive data.
-        while(length){
-                // Read data from port.
-                result=port->GetChar(data);
-                // Data received.
-                if(SUCCESSFUL(result)){
-                        data++;
-                        length--;
-                        if(bytesRead){
-                                (*bytesRead)++;
-                        }
-                        // Restart the timeout timer.
-                        TimerAPI_StartTimer(port->tsys,&tmr);
-                        continue;
-                }
-                // An error occurred, or the Rx buffer is empty and timeout has
-                // not been specified.
-                if(result!=SP_ERROR_RX_BUFFER_EMPTY||!timeout){
-                        return result;
-                }
-                // Rx buffer is empty. Check the timeout.
-                TimerAPI_GetTimeLapse(port->tsys,tmr,TIMER_TU_MS,&time);
-                if(time>timeout){
-                        return SP_ERROR_TIMEOUT;
-                }
-        }
-        return RESULT_OK;
+        // Start transfer.
+        return spTransfer(
+                port->drvfuncRead,
+                &port->rxd,
+                length,
+                data,
+                bytesRead,
+                timeout
+        );
 }
 
 Result_t
@@ -287,10 +519,7 @@ SP_Write(
 )
 {
         SP_COMPort_t *port;
-        Result_t result;
-        Timer_t tmr;
-        uint32_t time;
-        
+
         if(!data){
                 return SP_ERROR_INVALID_POINTER;
         }
@@ -298,57 +527,17 @@ SP_Write(
         if(!handle){
                 return SP_ERROR_INVALID_PARAMETER;
         }
-        // Check the data length (nothing to send if zero).
-        if(!length){
-                return RESULT_OK;
-        }
-        // Reset the length output parameter.
-        if(bytesWritten){
-                *bytesWritten=0;
-        }
         // Port access.
         port=(SP_COMPort_t*)handle;
-        // Invoke the driver implementation if existing.
-        if(port->Write){
-                return port->Write(length,data,bytesWritten,timeout);
-        }
-        // If the Write function is not implemented, the PutChar function is
-        // a requirement.
-        if(!port->PutChar){
-                return SP_ERROR_DRIVER_INTERNAL_ERROR;
-        }        
-        // Initialize the timer.
-        result=TimerAPI_StartTimer(port->tsys,&tmr);
-        if(!SUCCESSFUL(result)){
-                return SP_ERROR_DRIVER_INTERNAL_ERROR;
-        }
-        // Data transmission.
-        while(length){
-                // Write data to the port.
-                result=port->PutChar(*data);
-                // Data sent.
-                if(SUCCESSFUL(result)){
-                        data++;
-                        length--;                        
-                        if(bytesWritten){
-                                (*bytesWritten)++;
-                        }
-                        // Restart the timer.
-                        TimerAPI_StartTimer(port->tsys,&tmr);
-                        continue;
-                }                
-                // An error occurred, or buffer is full and timeout has not
-                // been specified.
-                if(result!=SP_ERROR_TX_BUFFER_FULL||!timeout){
-                        return result;
-                }                        
-                // Buffer is full. Check the timeout.
-                TimerAPI_GetTimeLapse(port->tsys,tmr,TIMER_TU_MS,&time);
-                if(time>timeout){
-                        return SP_ERROR_TIMEOUT;
-                }
-        }
-        return RESULT_OK;
+        // Init transfer.
+        return spTransfer(
+                port->drvfuncWrite,
+                &port->txd,
+                length,
+                data,
+                bytesWritten,
+                timeout
+        );
 }
 
 Result_t
@@ -357,19 +546,7 @@ SP_GetChar(
         uint8_t *data
 )
 {
-        SP_COMPort_t *port;
-        
-        if(!data){
-                return SP_ERROR_INVALID_POINTER;
-        }
-        // Check the handle.
-        if(!handle){
-                return SP_ERROR_INVALID_PARAMETER;
-        }
-        // Port access.
-        port=(SP_COMPort_t*)handle;
-        // Read data.
-        return port->GetChar(data);
+        return SP_Read(handle,1,data,0,0);
 }
 
 Result_t
@@ -378,7 +555,16 @@ SP_PutChar(
         uint8_t data
 )
 {
+        return SP_Write(handle,1,&data,0,0);
+}
+
+Result_t
+SP_Run(
+        Handle_t handle
+)
+{
         SP_COMPort_t *port;
+        Result_t result;
 
         // Check the handle.
         if(!handle){
@@ -386,8 +572,18 @@ SP_PutChar(
         }
         // Port access.
         port=(SP_COMPort_t*)handle;
-        // Write data.
-        return port->PutChar(data);
-}
 
+        // Run the driver.
+        if(port->drvfuncRunDriver){
+                result=port->drvfuncRunDriver(&port->rxd,&port->txd);
+                if(!SUCCESSFUL(result)){
+                        return result;
+                }
+        }
+
+        // Perform asynchronous transfers.
+        spAsyncTransfer(port->drvfuncRead,&port->rxd);
+        spAsyncTransfer(port->drvfuncWrite,&port->txd);
+        return RESULT_OK;
+}
 /* EOF */
