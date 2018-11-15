@@ -264,7 +264,7 @@ Sensor_Output_t{
         /// value is resetted automatically by the API when the change is
         /// handled in the function @ref SensorAPI_Run. Do not write this value
         /// manually.
-        bool ci;
+        bool_t ci;
         /// Output data.
         /// @remarks This value is set by a sensor driver by using the function
         /// @ref SensorDrv_SetOutputData.
@@ -445,7 +445,7 @@ typedef void
 **  new and old configuration data. It must return true if the configuration
 **  data has changed or false otherwise.
 */
-typedef bool
+typedef bool_t
 (*SensorDrv_SetConfiguration_t)(
         void *configurationData,
         void *userData
@@ -610,11 +610,11 @@ SensorDrv_t{
                 /// Control command callback.
                 SensorCbk_CtrlCmd_t ccbk;
                 /// Request sensor data.
-                bool rreq;
+                bool_t rreq;
                 /// Sensor control.
                 Sensor_Control_t ctrl;
                 /// Calibration state.
-                bool cal;
+                bool_t cal;
                 /// Timer system.
                 TimerSys_t *tsys;
                 /// User defined data.
@@ -854,7 +854,7 @@ SensorAPI_SetCalibrationData(
 **  @retval true Sensor is calibrated.
 **  @retval false Sensor is not calibrated, or the handle is invalid.
 */
-bool
+bool_t
 SensorAPI_IsCalibrated(
         Handle_t sensorHndl
 );
