@@ -47,6 +47,10 @@
 
 #include "types.h"
 
+#ifdef __cplusplus
+extern "C"{
+#endif // ifdef __cplusplus
+
 /******************************************************************************\
 **
 **  ERROR CODES
@@ -208,6 +212,10 @@ TimerAPI_TimerTick(
         TimerSys_t *timerSys,
         uint32_t ticks
 );
+
+#ifdef __cplusplus
+}
+#endif // ifdef __cplusplus
 
 #endif // timer_H
 

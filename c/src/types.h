@@ -53,13 +53,11 @@
 /*-------------------------------------------------------------------------*//**
 **  @brief Boolean data type.
 */
-#ifndef bool
 typedef enum
-bool{
-        false=0,
-        true=1
-} bool;
-#endif
+bool_t{
+        bFalse=0,
+        bTrue=1
+} bool_t;
 
 /*-------------------------------------------------------------------------*//**
 **  @brief Handle data type.
@@ -94,39 +92,55 @@ vartype_t{
 **  Maximum of 32-bit variables are used by the default. To get 64-bit variables
 **  in use, define a global macro USE_64BIT_VAR_T in the project options.
 */
-typedef struct
+typedef struct 
 var_t{
         vartype_t type;
         uint16_t sz;
         union{
 #ifdef USE_64BIT_VAR_T
                 /// 64-bit floating point value.
-                double   F64,   *F64Ptr;
+                double   F64,*F64Ptr;
                 /// 64-bit unsigned integer.
-                uint64_t U64,   *U64Ptr;
+                uint64_t U64,*U64Ptr;
                 /// 64-bit signed integer.
-                int64_t  S64,   *S64Ptr;
-#endif // USE_64BIT_VAR_T
+                int64_t  S64,*S64Ptr;
+                /// 64-bit value.
+                uint64_t val;
+#else // ifdef USE_64BIT_VAR_T
+                /// 32-bit value.
+                uint32_t val;
+#endif // ifdef USE_64BIT_VAR_T
                 /// 32-bit floating point value.
-                float    F32,   *F32Ptr;
+                float    F32,*F32Ptr;
                 /// 32-bit unsigned integer.
-                uint32_t U32,   *U32Ptr;
+                uint32_t U32,*U32Ptr;
                 /// 32-bit signed integer.
-                int32_t  S32,   *S32Ptr;
+                int32_t  S32,*S32Ptr;
                 /// 16-bit unsigned integer.
-                uint16_t U16,   *U16Ptr;
+                uint16_t U16,*U16Ptr;
                 /// 16-bit signed integer.
-                int16_t  S16,   *S16Ptr;
+                int16_t  S16,*S16Ptr;
                 /// 8-bit unsigned integer.
-                uint8_t  U8,    *U8Ptr;
+                uint8_t  U8,*U8Ptr;
                 /// 8-bit signed integer.
-                int8_t   S8,    *S8Ptr;
+                int8_t   S8,*S8Ptr;
                 /// Boolean.
-                bool     Bool,  *BoolPtr;
+                bool_t   Bool,*BoolPtr;
                 /// Enumeration.
-                uint16_t Enum;
+                int16_t  Enum;
         };
 } var_t;
+
+#ifdef __cplusplus
+class CVariable
+{
+        public:
+
+        CVariable() {}
+        CVariable(var_t var): Var(var){}
+        var_t Var;
+};
+#endif // ifdef __cplusplus
 
 /*-------------------------------------------------------------------------*//**
 **  @brief Bit macro.
@@ -147,12 +161,12 @@ typedef int16_t Result_t;
 */
 #ifndef SUCCESSFUL
         #define SUCCESSFUL(RESULT) ((RESULT)>=0)
-#endif // SUCCESSFUL
+#endif // ifndef SUCCESSFUL
 
 #ifndef RESULT_OK
         /// Generic definition for a successful result.
         #define RESULT_OK 0
-#endif // RESULT_OK
+#endif // ifndef RESULT_OK
 
 /*-------------------------------------------------------------------------*//**
 **  @brief Increases a value and wraps around.
@@ -300,6 +314,6 @@ typedef int16_t Result_t;
 */
 #define FTOI(FVAL) ((uint32_t)((FVAL)+0.5))
 
-#endif // types_H
+#endif // ifndef types_H
 
 /* EOF */
