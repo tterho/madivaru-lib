@@ -225,7 +225,7 @@ CLI_ParamDescr_t{
         /// The description of the parameter.
         char *Descr;
         /// Indicates whether the parameter should have a value or not.
-        bool HasValue;
+        bool_t HasValue;
         /// Type of the parameter value.
         vartype_t VarType;
 } CLI_ParamDescr_t;
@@ -284,9 +284,9 @@ CLI_Parser_t{
         /// A callback to echo the command line input.
         CLI_EchoCbk_t ecbk;
         /// Echo enable.
-        bool eena;
+        bool_t eena;
         /// Parser enable.
-        bool pena;
+        bool_t pena;
         /// Help header.
         const char *hhdr;
         /// A pointer to user specified data.
@@ -407,7 +407,7 @@ CLI_DisableEcho(
 Result_t
 CLI_BeginNewInput(
         CLI_Parser_t *parser,
-        bool newLine
+        bool_t newLine
 );
 
 /*-------------------------------------------------------------------------*//**

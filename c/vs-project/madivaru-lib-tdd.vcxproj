@@ -33,9 +33,14 @@
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros" />
   <ItemGroup>
+    <ClCompile Include="..\src\cli\cli_api.c" />
+    <ClCompile Include="..\src\sensor_framework\sensor_api.c" />
     <ClCompile Include="..\src\serialport\serialport.c" />
+    <ClCompile Include="..\src\spi\spi_api.c" />
+    <ClCompile Include="..\src\utils\average16.c" />
     <ClCompile Include="..\src\utils\fifo.c" />
     <ClCompile Include="..\src\utils\timer.c" />
+    <ClCompile Include="..\src\xtc\xtc_api.c" />
     <ClCompile Include="..\test\main.cc" />
     <ClCompile Include="..\test\utils\test_fifo.cc" />
     <ClCompile Include="..\test\utils\test_serialport.cc" />
