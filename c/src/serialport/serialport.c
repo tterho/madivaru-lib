@@ -368,7 +368,7 @@ SP_InitPort(
         // Set default configuration.
         port->cfg=spDefaultConfig;
         // Set initialization status.
-        port->init=bTrue;
+        port->init=true;
         // Initialize the driver.
         return port->drvfuncInit();        
 }
@@ -487,7 +487,6 @@ SP_Read(
 )
 {
         SP_COMPort_t *port;
-        Result_t result;
 
         if(!data){
                 return SP_ERROR_INVALID_POINTER;

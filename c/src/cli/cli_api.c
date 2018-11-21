@@ -101,7 +101,7 @@ cpapi_NewLine(
 static void
 cpapi_BeginNewInput(
         CLI_Parser_t *parser,
-        bool_t newLine
+        bool newLine
 )
 {
         if(newLine){
@@ -147,7 +147,7 @@ cpapi_PrintAppHelp(
                 cpapi_Echo(parser,cmd->Descr,(uint16_t)strlen(cmd->Descr));
                 cpapi_Echo(parser,"\r\n\r\n",4);
         }
-        cpapi_BeginNewInput(parser,bFalse);
+        cpapi_BeginNewInput(parser,false);
 }
 
 /*-------------------------------------------------------------------------*//**
@@ -188,7 +188,7 @@ cpapi_PrintCmdHelp(
                 cpapi_Echo(parser,param->Descr,(uint16_t)strlen(param->Descr));
                 cpapi_Echo(parser,"\r\n",2);
         }
-        cpapi_BeginNewInput(parser,bFalse);
+        cpapi_BeginNewInput(parser,false);
 }
 
 /*-------------------------------------------------------------------------*//**
@@ -210,8 +210,8 @@ cpapi_ParseParam(
         uint8_t k;
         uint8_t len=0;
         const CLI_ParamDescr_t *p=0;
-        bool_t found=bFalse;
-        bool_t chars=bFalse;
+        bool found=false;
+        bool chars=false;
         var_t *val=0;
 
         // EOL found.
@@ -278,7 +278,7 @@ cpapi_ParseParam(
                                 val->U32=0;
                                 val->sz=0;
                                 parser->pcnt++;
-                                found=bTrue;
+                                found=true;
                                 break;
                         }
                 }
@@ -352,7 +352,7 @@ cpapi_ParseParam(
                       parser->inp[(*i)+j]<='9')||
                      parser->inp[(*i)+j]=='.'||
                      parser->inp[(*i)+j]=='-')){
-                        chars=bTrue;
+                        chars=true;
                         break;
                 }
         }
@@ -405,21 +405,21 @@ cpapi_ParseParam(
         case VARTYPE_BOOL:
                 if(len==1&&parser->inp[*i]=='1'||
                    len==4&&!strncmp(&parser->inp[*i],"true",4)){
-                        val->Bool=bTrue;
+                        val->Bool=true;
                 }else if((len==1&&parser->inp[*i]=='0')||
                         len==5&&!strncmp(&parser->inp[*i],"false",5)){
-                        val->Bool=bFalse;
+                        val->Bool=false;
                 }else{
                         return CLI_ERROR_PARSER_INVALID_PARAMETER_VALUE;
                 }
                 break;
         case VARTYPE_ENUM:
-                found=bFalse;
+                found=false;
                 for(j=0;j<parser->cliecnt;j++){
                         if(strlen(parser->clienu[j])==len){
                                 if(!strncmp(parser->clienu[j],&parser->inp[*i],len)){
                                         val->Enum=j;
-                                        found=bTrue;
+                                        found=true;
                                         break;
                                 }
                         }
@@ -549,7 +549,7 @@ cpapi_ParseInput(
                 parser->ud
         );
         if(SUCCESSFUL(result)){
-                cpapi_BeginNewInput(parser,bTrue);
+                cpapi_BeginNewInput(parser,true);
         }
         return result;
 }
@@ -599,7 +599,7 @@ CLI_CreateParser(
         // Setup and enable the echo.
         if(echo){
                 parser->ecbk=echo;
-                parser->eena=bTrue;
+                parser->eena=true;
         }
         // Set the user defined enumerations.
         parser->clienu=cliEnums;
@@ -610,7 +610,7 @@ CLI_CreateParser(
         // buffer.
         parser->iptr=&parser->inp[0];
         // Enable the parser by default.
-        parser->pena=bTrue;
+        parser->pena=true;
         // Set the help header.
         parser->hhdr=helpHeader;
         return RESULT_OK;
@@ -624,7 +624,7 @@ CLI_EnableParser(
         if(!parser){
                 return CLI_ERROR_INVALID_POINTER;
         }
-        parser->pena=bTrue;
+        parser->pena=true;
         return RESULT_OK;
 }
 
@@ -636,7 +636,7 @@ CLI_DisableParser(
         if(!parser){
                 return CLI_ERROR_INVALID_POINTER;
         }
-        parser->pena=bFalse;
+        parser->pena=false;
         return RESULT_OK;
 }
 
@@ -648,14 +648,14 @@ CLI_EnableEcho(
         if(!parser){
                 return CLI_ERROR_INVALID_POINTER;
         }
-        parser->eena=bTrue;
+        parser->eena=true;
         return RESULT_OK;
 }
 
 Result_t
 CLI_BeginNewInput(
         CLI_Parser_t *parser,
-        bool_t newLine
+        bool newLine
 )
 {
         if(!parser){
@@ -673,7 +673,7 @@ CLI_DisableEcho(
         if(!parser){
                 return CLI_ERROR_INVALID_POINTER;
         }
-        parser->eena=bFalse;
+        parser->eena=false;
         return RESULT_OK;
 }
 
@@ -715,7 +715,7 @@ CLI_InputChar(
                 // CLI_ERROR_INTERRUPT_PROCESS to indicate that the user 
                 // interrupted the operation.
                 cpapi_Echo(parser," ^C",3);
-                cpapi_BeginNewInput(parser,bTrue);
+                cpapi_BeginNewInput(parser,true);
                 return CLI_ERROR_INTERRUPT_PROCESS;
         // Backspace command.
         case 8:
@@ -737,7 +737,7 @@ CLI_InputChar(
                 // If there is nothing to parse, echo a line feed.
                 if(!parser->icnt){
                         // Input buffer is empty. Begin a new input.
-                        cpapi_BeginNewInput(parser,bTrue);
+                        cpapi_BeginNewInput(parser,true);
                         break;
                 }
                 cpapi_NewLine(parser);
@@ -750,7 +750,7 @@ CLI_InputChar(
         // Escape command.
         case 27:
                 // Escape command clears the input.
-                cpapi_BeginNewInput(parser,bTrue);
+                cpapi_BeginNewInput(parser,true);
                 break;
         }
         return result;

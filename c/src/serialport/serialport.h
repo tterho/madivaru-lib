@@ -457,7 +457,7 @@ SP_COMPort_t{
         /// Runs the driver.
         SPDrv_Func_RunDriver_t drvfuncRunDriver;
         /// Port initialization status.
-        bool_t init;
+        bool init;
         /// Serial port configuration data.
         SP_Config_t cfg;
         /// Reception descriptor.
