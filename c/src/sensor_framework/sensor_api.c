@@ -63,7 +63,7 @@ SensorDrv_SetOutputStatus(
         // New status.
         output->st=status;
         // Status changed flag.
-        output->ci=bTrue;
+        output->ci=true;
 }
 
 void
@@ -79,7 +79,7 @@ SensorDrv_SetOutputData(
         // New data.
         output->data=data;
         // Data changed flag.
-        output->ci=bTrue;
+        output->ci=true;
 }
 
 /******************************************************************************\
@@ -138,12 +138,12 @@ SensorAPI_InitDriver(
         driver->dd.ocbk=outputCallback;
         driver->dd.ccbk=ctrlCmdCallback;
         driver->dd.ctrl=SENSOR_DISABLE;
-        driver->dd.rreq=bFalse;
+        driver->dd.rreq=false;
         driver->dd.tsys=timerSys;
         driver->dd.ud=userData;
         // If the driver supports calibration, the initial calibration state is
         // false. Otherwise it is true (no calibration required).
-        driver->dd.cal=driver->SetCalibrationData?bFalse:bTrue;
+        driver->dd.cal=driver->SetCalibrationData?false:true;
         // Initialize driver hardware.
         driver->Init(driver->dd.ud);
 }
@@ -263,11 +263,11 @@ SensorAPI_SetCalibrationData(
                 return SENSORAPI_ERROR_NOT_IMPLEMENTED;
         }
         drv->SetCalibrationData(calibrationData,drv->dd.ud);
-        drv->dd.cal=bTrue;
+        drv->dd.cal=true;
         return RESULT_OK;
 }
 
-bool_t
+bool
 SensorAPI_IsCalibrated(
         Handle_t sensorHndl
 )
@@ -275,7 +275,7 @@ SensorAPI_IsCalibrated(
         SensorDrv_t *drv;
 
         if(!sensorHndl){
-                return bFalse;
+                return false;
         }
         drv=(SensorDrv_t*)sensorHndl;
         return drv->dd.cal;
@@ -352,7 +352,7 @@ SensorAPI_Control(
                 }
                 break;
         case SENSOR_ENABLE:
-                drv->dd.rreq=bTrue;
+                drv->dd.rreq=true;
                 if(drv->On){
                         drv->On(drv->dd.ud);
                 }
@@ -456,14 +456,14 @@ SensorAPI_Run(
                         continue;
                 }
                 // Reset the data-changed flag.
-                od->ci=bFalse;
+                od->ci=false;
                 if(drv->dd.ctrl==SENSOR_ENABLE){
                         // Invoke the output data event callback.
                         drv->dd.ocbk(odi,od->data);
                 }
         }
         // Reset the data report request.
-        drv->dd.rreq=bFalse;
+        drv->dd.rreq=false;
 }
 
 /* EOF */

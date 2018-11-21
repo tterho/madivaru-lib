@@ -49,15 +49,7 @@
 
 #include <stdio.h>
 #include <inttypes.h>
-
-/*-------------------------------------------------------------------------*//**
-**  @brief Boolean data type.
-*/
-typedef enum
-bool_t{
-        bFalse=0,
-        bTrue=1
-} bool_t;
+#include <stdbool.h>
 
 /*-------------------------------------------------------------------------*//**
 **  @brief Handle data type.
@@ -125,7 +117,7 @@ var_t{
                 /// 8-bit signed integer.
                 int8_t   S8,*S8Ptr;
                 /// Boolean.
-                bool_t   Bool,*BoolPtr;
+                bool   Bool,*BoolPtr;
                 /// Enumeration.
                 int16_t  Enum;
         };
