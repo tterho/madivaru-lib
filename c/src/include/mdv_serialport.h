@@ -356,7 +356,7 @@ typedef
 MdvResult_t
 (*MdvSerialPortDriverInterface_Init_t)(
         void
-        );
+);
 
 /*-------------------------------------------------------------------------*//**
 **  @brief Opens the serial port driver.
@@ -374,7 +374,7 @@ typedef
 MdvResult_t
 (*MdvSerialPortDriverInterface_Open_t)(
         MdvSerialPortConfig_t *cfg
-        );
+);
 
 /*-------------------------------------------------------------------------*//**
 **  @brief Closes the serial port.
@@ -389,7 +389,7 @@ typedef
 MdvResult_t
 (*MdvSerialPortDriverInterface_Close_t)(
         void
-        );
+);
 
 /*-------------------------------------------------------------------------*//**
 **  @brief Transfers data to/from the serial port.
@@ -404,7 +404,7 @@ typedef
 MdvResult_t
 (*MdvSerialPortDriverInterface_Transfer_t)(
         MdvSerialPortTransfer_t *tfer
-        );
+);
 
 /*-------------------------------------------------------------------------*//**
 **  @brief Runs the driver.
@@ -421,7 +421,7 @@ MdvResult_t
 (*MdvSerialPortDriverInterface_Run_t)(
         MdvSerialPortTransfer_t *rxd,
         MdvSerialPortTransfer_t *txd
-        );
+);
 
 /******************************************************************************\
 **
@@ -468,7 +468,7 @@ extern "C"{
 typedef struct
 MdvSerialPort_t{
         /// Driver interface.
-        MdvSerialPortDriverInterface_t *drv;
+        MdvSerialPortDriverInterface_t drv;
         /// Port initialization status.
         bool init;
         /// Serial port configuration data.
@@ -499,7 +499,7 @@ extern const MdvSerialPortConfig_t MdvSerialportDefaultConfig;
 /*-------------------------------------------------------------------------*//**
 **  @brief Sets up the driver interface.
 **
-**  @param[out] iface Driver interfae to set up.
+**  @param[out] port Seria port instance which driver interface to set up.
 **  @param[in] funcInit (Mandatory) A function to initialize the port hardware.
 **  @param[in] funcOpen (Mandatory) A function to open the port.
 **  @param[in] funcClose (Mandatory) A function to close the port.
@@ -516,7 +516,7 @@ extern const MdvSerialPortConfig_t MdvSerialportDefaultConfig;
 */
 MdvResult_t
 mdv_serialport_setup_driver_interface(
-        MdvSerialPortDriverInterface_t *iface,
+        MdvSerialPort_t *port,
         MdvSerialPortDriverInterface_Init_t funcInit,
         MdvSerialPortDriverInterface_Open_t funcOpen,
         MdvSerialPortDriverInterface_Close_t funcClose,
@@ -528,8 +528,7 @@ mdv_serialport_setup_driver_interface(
 /*-------------------------------------------------------------------------*//**
 **  @brief Initializes a serial port driver.
 **
-**  @param[out] port Serial port driver to initialize.
-**  @param[in] driver Driver to be associated with the port.
+**  @param[out] port Serial port to initialize.
 **  @param[in] rxCompleted RX completed callback for asynchronous read
 **      operations. Set to null for synchronous reads.
 **  @param[in] txCompleted TX completed callback for asynchronous write
@@ -543,13 +542,13 @@ mdv_serialport_setup_driver_interface(
 **  @return On a driver error returns a negative error code. See the driver 
 **      implementation for more information.
 **
-**  Initializes the serial port and the hardware by invoking driver's 
-**  initialization method.
+**  Initializes the serial port and the hardware by calling driver's 
+**  initialization method. The driver interface must be initialized before this
+**  operation.
 */
 MdvResult_t
 mdv_serialport_init(
         MdvSerialPort_t *port,
-        MdvSerialPortDriverInterface_t *driver,
         MdvSerialPortTransferCompletedCallback_t rxCompleted,
         MdvSerialPortTransferCompletedCallback_t txCompleted,
         MdvTimerSystem_t *timerSys,

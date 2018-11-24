@@ -1,11 +1,11 @@
 /***************************************************************************//**
 **
-**  @defgroup   utils Utility library
+**  @defgroup   madivaru-lib Madivaru library.
 **
-**  General purpose utilities.
+**  General purpose APIs, driver interfaces and utilities.
 **
-**  @file       types.h
-**  @ingroup    utils
+**  @file       mdv_types.h
+**  @ingroup    madivaru-lib
 **  @brief      Common types and macros
 **  @copyright  Copyright (C) 2012-2018 Tuomas Terho. All rights reserved.
 **
@@ -97,7 +97,10 @@ MdvVarType_t{
 */
 typedef struct 
 MdvVar_t{
+        /// Type of the variable.
         MdvVarType_t type;
+        /// Size of a variable array (when a pointer-type variable points to an 
+        /// array).
         uint16_t sz;
         union{
 #ifdef USE_64BIT_VAR_T
@@ -225,7 +228,7 @@ typedef int16_t MdvResult_t;
 **  @brief Tests the minimum boundary of the value.
 **
 **  @param[in] VALUE The value being tested.
-**  @param[in] MAX The minimum possible value.
+**  @param[in] MIN The minimum possible value.
 **
 **  This macro performs a boolean test for the value and the minimum value.
 */

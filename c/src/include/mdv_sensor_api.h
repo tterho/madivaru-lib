@@ -595,7 +595,7 @@ mdv_sensor_set_output_data(
 /*-------------------------------------------------------------------------*//**
 **  @brief Initializes a sensor driver.
 **
-**  @param[in] driver Sensor driver to be initialized.
+**  @param[in] sensor Sensor to be initialized.
 **  @param[in] sensor Type of the sensor to be associated with the driver.
 **  @param[in] funcInit Driver function pointer (mandatory).
 **  @param[in] funcSetCalibrationParams Driver function pointer (optional, set
@@ -674,7 +674,7 @@ mdv_sensor_init(
 /*-------------------------------------------------------------------------*//**
 **  @brief Gets a handle to a sensor.
 **
-**  @param[in] sensor A sensor driver.
+**  @param[in] sensor A sensor.
 **  @param[out] handle Pointer to a sensor handle variable.
 **
 **  @retval MDV_RESULT_OK Handle successfully got.

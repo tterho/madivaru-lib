@@ -160,7 +160,6 @@ typedef void
         void *userData
 );
 
-
 /******************************************************************************\
 **
 **  DRIVER INTERFACE FUNCTION TYPES
@@ -306,7 +305,7 @@ extern "C"{
 typedef struct
 MdvSpi_t{
         /// Pointer to a SPI driver interface.
-        MdvSpiDriverInterface_t *drv;
+        MdvSpiDriverInterface_t drv;
         /// Stores the port configuration.
         MdvSpiConfig_t cfg;
         /// Transfer completion callback.
@@ -324,7 +323,7 @@ MdvSpi_t{
 /*-------------------------------------------------------------------------*//**
 **  @brief Sets up the driver interface.
 **
-**  @param[out] iface Driver interface to set up.
+**  @param[out] spi SPI port which driver interface to set up.
 **  @param[in] funcInit (Mandatory) A function to initialize the port hardware.
 **  @param[in] funcOpen (Mandatory) A function to open the port.
 **  @param[in] funcClose (Mandatory) A function to close the port.
@@ -341,7 +340,7 @@ MdvSpi_t{
 */
 MdvResult_t
 mdv_spi_setup_driver_interface(
-        MdvSpiDriverInterface_t *iface,
+        MdvSpi_t *spi,
         MdvSpiDriverInterface_Init_t funcInit,
         MdvSpiDriverInterface_Open_t funcOpen,
         MdvSpiDriverInterface_Close_t funcClose,
@@ -354,7 +353,6 @@ mdv_spi_setup_driver_interface(
 **  @brief Opens a SPI port.
 **
 **  @param[in] spi SPI port to open.
-**  @param[in] drv SPI driver interface.
 **  @param[in] config SPI port configuration.
 **  @param[in] callback Callback for asynchronous transfer completed events.
 **      This parameter is optional and can be set to null.
@@ -372,7 +370,6 @@ mdv_spi_setup_driver_interface(
 MdvResult_t
 mdv_spi_open(
         MdvSpi_t *spi,
-        MdvSpiDriverInterface_t *drv,
         MdvSpiConfig_t *config,
         MdvSpiTransferCompletedCallback_t callback,
         void *userData,

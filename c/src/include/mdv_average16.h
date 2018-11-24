@@ -51,6 +51,7 @@
 **
 \******************************************************************************/
 
+/// Invalid pointer (pointer value is null).
 #define MDV_AVERAGE_ERROR_INVALID_POINTER -1
 
 /******************************************************************************\
@@ -152,6 +153,7 @@ mdv_average16_reset(
 **  returns 0.
 **
 **  @param[in] average A pointer to an average structure where to put a sample.
+**  @param[in] sample The sample value to put.
 **
 **  @return The current average value.
 */

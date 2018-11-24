@@ -313,7 +313,7 @@ serialport_transfer(
 
 MdvResult_t
 mdv_serialport_setup_driver_interface(
-        MdvSerialPortDriverInterface_t *iface,
+        MdvSerialPort_t *port,
         MdvSerialPortDriverInterface_Init_t funcInit,
         MdvSerialPortDriverInterface_Open_t funcOpen,
         MdvSerialPortDriverInterface_Close_t funcClose,
@@ -322,26 +322,25 @@ mdv_serialport_setup_driver_interface(
         MdvSerialPortDriverInterface_Run_t funcRun
 )
 {
-        if(!iface){
+        if(!port){
                 return MDV_SERIALPORT_ERROR_INVALID_POINTER;
         }
         if(!funcInit||!funcOpen||!funcClose||!funcRead||!funcWrite){
                 return MDV_SERIALPORT_ERROR_INVALID_PARAMETER;
         }
-        iface->funcInit=funcInit;
-        iface->funcOpen=funcOpen;
-        iface->funcClose=funcClose;
-        iface->funcRead=funcRead;
-        iface->funcWrite=funcWrite;
-        iface->funcRun=funcRun;
-        iface->init=true;
+        port->drv.funcInit=funcInit;
+        port->drv.funcOpen=funcOpen;
+        port->drv.funcClose=funcClose;
+        port->drv.funcRead=funcRead;
+        port->drv.funcWrite=funcWrite;
+        port->drv.funcRun=funcRun;
+        port->drv.init=true;
         return MDV_RESULT_OK;
 }
 
 MdvResult_t
 mdv_serialport_init(
         MdvSerialPort_t *port,
-        MdvSerialPortDriverInterface_t *driver,
         MdvSerialPortTransferCompletedCallback_t rxCallback,
         MdvSerialPortTransferCompletedCallback_t txCallback,
         MdvTimerSystem_t *timerSys,
@@ -349,13 +348,12 @@ mdv_serialport_init(
         void *userData
 )
 {
-        if(!port||!driver){
+        if(!port){
                 return MDV_SERIALPORT_ERROR_INVALID_POINTER;
         }
-        if(!driver->init){
+        if(!port->drv.init){
                 return MDV_SERIALPORT_ERROR_NO_DRIVER_INTERFACE;
         }
-        port->drv=driver;
         // Initialize the rx descriptor.
         memset(&port->rxd,0,sizeof(MdvSerialPortTransfer_t));
         port->rxd.tsys=timerSys;
@@ -373,7 +371,7 @@ mdv_serialport_init(
         // Set initialization status.
         port->init=true;
         // Initialize the driver.
-        return port->drv->funcInit();        
+        return port->drv.funcInit();        
 }
 
 MdvResult_t
@@ -413,7 +411,7 @@ mdv_serialport_open(
         }
         // Configure and open the port.
         port->cfg=*config;
-        result=port->drv->funcOpen(&port->cfg);
+        result=port->drv.funcOpen(&port->cfg);
         if(!MDV_SUCCESSFUL(result)){
                 return result;
         }
@@ -440,7 +438,7 @@ mdv_serialport_close(
         serialport_cancel_transfer(&port->rxd);
         serialport_cancel_transfer(&port->txd);
         // Close the port.
-        result=port->drv->funcClose();
+        result=port->drv.funcClose();
         if(!MDV_SUCCESSFUL(result)){
                 return result;
         }
@@ -471,13 +469,13 @@ mdv_serialport_change_configuration(
         serialport_cancel_transfer(&port->rxd);
         serialport_cancel_transfer(&port->txd);
         // Close the port.
-        result=port->drv->funcClose();
+        result=port->drv.funcClose();
         if(!MDV_SUCCESSFUL(result)){
                 return result;
         }
         // Port re-configuration and re-opening.
         port->cfg=*config;
-        return port->drv->funcOpen(&port->cfg);
+        return port->drv.funcOpen(&port->cfg);
 }
 
 MdvResult_t
@@ -502,7 +500,7 @@ mdv_serialport_read(
         port=(MdvSerialPort_t*)handle;
         // Start transfer.
         return serialport_transfer(
-                port->drv->funcRead,
+                port->drv.funcRead,
                 &port->rxd,
                 length,
                 data,
@@ -533,7 +531,7 @@ mdv_serialport_write(
         port=(MdvSerialPort_t*)handle;
         // Init transfer.
         return serialport_transfer(
-                port->drv->funcWrite,
+                port->drv.funcWrite,
                 &port->txd,
                 length,
                 data,
@@ -576,16 +574,16 @@ mdv_serialport_runtime_process(
         port=(MdvSerialPort_t*)handle;
 
         // Run the driver.
-        if(port->drv->funcRun){
-                result=port->drv->funcRun(&port->rxd,&port->txd);
+        if(port->drv.funcRun){
+                result=port->drv.funcRun(&port->rxd,&port->txd);
                 if(!MDV_SUCCESSFUL(result)){
                         return result;
                 }
         }
 
         // Perform asynchronous transfers.
-        serialport_asynchronous_transfer(port->drv->funcRead,&port->rxd);
-        serialport_asynchronous_transfer(port->drv->funcWrite,&port->txd);
+        serialport_asynchronous_transfer(port->drv.funcRead,&port->rxd);
+        serialport_asynchronous_transfer(port->drv.funcWrite,&port->txd);
         return MDV_RESULT_OK;
 }
 
