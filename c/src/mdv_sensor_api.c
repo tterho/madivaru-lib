@@ -1,7 +1,7 @@
 /***************************************************************************//**
 **
-**  @file       sensor_api.c
-**  @ingroup    sensor_framework
+**  @file       mdv_sensor_api.c
+**  @ingroup    madivaru-lib
 **  @brief      Sensor framework implementation
 **  @copyright  Copyright (C) 2012-2018 Tuomas Terho. All rights reserved.
 **
@@ -40,20 +40,20 @@
 **
 *******************************************************************************/
 
-#include "sensor_api.h"
+#include "mdv_sensor_api.h"
 
 #include <string.h>
 
 /******************************************************************************\
 **
-**  DRIVER HELPER API FUNCTIONS
+**  DRIVER HELPER API FUNCTION DEFINITIONS
 **
 \******************************************************************************/
 
 void
-SensorDrv_SetOutputStatus(
-        Sensor_Output_t *output,
-        Sensor_OutputStatus_t status
+mdv_sensor_set_output_status(
+        MdvSensorOutput_t *output,
+        MdvSensorOutputDataStatus_t status
 )
 {
         if(output->st==status){
@@ -67,12 +67,12 @@ SensorDrv_SetOutputStatus(
 }
 
 void
-SensorDrv_SetOutputData(
-        Sensor_Output_t *output,
-        var_t data
+mdv_sensor_set_output_data(
+        MdvSensorOutput_t *output,
+        MdvVar_t data
 )
 {
-        if(!memcmp(&output->data,&data,sizeof(var_t))){
+        if(!memcmp(&output->data,&data,sizeof(MdvVar_t))){
                 // Data doesn't change.
                 return;
         }
@@ -84,280 +84,280 @@ SensorDrv_SetOutputData(
 
 /******************************************************************************\
 **
-**  SENSOR API FUNCTIONS
+**  SENSOR API FUNCTION DEFINITIONS
 **
 \******************************************************************************/
 
 void
-SensorAPI_InitDriver(
-        SensorDrv_t *driver,
-        SensorDrv_Init_t funcInit,
-        SensorDrv_SetCalibrationParams_t funcSetCalibrationParams,
-        SensorDrv_StartCalibration_t funcStartCalibration,
-        SensorDrv_GetCalibrationState_t funcGetCalibrationState,
-        SensorDrv_GetCalibrationData_t funcGetCalibrationData,
-        SensorDrv_SetCalibrationData_t funcSetCalibrationData,
-        SensorDrv_GetConfiguration_t funcGetConfiguration,
-        SensorDrv_SetConfiguration_t funcSetConfiguration,
-        SensorDrv_SetInput_t funcSetInput,
-        SensorDrv_GetOutput_t funcGetOutput,
-        SensorDrv_On_t funcOn,
-        SensorDrv_On_t funcOff,
-        SensorDrv_Run_t funcRun,
+mdv_sensor_init(
+        MdvSensor_t *sensor,
+        MdvSensorDriverInterface_Init_t funcInit,
+        MdvSensorDriverInterface_SetCalibrationParams_t funcSetCalibrationParams,
+        MdvSensorDriverInterface_StartCalibration_t funcStartCalibration,
+        MdvSensorDriverInterface_GetCalibrationState_t funcGetCalibrationState,
+        MdvSensorDriverInterface_GetCalibrationData_t funcGetCalibrationData,
+        MdvSensorDriverInterface_SetCalibrationData_t funcSetCalibrationData,
+        MdvSensorDriverInterface_GetConfiguration_t funcGetConfiguration,
+        MdvSensorDriverInterface_SetConfiguration_t funcSetConfiguration,
+        MdvSensorDriverInterface_SetInput_t funcSetInput,
+        MdvSensorDriverInterface_GetOutput_t funcGetOutput,
+        MdvSensorDriverInterface_On_t funcOn,
+        MdvSensorDriverInterface_On_t funcOff,
+        MdvSensorDriverInterface_Run_t funcRun,
         uint8_t inputDataItemCount,
         uint8_t outputDataItemCount,
-        var_t *inputDataSet,
-        Sensor_Output_t *outputDataSet,
-        SensorCbk_Input_t inputCallback,
-        SensorCbk_Output_t outputCallback,
-        SensorCbk_CtrlCmd_t ctrlCmdCallback,
-        TimerSys_t *timerSys,
+        MdvVar_t *inputDataSet,
+        MdvSensorOutput_t *outputDataSet,
+        MdvSensorInputCallback_t inputCallback,
+        MdvSensorOutputCallback_t outputCallback,
+        MdvSensorControlCommandCallback_t ctrlCmdCallback,
+        MdvTimerSystem_t *timerSys,
         void *userData
 )
 {
-        // Initialize the driver function interface.
-        driver->Init=funcInit;
-        driver->SetCalibrationParams=funcSetCalibrationParams;
-        driver->StartCalibration=funcStartCalibration;
-        driver->GetCalibrationState=funcGetCalibrationState;
-        driver->GetCalibrationData=funcGetCalibrationData;
-        driver->SetCalibrationData=funcSetCalibrationData;
-        driver->GetConfiguration=funcGetConfiguration;
-        driver->SetConfiguration=funcSetConfiguration;
-        driver->SetInput=funcSetInput;
-        driver->GetOutput=funcGetOutput;
-        driver->On=funcOn;
-        driver->Off=funcOff;
-        driver->Run=funcRun;
-        driver->ds.idc=inputDataItemCount;
-        driver->ds.odc=outputDataItemCount;
-        driver->ds.ids=inputDataSet;
-        driver->ds.ods=outputDataSet;
-        // Initialize driver data.
-        driver->dd.icbk=inputCallback;
-        driver->dd.ocbk=outputCallback;
-        driver->dd.ccbk=ctrlCmdCallback;
-        driver->dd.ctrl=SENSOR_DISABLE;
-        driver->dd.rreq=false;
-        driver->dd.tsys=timerSys;
-        driver->dd.ud=userData;
-        // If the driver supports calibration, the initial calibration state is
+        // Initialize the sensor function interface.
+        sensor->Init=funcInit;
+        sensor->SetCalibrationParams=funcSetCalibrationParams;
+        sensor->StartCalibration=funcStartCalibration;
+        sensor->GetCalibrationState=funcGetCalibrationState;
+        sensor->GetCalibrationData=funcGetCalibrationData;
+        sensor->SetCalibrationData=funcSetCalibrationData;
+        sensor->GetConfiguration=funcGetConfiguration;
+        sensor->SetConfiguration=funcSetConfiguration;
+        sensor->SetInput=funcSetInput;
+        sensor->GetOutput=funcGetOutput;
+        sensor->On=funcOn;
+        sensor->Off=funcOff;
+        sensor->Run=funcRun;
+        sensor->ds.idc=inputDataItemCount;
+        sensor->ds.odc=outputDataItemCount;
+        sensor->ds.ids=inputDataSet;
+        sensor->ds.ods=outputDataSet;
+        // Initialize sensor data.
+        sensor->dd.icbk=inputCallback;
+        sensor->dd.ocbk=outputCallback;
+        sensor->dd.ccbk=ctrlCmdCallback;
+        sensor->dd.ctrl=MDV_SENSOR_DISABLE;
+        sensor->dd.rreq=false;
+        sensor->dd.tsys=timerSys;
+        sensor->dd.ud=userData;
+        // If the sensor supports calibration, the initial calibration state is
         // false. Otherwise it is true (no calibration required).
-        driver->dd.cal=driver->SetCalibrationData?false:true;
-        // Initialize driver hardware.
-        driver->Init(driver->dd.ud);
+        sensor->dd.cal=sensor->SetCalibrationData?false:true;
+        // Initialize sensor hardware.
+        sensor->Init(sensor->dd.ud);
 }
 
-Result_t
-SensorAPI_GetHandle(
-        SensorDrv_t *driver,
-        Handle_t *sensorHndl
+MdvResult_t
+mdv_sensor_get_handle(
+        MdvSensor_t *sensor,
+        MdvHandle_t *handle
 )
 {
-        if(!driver||!sensorHndl){
-                return SENSORAPI_ERROR_INVALID_POINTER;
+        if(!sensor||!handle){
+                return MDV_SENSORAPI_ERROR_INVALID_POINTER;
         }
-        *sensorHndl=(Handle_t)driver;
-        return RESULT_OK;
+        *handle=(MdvHandle_t)sensor;
+        return MDV_RESULT_OK;
 }
 
-Result_t
-SensorAPI_SetCalibrationParams(
-        Handle_t sensorHndl,
+MdvResult_t
+mdv_sensor_set_calibration_parameters(
+        MdvHandle_t handle,
         void *calibrationParams
 )
 {
-        SensorDrv_t *drv;
+        MdvSensor_t *drv;
 
-        if(!sensorHndl){
-                return SENSORAPI_ERROR_INVALID_PARAMETER;
+        if(!handle){
+                return MDV_SENSORAPI_ERROR_INVALID_PARAMETER;
         }
         if(!calibrationParams){
-                return SENSORAPI_ERROR_INVALID_POINTER;
+                return MDV_SENSORAPI_ERROR_INVALID_POINTER;
         }
-        drv=(SensorDrv_t*)sensorHndl;
+        drv=(MdvSensor_t*)handle;
         if(!drv->SetCalibrationParams){
-                return SENSORAPI_ERROR_NOT_IMPLEMENTED;
+                return MDV_SENSORAPI_ERROR_NOT_IMPLEMENTED;
         }
         drv->SetCalibrationParams(calibrationParams,drv->dd.ud);
-        return RESULT_OK;
+        return MDV_RESULT_OK;
 }
 
-Result_t
-SensorAPI_StartCalibration(
-        Handle_t sensorHndl
+MdvResult_t
+mdv_sensor_start_calibration(
+        MdvHandle_t handle
 )
 {
-        SensorDrv_t *drv;
+        MdvSensor_t *drv;
 
-        if(!sensorHndl){
-                return SENSORAPI_ERROR_INVALID_PARAMETER;
+        if(!handle){
+                return MDV_SENSORAPI_ERROR_INVALID_PARAMETER;
         }
-        drv=(SensorDrv_t*)sensorHndl;
+        drv=(MdvSensor_t*)handle;
         if(!drv->StartCalibration){
-                return SENSORAPI_ERROR_NOT_IMPLEMENTED;
+                return MDV_SENSORAPI_ERROR_NOT_IMPLEMENTED;
         }
         drv->StartCalibration(drv->dd.ud);
-        return RESULT_OK;
+        return MDV_RESULT_OK;
 }
 
-Result_t
-SensorAPI_GetCalibrationState(
-        Handle_t sensorHndl,
+MdvResult_t
+mdv_sensor_get_calibration_state(
+        MdvHandle_t handle,
         void *calibrationState
 )
 {
-        SensorDrv_t *drv;
+        MdvSensor_t *drv;
 
-        if(!sensorHndl){
-                return SENSORAPI_ERROR_INVALID_PARAMETER;
+        if(!handle){
+                return MDV_SENSORAPI_ERROR_INVALID_PARAMETER;
         }
         if(!calibrationState){
-                return SENSORAPI_ERROR_INVALID_POINTER;
+                return MDV_SENSORAPI_ERROR_INVALID_POINTER;
         }
-        drv=(SensorDrv_t*)sensorHndl;
+        drv=(MdvSensor_t*)handle;
         if(!drv->GetCalibrationState){
-                return SENSORAPI_ERROR_NOT_IMPLEMENTED;
+                return MDV_SENSORAPI_ERROR_NOT_IMPLEMENTED;
         }
         return drv->GetCalibrationState(calibrationState,drv->dd.ud);
 }
 
-Result_t
-SensorAPI_GetCalibrationData(
-        Handle_t sensorHndl,
+MdvResult_t
+mdv_sensor_get_calibration_data(
+        MdvHandle_t handle,
         void *calibrationData
 )
 {
-        SensorDrv_t *drv;
+        MdvSensor_t *drv;
 
-        if(!sensorHndl){
-                return SENSORAPI_ERROR_INVALID_PARAMETER;
+        if(!handle){
+                return MDV_SENSORAPI_ERROR_INVALID_PARAMETER;
         }
         if(!calibrationData){
-                return SENSORAPI_ERROR_INVALID_POINTER;
+                return MDV_SENSORAPI_ERROR_INVALID_POINTER;
         }
-        drv=(SensorDrv_t*)sensorHndl;
+        drv=(MdvSensor_t*)handle;
         if(!drv->GetCalibrationData){
-                return SENSORAPI_ERROR_NOT_IMPLEMENTED;
+                return MDV_SENSORAPI_ERROR_NOT_IMPLEMENTED;
         }
         drv->GetCalibrationData(calibrationData,drv->dd.ud);
-        return RESULT_OK;
+        return MDV_RESULT_OK;
 }
 
-Result_t
-SensorAPI_SetCalibrationData(
-        Handle_t sensorHndl,
+MdvResult_t
+mdv_sensor_set_calibration_data(
+        MdvHandle_t handle,
         void *calibrationData
 )
 {
-        SensorDrv_t *drv;
+        MdvSensor_t *drv;
 
-        if(!sensorHndl){
-                return SENSORAPI_ERROR_INVALID_PARAMETER;
+        if(!handle){
+                return MDV_SENSORAPI_ERROR_INVALID_PARAMETER;
         }
         if(!calibrationData){
-                return SENSORAPI_ERROR_INVALID_POINTER;
+                return MDV_SENSORAPI_ERROR_INVALID_POINTER;
         }
-        drv=(SensorDrv_t*)sensorHndl;
+        drv=(MdvSensor_t*)handle;
         if(!drv->SetCalibrationData){
-                return SENSORAPI_ERROR_NOT_IMPLEMENTED;
+                return MDV_SENSORAPI_ERROR_NOT_IMPLEMENTED;
         }
         drv->SetCalibrationData(calibrationData,drv->dd.ud);
         drv->dd.cal=true;
-        return RESULT_OK;
+        return MDV_RESULT_OK;
 }
 
 bool
-SensorAPI_IsCalibrated(
-        Handle_t sensorHndl
+mdv_sensor_is_calibrated(
+        MdvHandle_t handle
 )
 {
-        SensorDrv_t *drv;
+        MdvSensor_t *drv;
 
-        if(!sensorHndl){
+        if(!handle){
                 return false;
         }
-        drv=(SensorDrv_t*)sensorHndl;
+        drv=(MdvSensor_t*)handle;
         return drv->dd.cal;
 }
 
-Result_t
-SensorAPI_GetConfiguration(
-        Handle_t sensorHndl,
+MdvResult_t
+mdv_sensor_get_configuration(
+        MdvHandle_t handle,
         void *configuration
 )
 {
-        SensorDrv_t *drv;
+        MdvSensor_t *drv;
 
-        if(!sensorHndl){
-                return SENSORAPI_ERROR_INVALID_PARAMETER;
+        if(!handle){
+                return MDV_SENSORAPI_ERROR_INVALID_PARAMETER;
         }
         if(!configuration){
-                return SENSORAPI_ERROR_INVALID_POINTER;
+                return MDV_SENSORAPI_ERROR_INVALID_POINTER;
         }
-        drv=(SensorDrv_t*)sensorHndl;
+        drv=(MdvSensor_t*)handle;
         if(!drv->GetConfiguration){
-                return SENSORAPI_ERROR_NOT_IMPLEMENTED;
+                return MDV_SENSORAPI_ERROR_NOT_IMPLEMENTED;
         }
         drv->GetConfiguration(configuration,drv->dd.ud);
-        return RESULT_OK;
+        return MDV_RESULT_OK;
 }
 
-Result_t
-SensorAPI_SetConfiguration(
-        Handle_t sensorHndl,
+MdvResult_t
+mdv_sensor_set_configuration(
+        MdvHandle_t handle,
         void *configuration
 )
 {
-        SensorDrv_t *drv;
+        MdvSensor_t *drv;
 
-        if(!sensorHndl){
-                return SENSORAPI_ERROR_INVALID_PARAMETER;
+        if(!handle){
+                return MDV_SENSORAPI_ERROR_INVALID_PARAMETER;
         }
         if(!configuration){
-                return SENSORAPI_ERROR_INVALID_POINTER;
+                return MDV_SENSORAPI_ERROR_INVALID_POINTER;
         }
-        drv=(SensorDrv_t*)sensorHndl;
+        drv=(MdvSensor_t*)handle;
         if(!drv->SetConfiguration){
-                return SENSORAPI_ERROR_NOT_IMPLEMENTED;
+                return MDV_SENSORAPI_ERROR_NOT_IMPLEMENTED;
         }
         drv->dd.rreq=drv->SetConfiguration(configuration,drv->dd.ud);
-        return RESULT_OK;
+        return MDV_RESULT_OK;
 }
 
 void
-SensorAPI_Control(
-        Handle_t sensorHndl,
-        Sensor_Control_t control
+mdv_sensor_control(
+        MdvHandle_t handle,
+        MdvSensorControl_t control
 )
 {
-        SensorDrv_t *drv;
+        MdvSensor_t *drv;
         uint8_t odi;
-        var_t od={0};
+        MdvVar_t od={0};
 
-        if(!sensorHndl){
+        if(!handle){
                 return;
         }
-        drv=(SensorDrv_t*)sensorHndl;
+        drv=(MdvSensor_t*)handle;
         if(drv->dd.ctrl==control){
                 return;
         }
         drv->dd.ctrl=control;
         switch(control){
         default:
-        case SENSOR_DISABLE:
+        case MDV_SENSOR_DISABLE:
                 // Reset all sensor data in the user application.
                 for(odi=0;odi<drv->ds.odc;odi++){
                         drv->dd.ocbk(odi,od);
                 }
                 break;
-        case SENSOR_ENABLE:
+        case MDV_SENSOR_ENABLE:
                 drv->dd.rreq=true;
                 if(drv->On){
                         drv->On(drv->dd.ud);
                 }
                 break;
-        case SENSOR_HALT:
+        case MDV_SENSOR_HALT:
                 if(drv->Off){
                         drv->Off(drv->dd.ud);
                 }
@@ -369,42 +369,42 @@ SensorAPI_Control(
         }
 }
 
-Sensor_Control_t
-SensorAPI_Status(
-        Handle_t sensorHndl
+MdvSensorControl_t
+mdv_sensor_status(
+        MdvHandle_t handle
 )
 {
-        SensorDrv_t *drv;
+        MdvSensor_t *drv;
 
-        if(!sensorHndl){
-                return SENSOR_HALT;
+        if(!handle){
+                return MDV_SENSOR_HALT;
         }
-        drv=(SensorDrv_t*)sensorHndl;
+        drv=(MdvSensor_t*)handle;
         return drv->dd.ctrl;
 }
 
 void
-SensorAPI_Run(
-        Handle_t sensorHndl
+mdv_sensor_run(
+        MdvHandle_t handle
 )
 {
-        SensorDrv_t *drv;
-        var_t id;
+        MdvSensor_t *drv;
+        MdvVar_t id;
         uint8_t idi;
-        Sensor_Output_t *od;
+        MdvSensorOutput_t *od;
         uint8_t odi;
         uint32_t tl;
 
-        if(!sensorHndl){
+        if(!handle){
                 return;
         }
-        drv=(SensorDrv_t*)sensorHndl;
+        drv=(MdvSensor_t*)handle;
         if(!drv->dd.icbk||!drv->dd.ocbk){
                 // Driver hasn't been initialized correctly.
                 return;
         }
         // If the sensor is halted, do nothing.
-        if(drv->dd.ctrl==SENSOR_HALT){
+        if(drv->dd.ctrl==MDV_SENSOR_HALT){
                 return;
         }
         // Go through the input data set and request data for each item
@@ -431,10 +431,10 @@ SensorAPI_Run(
                 if(od->rc){
                         // Output refresh cycle is in use.
                         // Check the cycle timer.
-                        TimerAPI_GetTimeLapse(
+                        mdv_timer_get_time(
                             drv->dd.tsys,
                             od->tim,
-                            TIMER_TU_MS,
+                            MDV_TIME_UNIT_MS,
                             &tl
                         );
                         if(tl<od->rc){
@@ -443,10 +443,10 @@ SensorAPI_Run(
                         }
                         // Cycle timer timeout occurred.
                         // Restart the timer.
-                        TimerAPI_StartTimer(drv->dd.tsys,&od->tim);
+                        mdv_timer_start(drv->dd.tsys,&od->tim);
                 }
                 // Check sensor data status.
-                if(od->st!=SENSOR_DATA_OK){
+                if(od->st!=MDV_SENSOR_OUTPUT_DATA_OK){
                         // Data not valid.
                         continue;
                 }
@@ -457,7 +457,7 @@ SensorAPI_Run(
                 }
                 // Reset the data-changed flag.
                 od->ci=false;
-                if(drv->dd.ctrl==SENSOR_ENABLE){
+                if(drv->dd.ctrl==MDV_SENSOR_ENABLE){
                         // Invoke the output data event callback.
                         drv->dd.ocbk(odi,od->data);
                 }

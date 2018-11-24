@@ -1,7 +1,7 @@
 /***************************************************************************//**
 **
-**  @file       crc16.h
-**  @ingroup    utils
+**  @file       mdv_crc16.c
+**  @ingroup    madivaru-lib
 **  @brief      CRC-16-IBM checksum calculator
 **  @copyright  Copyright (C) 2012-2018 Tuomas Terho. All rights reserved.
 **
@@ -40,58 +40,63 @@
 **
 \******************************************************************************/
 
-#ifndef crc16_H
-#define crc16_H
-
-#include "types.h"
+#include "mdv_crc16.h"
 
 /******************************************************************************\
 **
-**  PUBLIC FUNCTION DEFINITIONS
+**  CONSTANT DEFINITIONS
 **
 \******************************************************************************/
 
 /*-------------------------------------------------------------------------*//**
-**  @brief Calculates a CRC-16 checksum for the input data.
+**  @brief Polynomial representation for CRC-16-IBM (reversed calculation). 
+*/
+#define CRC16_POLYNOMIAL 0xA001
+
+/******************************************************************************\
 **
-**  @param[in] crc CRC from a previous calculation. Set to zero for initial 
-**      calculation.
-**  @param[in] size Data size in bytes.
-**  @param[in] data Pointer to a buffer containing input data.
+**  API FUNCTION DEFINITIONS
 **
-**  @return CRC-16 checksum.
-**  @return On error returns 0xffff.
-**  
-**  This function can be used for both single and continued CRC calculation. 
-**  In the initial calculation the crc parameter must be zero. For continued 
-**  calculation the crc value is the result of the previous calculation.
+\******************************************************************************/
+
+/*------------------------------------------------------------------------------
+**  Calculates a CRC-16 checksum for the input data. 
 */
 uint16_t
-CRC16(
+mdv_crc16(
         uint16_t crc,
         uint32_t size,
         const uint8_t *data
-);
+)
+{
+        // Calculate CRC for each byte.
+        while(size--){
+                crc=mdv_crc16_byte(crc,*(data++));
+        }
+        return crc;
+}
 
-/*-------------------------------------------------------------------------*//**
-**  @brief Calculates a CRC-16 checksum for one byte. 
-**  
-**  @param[in] crc CRC from a previous calculation. Set to zero for 
-**      initial calculation.
-**  @param[in] data Input data byte.
-**
-**  @return CRC-16 checksum.
-**
-**  This function can be used for both single and continued CRC calculation. In 
-**  the initial calculation the crc parameter must be zero. For continued 
-**  calculation the crc value is the result of the previous calculation.
+/*------------------------------------------------------------------------------
+**  Calculates a CRC-16 checksum for one byte. 
 */
 uint16_t 
-CRC16_Byte(
+mdv_crc16_byte(
         uint16_t crc,
         uint8_t data
-);
-
-#endif // crc16_H
+)
+{
+        uint8_t bit;
+        
+        // Generate CRC for data bits.
+        crc=crc^((uint16_t)data&0x00ff);
+        for(bit=0;bit<8;bit++){
+                if(crc&1){
+                        crc=(crc>>1)^CRC16_POLYNOMIAL;
+                }else{
+                        crc=(crc>>1);
+                }
+        }
+        return crc;
+}
 
 /* EOF */

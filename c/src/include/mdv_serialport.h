@@ -1,11 +1,7 @@
 /***************************************************************************//**
 **
-**  @defgroup   serialcomm Serial port communication library
-**
-**  A general purpose serial communication API and driver API library.
-**
-**  @file       serialport.h
-**  @ingroup    serialcomm
+**  @file       mdv_serialport.h
+**  @ingroup    madivaru-lib
 **  @brief      Serial port API.
 **  @copyright  Copyright (C) 2012-2018 Tuomas Terho. All rights reserved.
 **
@@ -47,14 +43,10 @@
 **
 *******************************************************************************/
 
-#ifndef serialport_H
-#define serialport_H
+#ifndef mdv_serialport_H
+#define mdv_serialport_H
 
-#include "timer.h"
-
-#ifdef __cplusplus
-extern "C"{
-#endif // ifdef __cplusplus
+#include "mdv_timer.h"
 
 /******************************************************************************\
 **
@@ -65,65 +57,65 @@ extern "C"{
 /// @brief Invalid pointer.
 ///
 /// At least one of the pointer parameters is invalid (points to null).
-#define SP_ERROR_INVALID_POINTER -1
+#define MDV_SERIALPORT_ERROR_INVALID_POINTER -1
 
 /// @brief Invalid parameter.
 ///
 /// At least one of the parameter values is invalid (out of range).
-#define SP_ERROR_INVALID_PARAMETER -2
+#define MDV_SERIALPORT_ERROR_INVALID_PARAMETER -2
 
 /// @brief Driver interface not specified.
 ///
 /// The driver interface functions are not initialized. Use the @ref 
-/// SP_SetupDriverInterface function to initialize the interface.
-#define SP_ERROR_NO_DRIVER_INTERFACE -3
+/// mdv_serialport_setup_driver_interface function to initialize the interface.
+#define MDV_SERIALPORT_ERROR_NO_DRIVER_INTERFACE -3
 
 /// @brief Resource is in use.
 ///
 /// The serial port handle already points to an opened port and can't be used
 /// to open another port before closing.
-#define SP_ERROR_RESOURCE_IN_USE -4
+#define MDV_SERIALPORT_ERROR_RESOURCE_IN_USE -4
 
 /// @brief Port not initialized.
 ///
 /// The serial port has not been initialized.
-#define SP_ERROR_PORT_NOT_INITIALIZED -5
+#define MDV_SERIALPORT_ERROR_PORT_NOT_INITIALIZED -5
 
 /// @brief Asynchronous transfer cancelled.
 ///
 /// An asynchronous transfer was cancelled by user.
-#define SP_ERROR_ASYNC_TRANSFER_CANCELLED -6
+#define MDV_SERIALPORT_ERROR_ASYNC_TRANSFER_CANCELLED -6
 
 /// @brief Asynchronous transfer in progress.
 ///
 /// Incompleted asynchronous transfers can't be queued.
-#define SP_ERROR_ASYNC_TRANSFER_IN_PROGRESS -7
+#define MDV_SERIALPORT_ERROR_ASYNC_TRANSFER_IN_PROGRESS -7
 
 /// @brief Rx buffer is empty.
 ///
 /// The receiver buffer is empty.
-#define SP_ERROR_RX_BUFFER_EMPTY -8
+#define MDV_SERIALPORT_ERROR_RX_BUFFER_EMPTY -8
 
 /// @brief Tx buffer is full.
 ///
 /// The transmission buffer is full.
-#define SP_ERROR_TX_BUFFER_FULL -9
+#define MDV_SERIALPORT_ERROR_TX_BUFFER_FULL -9
 
 /// @brief Error in driver.
 ///
 /// The driver has not been initialized correctly, e.g. the TimerSys pointer 
 /// points to null.
-#define SP_ERROR_DRIVER_INTERNAL_ERROR -10
+#define MDV_SERIALPORT_ERROR_DRIVER_INTERNAL_ERROR -10
 
 /// @brief Timeout.
 ///
 /// The operation has been timed out.
-#define SP_ERROR_TIMEOUT -11
+#define MDV_SERIALPORT_ERROR_TIMEOUT -11
 
 /// @brief Invalid configuration.
 ///
 /// One or more of the configuration values are not supported by the driver.
-#define SP_ERROR_INVALID_CONFIGURATION -12
+#define MDV_SERIALPORT_ERROR_INVALID_CONFIGURATION -12
 
 /******************************************************************************\
 **
@@ -141,28 +133,28 @@ extern "C"{
 **  Default: 9.6 kbps
 */
 typedef enum
-SP_BaudRate_t{
+MdvSerialPortBaudRate_t{
         /// @brief 9.6 kilobits per second
-        SP_BR_9600=9600,
+        MDV_SERIALPORT_BAUDRATE_9600=9600,
         /// @brief 14.4 kilobits per second
-        SP_BR_14400=14400,
+        MDV_SERIALPORT_BAUDRATE_14400=14400,
         /// @brief 19.2 kilobits per second
-        SP_BR_19200=19200,
+        MDV_SERIALPORT_BAUDRATE_19200=19200,
         /// @brief 38.4 kilobits per second
-        SP_BR_38400=38400,
+        MDV_SERIALPORT_BAUDRATE_38400=38400,
         /// @brief 57.6 kilobits per second
-        SP_BR_57600=57600,
+        MDV_SERIALPORT_BAUDRATE_57600=57600,
         /// @brief 76.8 kilobits per second
-        SP_BR_76800=76800,
+        MDV_SERIALPORT_BAUDRATE_76800=76800,
         /// @brief 115.2 kilobits per second
-        SP_BR_115200=115200,
+        MDV_SERIALPORT_BAUDRATE_115200=115200,
         /// @brief 230.4 kilobits per second
-        SP_BR_230400=230400,
+        MDV_SERIALPORT_BAUDRATE_230400=230400,
         /// @brief 460.8 kilobits per second
-        SP_BR_460800=460800,
+        MDV_SERIALPORT_BAUDRATE_460800=460800,
         /// @brief 921.6 kilobits per second
-        SP_BR_921600=921600
-} SP_BaudRate_t;
+        MDV_SERIALPORT_BAUDRATE_921600=921600
+} MdvSerialPortBaudRate_t;
 
 /*-------------------------------------------------------------------------*//**
 **  @brief Data bits per character
@@ -174,18 +166,18 @@ SP_BaudRate_t{
 **  Default: 8 bits
 */
 typedef enum
-SP_DataBits_t{
+MdvSerialPortDataBits_t{
         /// @brief 5 data bits per character
-        SP_DB_5=5,
+        MDV_SERIALPORT_DATABITS_5=5,
         /// @brief 6 data bits per character
-        SP_DB_6,
+        MDV_SERIALPORT_DATABITS_6,
         /// @brief 7 data bits per character
-        SP_DB_7,
+        MDV_SERIALPORT_DATABITS_7,
         /// @brief 8 data bits per character
-        SP_DB_8,
+        MDV_SERIALPORT_DATABITS_8,
         /// @brief 9 data bits per character
-        SP_DB_9
-} SP_DataBits_t;
+        MDV_SERIALPORT_DATABITS_9
+} MdvSerialPortDataBits_t;
 
 /*-------------------------------------------------------------------------*//**
 **  @brief Parity on/off and polarity control values
@@ -197,18 +189,18 @@ SP_DataBits_t{
 **  Default: No parity
 */
 typedef enum
-SP_Parity_t{
+MdvSerialPortParity_t{
         /// No parity.
-        SP_PA_NONE,
+        MDV_SERIALPORT_PARITY_NONE,
         /// Even parity.
-        SP_PA_EVEN,
+        MDV_SERIALPORT_PARITY_EVEN,
         /// Odd parity.
-        SP_PA_ODD,
+        MDV_SERIALPORT_PARITY_ODD,
         /// Parity value is permanent '1'.
-        SP_PA_STICK_1,
+        MDV_SERIALPORT_PARITY_STICK_1,
         /// Parity value is permanent '0'.
-        SP_PA_STICK_0
-} SP_Parity_t;
+        MDV_SERIALPORT_PARITY_STICK_0
+} MdvSerialPortParity_t;
 
 /*-------------------------------------------------------------------------*//**
 **  @brief Stop bit control values
@@ -218,12 +210,12 @@ SP_Parity_t{
 **  Default: One stop bit
 */
 typedef enum
-SP_StopBits_t{
+MdvSerialPortStopBits_t{
         /// One stop bit.
-        SP_SB_ONE=1,
+        MDV_SERIALPORT_STOPBITS_ONE=1,
         /// Two stop bits.
-        SP_SB_TWO
-} SP_StopBits_t;
+        MDV_SERIALPORT_STOPBITS_TWO
+} MdvSerialPortStopBits_t;
 
 /*-------------------------------------------------------------------------*//**
 **  @brief Flow control
@@ -234,14 +226,14 @@ SP_StopBits_t{
 **  Default: No control
 */
 typedef enum
-SP_FlowControl_t{
+MdvSerialPortFlowControl_t{
         /// No flow control.
-        SP_FC_NONE,
+        MDV_SERIALPORT_FLOWCONTROL_NONE,
         /// xOn/xOff flow control.
-        SP_FC_XONXOFF,
+        MDV_SERIALPORT_FLOWCONTROL_XONXOFF,
         /// Hardware RTS/CTS flow control.
-        SP_FC_HARDWARE
-} SP_FlowControl_t;
+        MDV_SERIALPORT_FLOWCONTROL_HARDWARE
+} MdvSerialPortFlowControl_t;
 
 /*-------------------------------------------------------------------------*//**
 **  @brief Serial port configuration structure
@@ -249,18 +241,18 @@ SP_FlowControl_t{
 **  This structure holds all the serial port information used in this interface.
 */
 typedef struct
-SP_Config_t{
+MdvSerialPortConfig_t{
         /// Baud rate.
-        SP_BaudRate_t BaudRate;
+        MdvSerialPortBaudRate_t baudRate;
         /// Data bits.
-        SP_DataBits_t DataBits;
+        MdvSerialPortDataBits_t dataBits;
         /// Parity.
-        SP_Parity_t Parity;
+        MdvSerialPortParity_t parity;
         /// Stop bits.
-        SP_StopBits_t StopBits;
+        MdvSerialPortStopBits_t stopBits;
         /// Flow control.
-        SP_FlowControl_t FlowControl;
-} SP_Config_t;
+        MdvSerialPortFlowControl_t flowControl;
+} MdvSerialPortConfig_t;
 
 /*-------------------------------------------------------------------------*//**
 **  @brief Transfer completion callback.
@@ -273,10 +265,10 @@ SP_Config_t{
 **  transfer.
 */
 typedef void
-(*SP_TransferCompletedCbk_t)(
-        Result_t result,
+(*MdvSerialPortTransferCompletedCallback_t)(
+        MdvResult_t result,
         void *userData
-);
+        );
 
 /*-------------------------------------------------------------------------*//**
 **  @brief Asynchronous transfer descriptor.
@@ -285,7 +277,7 @@ typedef void
 **  operation.
 */
 typedef struct
-SP_Transfer_t{
+MdvSerialPortTransfer_t{
         struct{
                 /// Transfer ongoing flag.
                 uint8_t t_on:1;
@@ -326,32 +318,32 @@ SP_Transfer_t{
         ///
         /// Timeouts are fully controlled by the library. Do not use them in the
         /// driver.
-        Timer_t tmr;
+        MdvTimer_t tmr;
         /// @brief Timer system to use.
         ///
         /// Timeouts are fully controlled by the library. Do not use them in the
         /// driver.
-        TimerSys_t *tsys;
+        MdvTimerSystem_t *tsys;
         /// @brief Time units.
         ///
         /// Timeouts are fully controlled by the library. Do not use them in the
         /// driver.
-        Timer_TimeUnit_t tu;
+        MdvTimeUnit_t tu;
         /// @brief Transfer completed callback.
         ///
         /// Callbacks are fully controlled by the library. Do not use them in
         /// the driver.
-        SP_TransferCompletedCbk_t cbk;
+        MdvSerialPortTransferCompletedCallback_t cbk;
         /// @brief A pointer to user specified data for the callback.
         ///
         /// Callbacks are fully controlled by the library. Do not use them in
         /// the driver.
         void *ud;
-} SP_Transfer_t;
+} MdvSerialPortTransfer_t;
 
 /******************************************************************************\
 **
-**  DRIVER API FUNCTIONS
+**  DRIVER INTERFACE FUNCTION TYPES
 **
 \******************************************************************************/
 
@@ -361,17 +353,17 @@ SP_Transfer_t{
 **  @return The result of the initialization.
 */
 typedef
-Result_t
-(*SPDrv_Func_Init_t)(
+MdvResult_t
+(*MdvSerialPortDriverInterface_Init_t)(
         void
-);
+        );
 
 /*-------------------------------------------------------------------------*//**
 **  @brief Opens the serial port driver.
 **
 **  @param[in] cfg Port configuration.
 **
-**  @retval RESULT_OK Successful
+**  @retval MDV_RESULT_OK Successful
 **  @return On error returns a negative error value specified by the driver
 **      implementation.
 **
@@ -379,40 +371,40 @@ Result_t
 **  transmitter and interrupts if necessary and clears the RX and TX buffers.
 */
 typedef
-Result_t
-(*SPDrv_Func_Open_t)(
-        SP_Config_t *cfg
-);
+MdvResult_t
+(*MdvSerialPortDriverInterface_Open_t)(
+        MdvSerialPortConfig_t *cfg
+        );
 
 /*-------------------------------------------------------------------------*//**
 **  @brief Closes the serial port.
 **
-**  @retval RESULT_OK Successful
+**  @retval MDV_RESULT_OK Successful
 **  @return On error returns a negative error value specified by the driver
 **      implementation.
 **
 **  Disables receiver, transmitter and interrupts if necessary.
 */
 typedef
-Result_t
-(*SPDrv_Func_Close_t)(
+MdvResult_t
+(*MdvSerialPortDriverInterface_Close_t)(
         void
-);
+        );
 
 /*-------------------------------------------------------------------------*//**
 **  @brief Transfers data to/from the serial port.
 **
 **  @param[in] tfer A pointer to a transfer descriptor.
 **
-**  @retval RESULT_OK Successful.
+**  @retval MDV_RESULT_OK Successful.
 **  @return On error returns a negative error value specified by the driver
 **      implementation.
 */
 typedef
-Result_t
-(*SPDrv_Func_Transfer_t)(
-        SP_Transfer_t *tfer
-);
+MdvResult_t
+(*MdvSerialPortDriverInterface_Transfer_t)(
+        MdvSerialPortTransfer_t *tfer
+        );
 
 /*-------------------------------------------------------------------------*//**
 **  @brief Runs the driver.
@@ -420,16 +412,16 @@ Result_t
 **  @param[in] rxd A pointer to a reception descriptor.
 **  @param[in] txd A pointer to a transmission descriptor.
 **
-**  @retval RESULT_OK Successful.
+**  @retval MDV_RESULT_OK Successful.
 **  @return On error returns a negative error value specified by the driver
 **      implementation.
 */
 typedef
-Result_t
-(*SPDrv_Func_RunDriver_t)(
-        SP_Transfer_t *rxd,
-        SP_Transfer_t *txd
-);
+MdvResult_t
+(*MdvSerialPortDriverInterface_Run_t)(
+        MdvSerialPortTransfer_t *rxd,
+        MdvSerialPortTransfer_t *txd
+        );
 
 /******************************************************************************\
 **
@@ -443,78 +435,101 @@ Result_t
 **  This structure is a common interface for serial port drivers.
 */
 typedef struct
-SP_COMPort_t{
+MdvSerialPortDriverInterface_t{
         /// Initializes the driver.
-        SPDrv_Func_Init_t drvfuncInit;
+        MdvSerialPortDriverInterface_Init_t funcInit;
         /// Opens the serial port.
-        SPDrv_Func_Open_t drvfuncOpen;
+        MdvSerialPortDriverInterface_Open_t funcOpen;
         /// Closes the serial port.
-        SPDrv_Func_Close_t drvfuncClose;
+        MdvSerialPortDriverInterface_Close_t funcClose;
         /// Reads data from the serial port.
-        SPDrv_Func_Transfer_t drvfuncRead;
+        MdvSerialPortDriverInterface_Transfer_t funcRead;
         /// Writes data to the serial port.
-        SPDrv_Func_Transfer_t drvfuncWrite;
+        MdvSerialPortDriverInterface_Transfer_t funcWrite;
         /// Runs the driver.
-        SPDrv_Func_RunDriver_t drvfuncRunDriver;
-        /// Port initialization status.
+        MdvSerialPortDriverInterface_Run_t funcRun;
+        /// Interface initialization status.
         bool init;
-        /// Serial port configuration data.
-        SP_Config_t cfg;
-        /// Reception descriptor.
-        SP_Transfer_t rxd;
-        /// Transmission descriptor.
-        SP_Transfer_t txd;
-} SP_COMPort_t;
+} MdvSerialPortDriverInterface_t;
+
+#ifdef __cplusplus
+extern "C"{
+#endif // ifdef __cplusplus
 
 /******************************************************************************\
 **
-**  PUBLIC DATA DEFINITIONS
+**  SERIAL PORT TYPE DEFINITION
+**
+\******************************************************************************/
+
+/*-------------------------------------------------------------------------*//**
+**  @brief Serial port
+*/
+typedef struct
+MdvSerialPort_t{
+        /// Driver interface.
+        MdvSerialPortDriverInterface_t *drv;
+        /// Port initialization status.
+        bool init;
+        /// Serial port configuration data.
+        MdvSerialPortConfig_t cfg;
+        /// Reception descriptor.
+        MdvSerialPortTransfer_t rxd;
+        /// Transmission descriptor.
+        MdvSerialPortTransfer_t txd;
+} MdvSerialPort_t;
+
+/******************************************************************************\
+**
+**  DATA DEFINITIONS
 **
 \******************************************************************************/
 
 /*-------------------------------------------------------------------------*//**
 **  @brief Default port configuration.
 */
-extern const SP_Config_t SP_DefaultConfig;
+extern const MdvSerialPortConfig_t MdvSerialportDefaultConfig;
 
 /******************************************************************************\
 **
-**  PUBLIC FUNCTION DEFINITIONS
+**  API FUNCTION DECLARATIONS
 **
 \******************************************************************************/
 
 /*-------------------------------------------------------------------------*//**
 **  @brief Sets up the driver interface.
 **
-**  @param[out] port Serial port driver to set up.
+**  @param[out] iface Driver interfae to set up.
 **  @param[in] funcInit (Mandatory) A function to initialize the port hardware.
 **  @param[in] funcOpen (Mandatory) A function to open the port.
 **  @param[in] funcClose (Mandatory) A function to close the port.
 **  @param[in] funcRead (Mandatory) A function to read data from the port.
 **  @param[in] funcWrite (Mandatory) A function to write data to the port.
-**  @param[in] funcRunDriver (Optional) A function to support asynchronous 
+**  @param[in] funcRun (Optional) A function to support asynchronous
 **      data transfer processing.
 **
-**  @retval RESULT_OK Successful.
-**  @retval SP_ERROR_INVALID_POINTER The port parameter points to null.
-**  @retval SP_ERROR_INVALID_PARAMETER At least one of the mandatory function
-**      pointers is null.
+**  @retval MDV_RESULT_OK Successful.
+**  @retval MDV_SERIALPORT_ERROR_INVALID_POINTER The port parameter points to
+**      null.
+**  @retval MDV_SERIALPORT_ERROR_INVALID_PARAMETER At least one of the mandatory
+**      function pointers is null.
 */
-Result_t
-SP_SetupDriverInterface(
-        SP_COMPort_t *port,
-        SPDrv_Func_Init_t funcInit,
-        SPDrv_Func_Open_t funcOpen,
-        SPDrv_Func_Close_t funcClose,
-        SPDrv_Func_Transfer_t funcRead,
-        SPDrv_Func_Transfer_t funcWrite,
-        SPDrv_Func_RunDriver_t funcRunDriver
+MdvResult_t
+mdv_serialport_setup_driver_interface(
+        MdvSerialPortDriverInterface_t *iface,
+        MdvSerialPortDriverInterface_Init_t funcInit,
+        MdvSerialPortDriverInterface_Open_t funcOpen,
+        MdvSerialPortDriverInterface_Close_t funcClose,
+        MdvSerialPortDriverInterface_Transfer_t funcRead,
+        MdvSerialPortDriverInterface_Transfer_t funcWrite,
+        MdvSerialPortDriverInterface_Run_t funcRun
 );
 
 /*-------------------------------------------------------------------------*//**
 **  @brief Initializes a serial port driver.
 **
 **  @param[out] port Serial port driver to initialize.
+**  @param[in] driver Driver to be associated with the port.
 **  @param[in] rxCompleted RX completed callback for asynchronous read
 **      operations. Set to null for synchronous reads.
 **  @param[in] txCompleted TX completed callback for asynchronous write
@@ -523,7 +538,7 @@ SP_SetupDriverInterface(
 **  @param[in] timeUnit Time units to use.
 **  @param[in] userData A pointer to user specified data.
 **
-**  @retval RESULT_OK Successful.
+**  @retval MDV_RESULT_OK Successful.
 **  @retval SP_ERROR_INVALID_POINTER The port parameter points to null.
 **  @return On a driver error returns a negative error code. See the driver 
 **      implementation for more information.
@@ -531,13 +546,14 @@ SP_SetupDriverInterface(
 **  Initializes the serial port and the hardware by invoking driver's 
 **  initialization method.
 */
-Result_t
-SP_InitPort(
-        SP_COMPort_t *port,
-        SP_TransferCompletedCbk_t rxCompleted,
-        SP_TransferCompletedCbk_t txCompleted,
-        TimerSys_t *timerSys,
-        Timer_TimeUnit_t timeUnit,
+MdvResult_t
+mdv_serialport_init(
+        MdvSerialPort_t *port,
+        MdvSerialPortDriverInterface_t *driver,
+        MdvSerialPortTransferCompletedCallback_t rxCompleted,
+        MdvSerialPortTransferCompletedCallback_t txCompleted,
+        MdvTimerSystem_t *timerSys,
+        MdvTimeUnit_t timeUnit,
         void *userData
 );
 
@@ -548,14 +564,14 @@ SP_InitPort(
 **  @param[out] config Pointer to a configuration structure where the
 **      information will be copied.
 **
-**  @retval RESULT_OK Configuration got successfully.
+**  @retval MDV_RESULT_OK Configuration got successfully.
 **  @return SP_ERROR_INVALID_POINTER The port or config parameter points to
 **      null.
 */
-Result_t
-SP_GetCurrentConfig(
-        SP_COMPort_t *port,
-        SP_Config_t *config
+MdvResult_t
+mdv_serialport_get_current_configuration(
+        MdvSerialPort_t *port,
+        MdvSerialPortConfig_t *config
 );
 
 /*-------------------------------------------------------------------------*//**
@@ -566,7 +582,7 @@ SP_GetCurrentConfig(
 **  @param[out] handle Pointer to a variable where the serial port handle will
 **      be stored.
 **
-**  @retval RESULT_OK Open successful.
+**  @retval MDV_RESULT_OK Open successful.
 **  @retval SP_ERROR_INVALID_POINTER The port, config or handle parameter points
 **      to null.
 **  @return On a driver error returns a negative error code. See the driver
@@ -575,11 +591,11 @@ SP_GetCurrentConfig(
 **  Opens a serial port using the given configuration. Returns a port handle as
 **  an output parameter.
 */
-Result_t
-SP_Open(
-        SP_COMPort_t *port,
-        SP_Config_t *config,
-        Handle_t *handle
+MdvResult_t
+mdv_serialport_open(
+        MdvSerialPort_t *port,
+        MdvSerialPortConfig_t *config,
+        MdvHandle_t *handle
 );
 
 /*-------------------------------------------------------------------------*//**
@@ -587,16 +603,16 @@ SP_Open(
 **
 **  @param[out] handle Pointer to the handle of the port being closed.
 **
-**  @retval RESULT_OK Closed successfully.
+**  @retval MDV_RESULT_OK Closed successfully.
 **  @retval SP_ERROR_INVALID_POINTER The handle parameter points to null.
 **  @return On a driver error returns a negative error code. See the driver
 **      implementation for more information.
 **
 **  Closes a serial port and resets the given port handle.
 */
-Result_t
-SP_Close(
-        Handle_t *handle
+MdvResult_t
+mdv_serialport_close(
+        MdvHandle_t *handle
 );
 
 /*-------------------------------------------------------------------------*//**
@@ -605,18 +621,18 @@ SP_Close(
 **  @param[in] handle Serial port handle.
 **  @param[in] config Pointer to a configuration structure.
 **
-**  @retval RESULT_OK Successful
+**  @retval MDV_RESULT_OK Successful
 **  @retval SP_ERROR_INVALID_POINTER The config parameter points to null.
-**  @retval SP_ERROR_INVALID_PARAMETER The handle is invalid.
+**  @retval MDV_SERIALPORT_ERROR_INVALID_PARAMETER The handle is invalid.
 **  @return On a driver error returns a negative error code. See the driver
 **      implementation for more information.
 **
 **  Closes a serial port and re-opens it with the new configuration values.
 */
-Result_t
-SP_ChangeConfig(
-        Handle_t handle,
-        SP_Config_t *config
+MdvResult_t
+mdv_serialport_change_configuration(
+        MdvHandle_t handle,
+        MdvSerialPortConfig_t *config
 );
 
 /*-------------------------------------------------------------------------*//**
@@ -630,20 +646,20 @@ SP_ChangeConfig(
 **  @param[in] timeout Maximum time in milliseconds between two bytes or an
 **      initial wait timeout.
 **
-**  @retval RESULT_OK Read successful.
+**  @retval MDV_RESULT_OK Read successful.
 **  @retval SP_ERROR_INVALID_POINTER The data or bytesRead parameter points to
 **      null.
-**  @retval SP_ERROR_INVALID_PARAMETER The handle is invalid.
-**  @retval SP_ERROR_TIMEOUT Reception timed out.
+**  @retval MDV_SERIALPORT_ERROR_INVALID_PARAMETER The handle is invalid.
+**  @retval MDV_SERIALPORT_ERROR_TIMEOUT Reception timed out.
 **  @return On a driver error returns a negative error code. See the driver
 **      implementation for more information.
 **
 **  Reads a chunk of data from the serial port. If not enough data received
 **  within the given timeout time, returns an error.
 */
-Result_t
-SP_Read(
-        Handle_t handle,
+MdvResult_t
+mdv_serialport_read(
+        MdvHandle_t handle,
         uint32_t length,
         uint8_t *data,
         uint32_t *bytesRead,
@@ -661,19 +677,19 @@ SP_Read(
 **  @param[in] timeout Maximum time in milliseconds between two bytes or an
 **      initial wait timeout.
 **
-**  @retval RESULT_OK Write successful.
+**  @retval MDV_RESULT_OK Write successful.
 **  @retval SP_ERROR_INVALID_POINTER One or more of the pointer parameters
 **      handle and data points to null.
-**  @retval SP_ERROR_INVALID_PARAMETER The handle is invalid.
-**  @retval SP_ERROR_TIMEOUT Transmission timed out.
+**  @retval MDV_SERIALPORT_ERROR_INVALID_PARAMETER The handle is invalid.
+**  @retval MDV_SERIALPORT_ERROR_TIMEOUT Transmission timed out.
 **  @return On a driver error returns a negative error code. See the driver
 **      implementation for more information.
 **
 **  Writes a chunk of data to a TX buffer.
 */
-Result_t
-SP_Write(
-        Handle_t handle,
+MdvResult_t
+mdv_serialport_write(
+        MdvHandle_t handle,
         uint32_t length,
         uint8_t *data,
         uint32_t *bytesWritten,
@@ -686,18 +702,18 @@ SP_Write(
 **  @param[in] handle Serial port handle.
 **  @param[out] data Pointer to a character variable.
 **
-**  @retval RESULT_OK Character got successfully.
+**  @retval MDV_RESULT_OK Character got successfully.
 **  @retval SP_ERROR_INVALID_POINTER One or more of the pointer parameters
 **      handle and data points to null.
-**  @retval SP_ERROR_INVALID_PARAMETER The handle is invalid.
-**  @retval SP_ERROR_RX_BUFFER_EMPTY The RX buffer is empty.
+**  @retval MDV_SERIALPORT_ERROR_INVALID_PARAMETER The handle is invalid.
+**  @retval MDV_SERIALPORT_ERROR_RX_BUFFER_EMPTY The RX buffer is empty.
 **
 **  Gets a single character from the serial port. If the RX buffer is empty,
 **  returns an error without waiting.
 */
-Result_t
-SP_GetChar(
-        Handle_t handle,
+MdvResult_t
+mdv_serialport_getchar(
+        MdvHandle_t handle,
         uint8_t *data
 );
 
@@ -707,19 +723,19 @@ SP_GetChar(
 **  @param[in] handle Serial port handle.
 **  @param[in] data Character to put.
 **
-**  @retval RESULT_OK Character put successfully.
+**  @retval MDV_RESULT_OK Character put successfully.
 **  @retval SP_ERROR_INVALID_POINTER Pointer parameter handle points to null.
-**  @retval SP_ERROR_INVALID_PARAMETER The handle is invalid.
-**  @retval SP_ERROR_TX_BUFFER_FULL The TX buffer is full.
+**  @retval MDV_SERIALPORT_ERROR_INVALID_PARAMETER The handle is invalid.
+**  @retval MDV_SERIALPORT_ERROR_TX_BUFFER_FULL The TX buffer is full.
 **  @return On a driver error returns a negative error code. See the driver
 **      implementation for more information.
 **
 **  Puts a single character to the TX buffer. If the buffer is full, returns
 **  an error without waiting.
 */
-Result_t
-SP_PutChar(
-        Handle_t handle,
+MdvResult_t
+mdv_serialport_putchar(
+        MdvHandle_t handle,
         uint8_t data
 );
 
@@ -728,18 +744,21 @@ SP_PutChar(
 **
 **  @param[in] handle Serial port handle.
 **
-**  @return RESULT_OK Successful.
-**  @return SP_ERROR_INVALID_PARAMETER The handle is invalid.
+**  @return MDV_RESULT_OK Successful.
+**  @return MDV_SERIALPORT_ERROR_INVALID_PARAMETER The handle is invalid.
+**
+**  This function must be called periodically in order to run asynchronous
+**  transfers. The callback functions are called in this context.
 */
-Result_t
-SP_Run(
-        Handle_t handle
+MdvResult_t
+mdv_serialport_runtime_process(
+        MdvHandle_t handle
 );
 
 #ifdef __cplusplus
 }
 #endif // ifdef __cplusplus
 
-#endif // serialport_H
+#endif // ifndef mdv_serialport_H
 
 /* EOF */

@@ -54,29 +54,40 @@
 /*-------------------------------------------------------------------------*//**
 **  @brief Handle data type.
 */
-typedef void *Handle_t;
+typedef void *MdvHandle_t;
 
 /*-------------------------------------------------------------------------*//**
 **  @brief Identifiers of the generic variable data types.
 */
 typedef enum
-vartype_t{
-        VARTYPE_NONE=0,
+MdvVarType_t{
+        MDV_VARTYPE_NONE=0,
 #ifdef USE_64BIT_VAR_T
-        VARTYPE_F64,    VARTYPE_F64PTR,
-        VARTYPE_U64,    VARTYPE_U64PTR,
-        VARTYPE_S64,    VARTYPE_S64PTR,
+        MDV_VARTYPE_F64,  
+        MDV_VARTYPE_F64PTR,
+        MDV_VARTYPE_U64,  
+        MDV_VARTYPE_U64PTR,
+        MDV_VARTYPE_S64,  
+        MDV_VARTYPE_S64PTR,
 #endif // USE_64BIT_VAR_T
-        VARTYPE_F32,    VARTYPE_F32PTR,
-        VARTYPE_U32,    VARTYPE_U32PTR,
-        VARTYPE_S32,    VARTYPE_S32PTR,
-        VARTYPE_U16,    VARTYPE_U16PTR,
-        VARTYPE_S16,    VARTYPE_S16PTR,
-        VARTYPE_U8,     VARTYPE_U8PTR,
-        VARTYPE_S8,     VARTYPE_S8PTR,
-        VARTYPE_BOOL,   VARTYPE_BOOLPTR,
-        VARTYPE_ENUM
-} vartype_t;
+        MDV_VARTYPE_F32,  
+        MDV_VARTYPE_F32PTR,
+        MDV_VARTYPE_U32,  
+        MDV_VARTYPE_U32PTR,
+        MDV_VARTYPE_S32,  
+        MDV_VARTYPE_S32PTR,
+        MDV_VARTYPE_U16,  
+        MDV_VARTYPE_U16PTR,
+        MDV_VARTYPE_S16,  
+        MDV_VARTYPE_S16PTR,
+        MDV_VARTYPE_U8,   
+        MDV_VARTYPE_U8PTR,
+        MDV_VARTYPE_S8,   
+        MDV_VARTYPE_S8PTR,
+        MDV_VARTYPE_BOOL, 
+        MDV_VARTYPE_BOOLPTR,
+        MDV_VARTYPE_ENUM
+} MdvVarType_t;
 
 /*-------------------------------------------------------------------------*//**
 **  @brief Generic variable data type.
@@ -85,8 +96,8 @@ vartype_t{
 **  in use, define a global macro USE_64BIT_VAR_T in the project options.
 */
 typedef struct 
-var_t{
-        vartype_t type;
+MdvVar_t{
+        MdvVarType_t type;
         uint16_t sz;
         union{
 #ifdef USE_64BIT_VAR_T
@@ -121,16 +132,16 @@ var_t{
                 /// Enumeration.
                 int16_t  Enum;
         };
-} var_t;
+} MdvVar_t;
 
 #ifdef __cplusplus
-class CVariable
+class MdvVariable_c
 {
         public:
 
-        CVariable() {}
-        CVariable(var_t var): Var(var){}
-        var_t Var;
+        MdvVariable_c() {}
+        MdvVariable_c(MdvVar_t var): Var(var){}
+        MdvVar_t Var;
 };
 #endif // ifdef __cplusplus
 
@@ -141,24 +152,20 @@ class CVariable
 **
 **  This macro is used to generate a bit mask by the means of the bit index.
 */
-#define BIT(A) (1<<(A))
+#define MDV_BIT(A) (1<<(A))
 
 /*-------------------------------------------------------------------------*//**
 **  @brief Common result data type for function result handling.
 */
-typedef int16_t Result_t;
+typedef int16_t MdvResult_t;
 
 /*-------------------------------------------------------------------------*//**
 **  @brief A macro to test a result.
 */
-#ifndef SUCCESSFUL
-        #define SUCCESSFUL(RESULT) ((RESULT)>=0)
-#endif // ifndef SUCCESSFUL
+#define MDV_SUCCESSFUL(RESULT) ((RESULT)>=0)
 
-#ifndef RESULT_OK
-        /// Generic definition for a successful result.
-        #define RESULT_OK 0
-#endif // ifndef RESULT_OK
+/// Generic definition for a successful result.
+#define MDV_RESULT_OK 0
 
 /*-------------------------------------------------------------------------*//**
 **  @brief Increases a value and wraps around.
@@ -170,7 +177,7 @@ typedef int16_t Result_t;
 **  The value is increased by one. If it reaches the maximum value, it is
 **  wrapped around to the minimum value.
 */
-#define INC_W(VALUE,MIN,MAX) (((VALUE)==(MAX))?(MIN):((VALUE)+1))
+#define MDV_INC_W(VALUE,MIN,MAX) (((VALUE)==(MAX))?(MIN):((VALUE)+1))
 
 /*-------------------------------------------------------------------------*//**
 **  @brief Decreases a value and wraps around.
@@ -182,7 +189,7 @@ typedef int16_t Result_t;
 **  The value is decreased by one. If it reaches the minimum value, it is
 **  wrapped around to the maximum value.
 */
-#define DEC_W(VALUE,MIN,MAX) (((VALUE)==(MIN))?(MAX):((VALUE)-1))
+#define MDV_DEC_W(VALUE,MIN,MAX) (((VALUE)==(MIN))?(MAX):((VALUE)-1))
 
 /*-------------------------------------------------------------------------*//**
 **  @brief Increases a value and stops at the maximum value.
@@ -192,7 +199,7 @@ typedef int16_t Result_t;
 **
 **  The value is increased by one until it reaches the maximum value.
 */
-#define INC_L(VALUE,MAX) (((VALUE)==(MAX))?(MAX):((VALUE)+1))
+#define MDV_INC_L(VALUE,MAX) (((VALUE)==(MAX))?(MAX):((VALUE)+1))
 
 /*-------------------------------------------------------------------------*//**
 **  @brief Decreases a value and stops at the minimum value.
@@ -202,7 +209,7 @@ typedef int16_t Result_t;
 **
 **  The value is decreased by one until it reaches the minimum value.
 */
-#define DEC_L(VALUE,MIN) (((VALUE)==(MIN))?(MIN):((VALUE)-1))
+#define MDV_DEC_L(VALUE,MIN) (((VALUE)==(MIN))?(MIN):((VALUE)-1))
 
 /*-------------------------------------------------------------------------*//**
 **  @brief Tests the maximum boundary of the value.
@@ -212,7 +219,7 @@ typedef int16_t Result_t;
 **
 **  This macro performs a boolean test for the value and the maximum value.
 */
-#define MAX_L(VALUE,MAX) ((VALUE)<(MAX)?(VALUE):(MAX))
+#define MDV_MAX_L(VALUE,MAX) ((VALUE)<(MAX)?(VALUE):(MAX))
 
 /*-------------------------------------------------------------------------*//**
 **  @brief Tests the minimum boundary of the value.
@@ -222,7 +229,7 @@ typedef int16_t Result_t;
 **
 **  This macro performs a boolean test for the value and the minimum value.
 */
-#define MIN_L(VALUE,MIN) ((VALUE)>(MIN)?(VALUE):(MIN))
+#define MDV_MIN_L(VALUE,MIN) ((VALUE)>(MIN)?(VALUE):(MIN))
 
 /*-------------------------------------------------------------------------*//**
 **  @brief Performs MSB alignment between two different size registers from
@@ -241,7 +248,7 @@ typedef int16_t Result_t;
 **
 **  @attention The SZ_TRG must be always greater than or equal to the SZ_SRC.
 */
-#define ALIGNL(VALUE,SZ_SRC,SZ_TRG) ((VALUE)<<(SZ_TRG-SZ_SRC))
+#define MDV_ALIGNL(VALUE,SZ_SRC,SZ_TRG) ((VALUE)<<(SZ_TRG-SZ_SRC))
 
 /*-------------------------------------------------------------------------*//**
 **  @brief Performs MSB alignment between two different size of registers from
@@ -260,7 +267,7 @@ typedef int16_t Result_t;
 **
 **  @attention The SZ_TRG must be always greater than or equal to the SZ_SRC.
 */
-#define ALIGNLS(VALUE,SZ_SRC,SZ_TRG) ((VALUE)<<=(SZ_TRG-SZ_SRC))
+#define MDV_ALIGNLS(VALUE,SZ_SRC,SZ_TRG) ((VALUE)<<=(SZ_TRG-SZ_SRC))
 
 /*-------------------------------------------------------------------------*//**
 **  @brief Performs LSB alignment between to different size of registers from
@@ -279,7 +286,7 @@ typedef int16_t Result_t;
 **
 **  @attention The SZ_SRC must be always greater than or equal to the SZ_TRG.
 */
-#define ALIGNR(VALUE,SZ_SRC,SZ_TRG) ((VALUE)>>(SZ_SRC-SZ_TRG))
+#define MDV_ALIGNR(VALUE,SZ_SRC,SZ_TRG) ((VALUE)>>(SZ_SRC-SZ_TRG))
 
 /*-------------------------------------------------------------------------*//**
 **  @brief Performs LSB alignment between to different size of registers from
@@ -297,14 +304,14 @@ typedef int16_t Result_t;
 **
 **  @attention The SZ_SRC must be always greater than or equal to the SZ_TRG.
 */
-#define ALIGNRS(VALUE,SZ_SRC,SZ_TRG) ((VALUE)>>=(SZ_SRC-SZ_TRG))
+#define MDV_ALIGNRS(VALUE,SZ_SRC,SZ_TRG) ((VALUE)>>=(SZ_SRC-SZ_TRG))
 
 /*-------------------------------------------------------------------------*//**
 **  @brief Rounds a floating point value to an integer.
 **
 **  @param[in] FVAL A floating point value to round.
 */
-#define FTOI(FVAL) ((uint32_t)((FVAL)+0.5))
+#define MDV_FTOI(FVAL) ((uint32_t)((FVAL)+0.5))
 
 #endif // ifndef types_H
 

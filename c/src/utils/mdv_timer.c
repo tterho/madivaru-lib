@@ -1,7 +1,7 @@
 /***************************************************************************//**
 **
-**  @file       timer.c
-**  @ingroup    utils
+**  @file       mdv_timer.c
+**  @ingroup    madivaru-lib
 **  @brief      A general purpose timer API.
 **  @copyright  Copyright (C) 2012-2018 Tuomas Terho. All rights reserved.
 **
@@ -40,60 +40,70 @@
 **
 \******************************************************************************/
 
-#include "timer.h"
+#include "mdv_timer.h"
 
 /******************************************************************************\
 **
-**  PUBLIC FUNCTION DECLARATIONS
+**  API FUNCTION DEFINITIONS
 **
 \******************************************************************************/
 
-Result_t
-TimerAPI_Init(
-        TimerSys_t *timerSys,
+MdvResult_t
+mdv_timer_system_init(
+        MdvTimerSystem_t *timerSys,
         uint32_t timeBase,
         uint32_t timerInvocationLimit
 )
 {
         if(!timerSys){
-                return TIMER_ERROR_INVALID_POINTER;
+                return MDV_TIMER_ERROR_INVALID_POINTER;
         }  
         timerSys->tck=0;
         timerSys->icnt=0;
         timerSys->tb=timeBase;
         timerSys->ilim=timerInvocationLimit;
-        return RESULT_OK;
+        return MDV_RESULT_OK;
 }
 
-Result_t
-TimerAPI_StartTimer(
-        TimerSys_t *timerSys,
-        Timer_t *timer
+MdvResult_t
+mdv_timer_system_tick(
+        MdvTimerSystem_t *timerSys,
+        uint32_t ticks
+)
+{
+        if(!timerSys){
+                return MDV_TIMER_ERROR_INVALID_POINTER;
+        }
+        timerSys->tck+=ticks;
+        return MDV_RESULT_OK;
+}
+
+MdvResult_t
+mdv_timer_start(
+        MdvTimerSystem_t *timerSys,
+        MdvTimer_t *timer
 )
 {
         if(!timerSys||!timer){
-                return TIMER_ERROR_INVALID_POINTER;
+                return MDV_TIMER_ERROR_INVALID_POINTER;
         }
         *timer=timerSys->tck;
         timerSys->icnt=0;
-        return RESULT_OK;
+        return MDV_RESULT_OK;
 }
 
-/*------------------------------------------------------------------------------
-**  Returns the time lapse from the timer start.
-*/
-Result_t
-TimerAPI_GetTimeLapse(
-        TimerSys_t *timerSys,
-        Timer_t timer,
-        Timer_TimeUnit_t timeUnit,
-        uint32_t *timeLapse
+MdvResult_t
+mdv_timer_get_time(
+        MdvTimerSystem_t *timerSys,
+        MdvTimer_t timer,
+        MdvTimeUnit_t timeUnit,
+        uint32_t *timeElapsed
 )
 {
         uint32_t tl;
     
-        if(!timerSys||!timeLapse){
-                return TIMER_ERROR_INVALID_POINTER;
+        if(!timerSys||!timeElapsed){
+                return MDV_TIMER_ERROR_INVALID_POINTER;
         }
         // If there is no change between the current timer value and the 
         // running tick counter, advance the invokation counter. Otherwise,
@@ -106,7 +116,7 @@ TimerAPI_GetTimeLapse(
         // If the invokation counter has reached the timer invokation limit,
         // the timer is not running properly.
         if(timerSys->icnt>timerSys->ilim){
-                return TIMER_ERROR_TIMER_NOT_RUNNING;
+                return MDV_TIMER_ERROR_TIMER_NOT_RUNNING;
         }
         // Store the running tick counter and compare it to the given timer.
         // Handle a wrap-around of the tick counter. Store the difference to the 
@@ -119,65 +129,46 @@ TimerAPI_GetTimeLapse(
         // time units.
         switch(timeUnit){
         default:
-        case TIMER_TU_TIMERTICK:
-                // The timeLapse value is in correct units. Nothing to do.
+        case MDV_TIME_UNIT_TIMERTICK:
+                // The timeElapsed value is in correct units. Nothing to do.
                 break;
-        case TIMER_TU_US:
+        case MDV_TIME_UNIT_US:
                 tl=(tl*timerSys->tb);
-        case TIMER_TU_MS:
+        case MDV_TIME_UNIT_MS:
                 tl=(tl*timerSys->tb)/1000;
                 break;
-        case TIMER_TU_S:
+        case MDV_TIME_UNIT_S:
                 tl=(tl*timerSys->tb)/1000000;
                 break;
         }
-        *timeLapse=tl;
-        return RESULT_OK;
+        *timeElapsed=tl;
+        return MDV_RESULT_OK;
 }
 
-/*------------------------------------------------------------------------------
-**  Makes a delay in timer ticks.
-*/
-Result_t
-TimerAPI_Delay(
-        TimerSys_t *timerSys,
-        Timer_TimeUnit_t timeUnit,
+MdvResult_t
+mdv_timer_delay(
+        MdvTimerSystem_t *timerSys,
+        MdvTimeUnit_t timeUnit,
         uint32_t delay
 )
 {
-        Timer_t t;
+        MdvTimer_t t;
         uint32_t tl=0;
-        Result_t result;
+        MdvResult_t result;
     
         if(!timerSys){
-                return TIMER_ERROR_INVALID_POINTER;
+                return MDV_TIMER_ERROR_INVALID_POINTER;
         }
         // Start a timer.
-        TimerAPI_StartTimer(timerSys,&t);
+        mdv_timer_start(timerSys,&t);
         // Wait as long as the time lapse is less than the delay.
         while(tl<delay){
-                result=TimerAPI_GetTimeLapse(timerSys,t,timeUnit,&tl);
-                if(!SUCCESSFUL(result)){
+                result=mdv_timer_get_time(timerSys,t,timeUnit,&tl);
+                if(!MDV_SUCCESSFUL(result)){
                         return result;
                 }
         }
-        return RESULT_OK;
-}
-
-/*------------------------------------------------------------------------------
-**  Advances the timer system by the given timer tick value.
-*/
-Result_t
-TimerAPI_TimerTick(
-        TimerSys_t *timerSys,
-        uint32_t ticks
-)
-{
-        if(!timerSys){
-                return TIMER_ERROR_INVALID_POINTER;
-        }
-        timerSys->tck+=ticks;
-        return RESULT_OK;
+        return MDV_RESULT_OK;
 }
 
 /* EOF */

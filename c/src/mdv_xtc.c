@@ -1,7 +1,7 @@
 /***************************************************************************//**
 **
-**  @file       xtc_api.c
-**  @ingroup    utils
+**  @file       mdv_xtc.c
+**  @ingroup    madivaru-lib
 **  @brief      An API for NTC and PTC temperature sensors.
 **  @copyright  Copyright (C) 2012-2018 Tuomas Terho
 **
@@ -38,11 +38,11 @@
 **
 *******************************************************************************/
 
-#include "xtc_api.h"
+#include "mdv_xtc.h"
 
 /******************************************************************************\
 **
-**  LOCAL FUNCTIONS
+**  LOCAL FUNCTION DEFINITIONS
 **
 \******************************************************************************/
 
@@ -56,8 +56,8 @@
 **  @return Temperature in °C.
 */
 static float
-xtcGetTbyR(
-        XTC_t *xtc,
+xtc_get_temperature_by_resistance(
+        MdvXtc_t *xtc,
         uint16_t i,
         float R
 )
@@ -86,8 +86,8 @@ xtcGetTbyR(
 **  @return Temperature in °C.
 */
 static float
-xtcNtcRtoT(
-        XTC_t *ntc,
+xtc_ntc_resistance_to_temperature(
+        MdvXtc_t *ntc,
         float R
 )
 {
@@ -113,7 +113,7 @@ xtcNtcRtoT(
                         break;
                 }
         }
-        return xtcGetTbyR(ntc,i,R);
+        return xtc_get_temperature_by_resistance(ntc,i,R);
 }
 
 /*-------------------------------------------------------------------------*//**
@@ -125,8 +125,8 @@ xtcNtcRtoT(
 **  @return Temperature in °C.
 */
 static float
-xtcPtcRtoT(
-        XTC_t *ptc,
+xtc_ptc_resistance_to_temperature(
+        MdvXtc_t *ptc,
         float R
 )
 {
@@ -152,31 +152,31 @@ xtcPtcRtoT(
                         break;
                 }
         }
-        return xtcGetTbyR(ptc,i,R);
+        return xtc_get_temperature_by_resistance(ptc,i,R);
 }
 
 /******************************************************************************\
 **
-**  API FUNCTIONS
+**  API FUNCTION DEFINITIONS
 **
 \******************************************************************************/
 
 float
-XTC_Convert_R_to_T(
-        XTC_t *xtc,
+mdv_xtc_get_temperature(
+        MdvXtc_t *xtc,
         float R
 )
 {
         switch(xtc->tp){
-        case XTC_TYPE_NTC:return xtcNtcRtoT(xtc,R);
-        case XTC_TYPE_PTC:return xtcPtcRtoT(xtc,R);
+        case MDV_XTC_TYPE_NTC:return xtc_ntc_resistance_to_temperature(xtc,R);
+        case MDV_XTC_TYPE_PTC:return xtc_ptc_resistance_to_temperature(xtc,R);
         default:return 0.0;
         }
 }
 
 float
-XTC_Convert_T_to_R(
-        XTC_t *xtc,
+mdv_xtc_get_resistance(
+        MdvXtc_t *xtc,
         float T
 )
 {

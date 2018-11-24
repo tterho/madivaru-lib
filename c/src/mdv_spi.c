@@ -1,12 +1,9 @@
 /***************************************************************************//**
 **
-**  @file       spi_api.c
-**  @ingroup    serialcomm
+**  @file       mdv_spi.c
+**  @ingroup    madivaru-lib
 **  @brief      SPI communication API.
 **  @copyright  Copyright (C) 2012-2018 Tuomas Terho. All rights reserved.
-**
-**  Common synchronous serial port interface which can be easily ported for 
-**  different platforms without need to change the control interface.
 **
 *******************************************************************************/
 /*
@@ -43,131 +40,170 @@
 **
 *******************************************************************************/
 
-#include "spi_api.h"
+#include "mdv_spi.h"
 
-Result_t
-SPI_Open(
-        SPIDrv_t *driver,
-        SPI_Config_t *config,
-        SPI_TransferCompletedCbk_t callback,
-        void *userData,
-        Handle_t *handle
+/******************************************************************************\
+**
+**  API FUNCTION DEFINITIONS
+**
+\******************************************************************************/
+
+MdvResult_t
+mdv_spi_setup_driver_interface(
+        MdvSpiDriverInterface_t *iface,
+        MdvSpiDriverInterface_Init_t funcInit,
+        MdvSpiDriverInterface_Open_t funcOpen,
+        MdvSpiDriverInterface_Close_t funcClose,
+        MdvSpiDriverInterface_SelectSlave_t funcSelectSlave,
+        MdvSpiDriverInterface_TransferByte_t funcTransferByte,
+        MdvSpiDriverInterface_Transfer_t funcTransfer
 )
 {
-        if(!driver||!config||!handle){
-                return SPI_ERROR_INVALID_POINTER;
+        if(!iface){
+                return MDV_SPI_ERROR_INVALID_POINTER;
+        }
+        if(!funcInit||!funcOpen||!funcClose||!funcSelectSlave||
+                !funcTransferByte||!funcTransfer
+                ){
+                return MDV_SPI_ERROR_INVALID_PARAMETER;
+        }
+        iface->funcInit=funcInit;
+        iface->funcOpen=funcOpen;
+        iface->funcClose=funcClose;
+        iface->funcSelectSlave=funcSelectSlave;
+        iface->funcTransferByte=funcTransferByte;
+        iface->funcTransfer=funcTransfer;
+        iface->init=true;
+        return MDV_RESULT_OK;
+}
+
+MdvResult_t
+mdv_spi_open(
+        MdvSpi_t *spi,
+        MdvSpiDriverInterface_t *drv,
+        MdvSpiConfig_t *config,
+        MdvSpiTransferCompletedCallback_t callback,
+        void *userData,
+        MdvHandle_t *handle
+)
+{
+        if(!spi||!config||!handle){
+                return MDV_SPI_ERROR_INVALID_POINTER;
         }
         if(*handle){
-                return SPI_ERROR_INVALID_PARAMETER;
+                return MDV_SPI_ERROR_INVALID_PARAMETER;
         }
-        // Initialize the driver.
-        if(!SUCCESSFUL(driver->Init(config))){
-                return SPI_ERROR_DRIVER_INITIALIZATION_FAILED;
+
+
+        spi->drv=drv;
+        // Initialize the spi.
+        if(!MDV_SUCCESSFUL(spi->drv->funcInit(config))){
+                return MDV_SPI_ERROR_DRIVER_INITIALIZATION_FAILED;
         }
         // Store the port configuration.
-        driver->cfg=*config;
+        spi->cfg=*config;
         // Set the transfer completion callback and user data.
-        driver->cbk=callback;
-        driver->ud=userData;
+        spi->cbk=callback;
+        spi->ud=userData;
         // Open the port.
-        driver->Open();
-        // Set the handle to point to the driver.
-        *handle=(Handle_t)driver;
-        return RESULT_OK;
+        spi->drv->funcOpen();
+        // Set the handle to point to the spi.
+        *handle=(MdvHandle_t)spi;
+        return MDV_RESULT_OK;
 }
 
-Result_t
-SPI_Close(
-        Handle_t *handle
+MdvResult_t
+mdv_spi_close(
+        MdvHandle_t *handle
 )
 {
-        SPIDrv_t *drv;
+        MdvSpi_t *spi;
         
         if(!handle){
-                return SPI_ERROR_INVALID_POINTER;
+                return MDV_SPI_ERROR_INVALID_POINTER;
         }
         if(!*handle){
-                return SPI_ERROR_INVALID_PARAMETER;
+                return MDV_SPI_ERROR_INVALID_PARAMETER;
         }
         // Get an access to the driver.
-        drv=(SPIDrv_t*)*handle;
+        spi=(MdvSpi_t*)*handle;
         // Close the port.
-        drv->Close();
+        spi->drv->funcClose();
         // Set the handle to null.
-        *handle=(Handle_t)0;
-        return RESULT_OK;
+        *handle=(MdvHandle_t)0;
+        return MDV_RESULT_OK;
 }
 
-Result_t
-SPI_SelectSlave(
-        Handle_t handle,
+MdvResult_t
+mdv_spi_select_slave(
+        MdvHandle_t handle,
         uint8_t slaveAddress
 )
 {
-        SPIDrv_t *drv;
+        MdvSpi_t *spi;
         
         if(!handle){
-                return SPI_ERROR_INVALID_PARAMETER;
+                return MDV_SPI_ERROR_INVALID_PARAMETER;
         }
         // Get an access to the driver.
-        drv=(SPIDrv_t*)handle;
+        spi=(MdvSpi_t*)handle;
         // Check the port configuration. The operation is not allowed for 
         // a port configured as a slave.
-        if(drv->cfg.OperatingMode==SPI_OM_SLAVE){
-                return SPI_ERROR_INVALID_OPERATION;
+        if(spi->cfg.operatingMode==MDV_SPI_OPERATING_MODE_SLAVE){
+                return MDV_SPI_ERROR_INVALID_OPERATION;
         }
         // Select the slave.
-        if(!SUCCESSFUL(drv->SelectSlave(slaveAddress))){
-                return SPI_ERROR_INVALID_PARAMETER;
+        if(!MDV_SUCCESSFUL(spi->drv->funcSelectSlave(slaveAddress))){
+                return MDV_SPI_ERROR_INVALID_PARAMETER;
         }
-        return RESULT_OK;
+        return MDV_RESULT_OK;
 }
 
-Result_t
-SPI_Transfer(
-        Handle_t handle,
+MdvResult_t
+mdv_spi_transfer(
+        MdvHandle_t handle,
         uint8_t *dout,
         uint16_t outsz,
         uint8_t *din,
         uint16_t insz
 )
 {
-        SPIDrv_t *drv;
+        MdvSpi_t *spi;
         uint8_t tmp=0;
-        Result_t result;
+        MdvResult_t result;
         
         if(!dout||!din){
-                return SPI_ERROR_INVALID_POINTER;
+                return MDV_SPI_ERROR_INVALID_POINTER;
         }
         if(!handle){
-                return SPI_ERROR_INVALID_PARAMETER;
+                return MDV_SPI_ERROR_INVALID_PARAMETER;
         }
         // Get an access to the driver.
-        drv=(SPIDrv_t*)handle;
+        spi=(MdvSpi_t*)handle;
         // Check if the driver is capable of to transfer all data at once.
-        if(drv->Transfer){
+        if(spi->drv->funcTransfer){
                 // Transfer data.
-                result=drv->Transfer(dout,outsz,din,insz);
+                result=spi->drv->funcTransfer(dout,outsz,din,insz);
                 // If the driver doesn't support inequal buffer sizes, it 
                 // returns this error code.
-                if(result==SPI_ERROR_INVALID_BUFFER_SIZE){
+                if(result==MDV_SPI_ERROR_INVALID_BUFFER_SIZE){
                         return result;
                 }
                 // Check other possible driver errors.
-                if(!SUCCESSFUL(result)){
-                        return SPI_ERROR_TRANSMISSION_FAILED;
+                if(!MDV_SUCCESSFUL(result)){
+                        return MDV_SPI_ERROR_TRANSMISSION_FAILED;
                 }
-                return RESULT_OK;
+                return MDV_RESULT_OK;
         }        
         // Both Transfer and TransferByte implementations are missing. This is 
         // an initialization error.
-        if(!drv->TransferByte){
-                return SPI_ERROR_DRIVER_INITIALIZATION_FAILED;
+        if(!spi->drv->funcTransferByte){
+                return MDV_SPI_ERROR_DRIVER_INITIALIZATION_FAILED;
         }
         // Transfer all bi-directional data.
         while(outsz&&insz){
-                if(!SUCCESSFUL(drv->TransferByte(*dout,din))){
-                        return SPI_ERROR_TRANSMISSION_FAILED;
+                if(!MDV_SUCCESSFUL(spi->drv->funcTransferByte(*dout,din))){
+                        return MDV_SPI_ERROR_TRANSMISSION_FAILED;
                 }
                 dout++;
                 din++;
@@ -176,21 +212,21 @@ SPI_Transfer(
         }
         // Transfer remaining output data (if any).
         while(outsz){
-                if(!SUCCESSFUL(drv->TransferByte(*dout,&tmp))){
-                        return SPI_ERROR_TRANSMISSION_FAILED;
+                if(!MDV_SUCCESSFUL(spi->drv->funcTransferByte(*dout,&tmp))){
+                        return MDV_SPI_ERROR_TRANSMISSION_FAILED;
                 }
                 dout++;
                 outsz--;
         }
         // Transfer remaining input data (if any).
         while(insz){
-                if(!SUCCESSFUL(drv->TransferByte(tmp,din))){
-                        return SPI_ERROR_TRANSMISSION_FAILED;
+                if(!MDV_SUCCESSFUL(spi->drv->funcTransferByte(tmp,din))){
+                        return MDV_SPI_ERROR_TRANSMISSION_FAILED;
                 }
                 din++;
                 insz--;
         }
-        return RESULT_OK;
+        return MDV_RESULT_OK;
 }
 
 /* EOF */

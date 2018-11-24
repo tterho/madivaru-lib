@@ -1,7 +1,7 @@
 /***************************************************************************//**
 **
-**  @file       fifo.c
-**  @ingroup    utils
+**  @file       mdv_fifo.c
+**  @ingroup    madivaru-lib
 **  @brief      A general purpose first-in/first-out buffer (FIFO).
 **  @copyright  Copyright (C) 2012-2018 Tuomas Terho. All rights reserved.
 **
@@ -42,23 +42,23 @@
 **
 *******************************************************************************/
 
-#include "types.h"
-#include "fifo.h"
+#include "mdv_types.h"
+#include "mdv_fifo.h"
 
 #include <string.h>
 
 /******************************************************************************\
 **
-**  PUBLIC FUNCTION DECLARATIONS
+**  API FUNCTION DEFINITIONS
 **
 \******************************************************************************/
 
 /*------------------------------------------------------------------------------
 **  Initializes a FIFO.
 */
-Result_t
-FIFO_Init(
-        FIFO_t *fifo,
+MdvResult_t
+mdv_fifo_init(
+        MdvFifo_t *fifo,
         void *data,
         uint32_t size,
         uint16_t dsize
@@ -66,10 +66,10 @@ FIFO_Init(
 {
         // Check the parameters.
         if(!fifo||!data){
-                return FIFO_ERROR_INVALID_POINTER;
+                return MDV_FIFO_ERROR_INVALID_POINTER;
         }
         if(!size||!dsize||size<dsize){
-                return FIFO_ERROR_INVALID_PARAMETER;
+                return MDV_FIFO_ERROR_INVALID_PARAMETER;
         }
         // Setup the FIFO.
         fifo->d=data;
@@ -78,19 +78,19 @@ FIFO_Init(
         // Calculate the FIFO size in items.
         fifo->max=fifo->sz/fifo->dsz;
         // Reset the FIFO.
-        return FIFO_Reset(fifo);
+        return mdv_fifo_reset(fifo);
 }
 
 /*------------------------------------------------------------------------------
 **  Resets a FIFO
 */
-Result_t
-FIFO_Reset(
-        FIFO_t *fifo
+MdvResult_t
+mdv_fifo_reset(
+        MdvFifo_t *fifo
 )
 {
         if(!fifo){
-                return FIFO_ERROR_INVALID_POINTER;
+                return MDV_FIFO_ERROR_INVALID_POINTER;
         }        
         // Reset the write and read pointers and the item counter.
         fifo->wr=0;
@@ -98,69 +98,69 @@ FIFO_Reset(
         fifo->cnt=0;
         fifo->wrp=fifo->d;
         fifo->rdp=fifo->d;
-        return RESULT_OK;
+        return MDV_RESULT_OK;
 }
 
 /*------------------------------------------------------------------------------
 **  Puts a byte to the FIFO
 */
-Result_t
-FIFO_Put(
-        FIFO_t *fifo,
+MdvResult_t
+mdv_fifo_put(
+        MdvFifo_t *fifo,
         void *data
 )
 {
         if(!fifo||!data){
-                return FIFO_ERROR_INVALID_POINTER;
+                return MDV_FIFO_ERROR_INVALID_POINTER;
         }
         // If there is no room for data, return an error.
         if(fifo->cnt==fifo->max){
-                return FIFO_ERROR_FULL; 
+                return MDV_FIFO_ERROR_FULL; 
         }        
         // Write data to the buffer and advance the write pointers.
-        FIFO_ENTER_CRITICAL();
+        MDV_FIFO_ENTER_CRITICAL();
         memcpy(fifo->wrp,data,fifo->dsz);
         fifo->wr++;
         fifo->cnt++;
         fifo->wrp=(uint8_t*)fifo->wrp+fifo->dsz;
-        FIFO_EXIT_CRITICAL();
+        MDV_FIFO_EXIT_CRITICAL();
         // Write index and pointer wrap-around.
         if(fifo->wr==fifo->max){
                 fifo->wr=0;
                 fifo->wrp=fifo->d;
         }  
-        return RESULT_OK;
+        return MDV_RESULT_OK;
 }
 
 /*------------------------------------------------------------------------------
 **  Gets a byte from the FIFO
 */
-Result_t
-FIFO_Get(
-        FIFO_t *fifo,
+MdvResult_t
+mdv_fifo_get(
+        MdvFifo_t *fifo,
         void *data
 )
 {
         if(!fifo||!data){
-                return FIFO_ERROR_INVALID_POINTER;
+                return MDV_FIFO_ERROR_INVALID_POINTER;
         }        
         // If there is no data in the FIFO, return error.
         if(!fifo->cnt){
-                return FIFO_ERROR_EMPTY;
+                return MDV_FIFO_ERROR_EMPTY;
         }        
         // Read data from the buffer and advance the read pointers.
         memcpy(data,fifo->rdp,fifo->dsz);
-        FIFO_ENTER_CRITICAL();
+        MDV_FIFO_ENTER_CRITICAL();
         fifo->rd++;
         fifo->cnt--;
         fifo->rdp=(uint8_t*)fifo->rdp+fifo->dsz;
-        FIFO_EXIT_CRITICAL();
+        MDV_FIFO_EXIT_CRITICAL();
         // Read index and pointer wrap-around.
         if(fifo->rd==fifo->max){
                 fifo->rd=0;
                 fifo->rdp=fifo->d;
         }  
-        return RESULT_OK;
+        return MDV_RESULT_OK;
 }
 
 /* EOF */

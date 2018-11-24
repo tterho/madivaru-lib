@@ -1,7 +1,7 @@
 /***************************************************************************//**
 **
-**  @file       serialport.c
-**  @ingroup    serialcomm
+**  @file       mdv_serialport.c
+**  @ingroup    madivaru-lib
 **  @brief      Serial port API.
 **  @copyright  Copyright (C) 2012-2018 Tuomas Terho. All rights reserved.
 **
@@ -40,36 +40,36 @@
 **
 *******************************************************************************/
 
-#include "serialport.h"
+#include "mdv_serialport.h"
 
 #include <string.h>
 
 /******************************************************************************\
 **
-**  DATA DECLARATIONS
+**  DATA DEFINITIONS
 **
 \******************************************************************************/
 
 /*-------------------------------------------------------------------------*//**
 **  @brief Default configuration for serial ports.
 */
-const SP_Config_t 
-spDefaultConfig={
+const MdvSerialPortConfig_t 
+serialPortDefaultConfig={
         /// Baud rate = 9600 bps.
-        SP_BR_9600,
+        MDV_SERIALPORT_BAUDRATE_9600,
         /// Data bits = 8 data bits.
-        SP_DB_8,
+        MDV_SERIALPORT_DATABITS_8,
         /// Parity = NONE.
-        SP_PA_NONE,
+        MDV_SERIALPORT_PARITY_NONE,
         /// Stop bits = One stop bit.
-        SP_SB_ONE,
+        MDV_SERIALPORT_STOPBITS_ONE,
         /// Flow control = NONE.
-        SP_FC_NONE
+        MDV_SERIALPORT_FLOWCONTROL_NONE
 };
 
 /******************************************************************************\
 **
-**  LOCAL FUNCTION DECLARATIONS
+**  LOCAL FUNCTION DEFINITIONS
 **
 \******************************************************************************/
 
@@ -87,8 +87,8 @@ spDefaultConfig={
 **  Marks the transfer incompleted and resets all the required values.
 */
 static void
-spInitTransfer(
-        SP_Transfer_t *tfer,
+serialport_init_transfer(
+        MdvSerialPortTransfer_t *tfer,
         uint32_t length,
         uint8_t *data,
         uint32_t *plen,
@@ -108,7 +108,7 @@ spInitTransfer(
         }
         // Start the timeout timer.
         if(tfer->tout){
-                TimerAPI_StartTimer(tfer->tsys,&tfer->tmr);
+                mdv_timer_start(tfer->tsys,&tfer->tmr);
         }
 }
 
@@ -124,9 +124,9 @@ spInitTransfer(
 **  set.
 */
 static void
-spTransferCompleted(
-        SP_Transfer_t *tfer,
-        Result_t result
+serialport_complete_transfer(
+        MdvSerialPortTransfer_t *tfer,
+        MdvResult_t result
 )
 {
         tfer->t_on=0;
@@ -152,8 +152,8 @@ spTransferCompleted(
 **  set.
 */
 static void
-spCancelTransfer(
-        SP_Transfer_t *tfer
+serialport_cancel_transfer(
+        MdvSerialPortTransfer_t *tfer
 )
 {
         if(!tfer->t_on){
@@ -161,7 +161,10 @@ spCancelTransfer(
                 return;
         }
 
-        spTransferCompleted(tfer,SP_ERROR_ASYNC_TRANSFER_CANCELLED);
+        serialport_complete_transfer(
+                tfer,
+                MDV_SERIALPORT_ERROR_ASYNC_TRANSFER_CANCELLED
+        );
 }
 
 /*-------------------------------------------------------------------------*//**
@@ -170,58 +173,58 @@ spCancelTransfer(
 **  @param[in] tferFunc Driver Read/Write operation.
 **  @param[in] tfer A pointer to a transfer descriptor.
 **
-**  @retval RESULT_OK Successful.
-**  @retval SP_ERROR_TIMEOUT Timeout.
+**  @retval MDV_RESULT_OK Successful.
+**  @retval MDV_SERIALPORT_ERROR_TIMEOUT Timeout.
 */
-static Result_t
-spAsyncTransfer(
-        SPDrv_Func_Transfer_t tferFunc,
-        SP_Transfer_t *tfer
+static MdvResult_t
+serialport_asynchronous_transfer(
+        MdvSerialPortDriverInterface_Transfer_t tferFunc,
+        MdvSerialPortTransfer_t *tfer
 )
 {
-        Result_t result=RESULT_OK;
+        MdvResult_t result=MDV_RESULT_OK;
         uint32_t time;
 
         // If there is no transfer ongoing, do nothing.
         if(!tfer->t_on){
-                return RESULT_OK;
+                return MDV_RESULT_OK;
         }
         // Retrieve data.
         result=tferFunc(tfer);
-        if(!SUCCESSFUL(result)&&
-           result!=SP_ERROR_RX_BUFFER_EMPTY&&
-           result!=SP_ERROR_TX_BUFFER_FULL){
+        if(!MDV_SUCCESSFUL(result)&&
+           result!=MDV_SERIALPORT_ERROR_RX_BUFFER_EMPTY&&
+           result!=MDV_SERIALPORT_ERROR_TX_BUFFER_FULL){
                 // Something went wrong.
-                spTransferCompleted(tfer,result);
+                serialport_complete_transfer(tfer,result);
                 return result;
         }
         // Check the length of data to be transferred.
         if(!tfer->tleft){
                 // All data retrieved. Complete the transfer with successful
                 // result.
-                spTransferCompleted(tfer,result);
-                return RESULT_OK;
+                serialport_complete_transfer(tfer,result);
+                return MDV_RESULT_OK;
         }
         // If timeout not specified, continue infinitely.
         if(!tfer->tout){
-                return RESULT_OK;
+                return MDV_RESULT_OK;
         }
         // If some data got transferred, reset the timeout timer and continue
         // reception.
         if(tfer->tleft!=tfer->ptleft){
                 tfer->ptleft=tfer->tleft;
-                TimerAPI_StartTimer(tfer->tsys,&tfer->tmr);
-                return RESULT_OK;
+                mdv_timer_start(tfer->tsys,&tfer->tmr);
+                return MDV_RESULT_OK;
         }
         // Check the timeout.
-        TimerAPI_GetTimeLapse(tfer->tsys,tfer->tmr,tfer->tu,&time);
+        mdv_timer_get_time(tfer->tsys,tfer->tmr,tfer->tu,&time);
         if(time>tfer->tout){
-                result=SP_ERROR_TIMEOUT;
-                spTransferCompleted(tfer,result);
+                result=MDV_SERIALPORT_ERROR_TIMEOUT;
+                serialport_complete_transfer(tfer,result);
                 return result;
         }
         // Nothing happened, but transfer is still in progress.
-        return RESULT_OK;
+        return MDV_RESULT_OK;
 }
 
 /*-------------------------------------------------------------------------*//**
@@ -230,27 +233,27 @@ spAsyncTransfer(
 **  @param[in] tferFunc Driver Read/Write operation.
 **  @param[in] tfer A pointer to a transfer descriptor.
 **
-**  @retval RESULT_OK Successful.
-**  @retval SP_ERROR_TIMEOUT Timeout.
+**  @retval MDV_RESULT_OK Successful.
+**  @retval MDV_SERIALPORT_ERROR_TIMEOUT Timeout.
 */
-static Result_t
-spSyncTransfer(
-        SPDrv_Func_Transfer_t tferFunc,
-        SP_Transfer_t *tfer
+static MdvResult_t
+serialport_synchronous_transfer(
+        MdvSerialPortDriverInterface_Transfer_t tferFunc,
+        MdvSerialPortTransfer_t *tfer
 )
 {
-        Result_t result;
+        MdvResult_t result;
 
         // Loop until the transfer completed.
         while(tfer->t_on){
                 // Use the asynchronous transfer function to retrieve data
                 // and manage timeouts.
-                result=spAsyncTransfer(tferFunc,tfer);
-                if(!SUCCESSFUL(result)){
+                result=serialport_asynchronous_transfer(tferFunc,tfer);
+                if(!MDV_SUCCESSFUL(result)){
                         return result;
                 }
         }
-        return RESULT_OK;
+        return MDV_RESULT_OK;
 }
 /*-------------------------------------------------------------------------*//**
 **  @brief Transfers data to/from serial port.
@@ -262,13 +265,13 @@ spSyncTransfer(
 **  @param[in] plen A pointer to transferred data length.
 **  @param[in] timeout Timeout time in milliseconds.
 **
-**  @retval RESULT_OK Successful.
-**  @retval SP_ERROR_TIMEOUT Timeout.
+**  @retval MDV_RESULT_OK Successful.
+**  @retval MDV_SERIALPORT_ERROR_TIMEOUT Timeout.
 */
-static Result_t
-spTransfer(
-        SPDrv_Func_Transfer_t tferFunc,
-        SP_Transfer_t *tfer,
+static MdvResult_t
+serialport_transfer(
+        MdvSerialPortDriverInterface_Transfer_t tferFunc,
+        MdvSerialPortTransfer_t *tfer,
         uint32_t length,
         uint8_t *data,
         uint32_t *plen,
@@ -277,10 +280,10 @@ spTransfer(
 {
         // Check if transfer is already in progress.
         if(tfer->t_on){
-                return SP_ERROR_ASYNC_TRANSFER_IN_PROGRESS;
+                return MDV_SERIALPORT_ERROR_ASYNC_TRANSFER_IN_PROGRESS;
         }
         // Init transfer.
-        spInitTransfer(
+        serialport_init_transfer(
                 tfer,
                 length,
                 data,
@@ -289,217 +292,217 @@ spTransfer(
         );
         // Check the data length (nothing to transfer if zero).
         if(!tfer->len){
-                spTransferCompleted(tfer,RESULT_OK);
-                return RESULT_OK;
+                serialport_complete_transfer(tfer,MDV_RESULT_OK);
+                return MDV_RESULT_OK;
         }
         if(!tfer->cbk){
                 // No callback defined. Use synchronous transfer.
-                return spSyncTransfer(tferFunc,tfer);
+                return serialport_synchronous_transfer(tferFunc,tfer);
         }
         else{
-                return spAsyncTransfer(tferFunc,tfer);
+                return serialport_asynchronous_transfer(tferFunc,tfer);
         }
-
-        return RESULT_OK;
+        return MDV_RESULT_OK;
 }
 
 /******************************************************************************\
 **
-**  API FUNCTION DECLARATIONS
+**  API FUNCTION DEFINITIONS
 **
 \******************************************************************************/
 
-Result_t
-SP_SetupDriverInterface(
-        SP_COMPort_t *port,
-        SPDrv_Func_Init_t funcInit,
-        SPDrv_Func_Open_t funcOpen,
-        SPDrv_Func_Close_t funcClose,
-        SPDrv_Func_Transfer_t funcRead,
-        SPDrv_Func_Transfer_t funcWrite,
-        SPDrv_Func_RunDriver_t funcRunDriver
+MdvResult_t
+mdv_serialport_setup_driver_interface(
+        MdvSerialPortDriverInterface_t *iface,
+        MdvSerialPortDriverInterface_Init_t funcInit,
+        MdvSerialPortDriverInterface_Open_t funcOpen,
+        MdvSerialPortDriverInterface_Close_t funcClose,
+        MdvSerialPortDriverInterface_Transfer_t funcRead,
+        MdvSerialPortDriverInterface_Transfer_t funcWrite,
+        MdvSerialPortDriverInterface_Run_t funcRun
 )
 {
-        if(!port){
-                return SP_ERROR_INVALID_POINTER;
+        if(!iface){
+                return MDV_SERIALPORT_ERROR_INVALID_POINTER;
         }
-
         if(!funcInit||!funcOpen||!funcClose||!funcRead||!funcWrite){
-                return SP_ERROR_INVALID_PARAMETER;
+                return MDV_SERIALPORT_ERROR_INVALID_PARAMETER;
         }
-
-        port->drvfuncInit=funcInit;
-        port->drvfuncOpen=funcOpen;
-        port->drvfuncClose=funcClose;
-        port->drvfuncRead=funcRead;
-        port->drvfuncWrite=funcWrite;
-        port->drvfuncRunDriver=funcRunDriver;
-        return RESULT_OK;
+        iface->funcInit=funcInit;
+        iface->funcOpen=funcOpen;
+        iface->funcClose=funcClose;
+        iface->funcRead=funcRead;
+        iface->funcWrite=funcWrite;
+        iface->funcRun=funcRun;
+        iface->init=true;
+        return MDV_RESULT_OK;
 }
 
-Result_t
-SP_InitPort(
-        SP_COMPort_t *port,
-        SP_TransferCompletedCbk_t rxCallback,
-        SP_TransferCompletedCbk_t txCallback,
-        TimerSys_t *timerSys,
-        Timer_TimeUnit_t timeUnit,
+MdvResult_t
+mdv_serialport_init(
+        MdvSerialPort_t *port,
+        MdvSerialPortDriverInterface_t *driver,
+        MdvSerialPortTransferCompletedCallback_t rxCallback,
+        MdvSerialPortTransferCompletedCallback_t txCallback,
+        MdvTimerSystem_t *timerSys,
+        MdvTimeUnit_t timeUnit,
         void *userData
 )
 {
-        if(!port){
-                return SP_ERROR_INVALID_POINTER;
+        if(!port||!driver){
+                return MDV_SERIALPORT_ERROR_INVALID_POINTER;
         }
-        if(!port->drvfuncInit){
-                return SP_ERROR_NO_DRIVER_INTERFACE;
+        if(!driver->init){
+                return MDV_SERIALPORT_ERROR_NO_DRIVER_INTERFACE;
         }
+        port->drv=driver;
         // Initialize the rx descriptor.
-        memset(&port->rxd,0,sizeof(SP_Transfer_t));
+        memset(&port->rxd,0,sizeof(MdvSerialPortTransfer_t));
         port->rxd.tsys=timerSys;
         port->rxd.tu=timeUnit;
         port->rxd.cbk=rxCallback;
         port->rxd.ud=userData;
         // Initialize the tx descriptor.
-        memset(&port->txd,0,sizeof(SP_Transfer_t));
+        memset(&port->txd,0,sizeof(MdvSerialPortTransfer_t));
         port->txd.tsys=timerSys;
         port->txd.tu=timeUnit;
         port->txd.cbk=txCallback;
         port->txd.ud=userData;
         // Set default configuration.
-        port->cfg=spDefaultConfig;
+        port->cfg=serialPortDefaultConfig;
         // Set initialization status.
         port->init=true;
         // Initialize the driver.
-        return port->drvfuncInit();        
+        return port->drv->funcInit();        
 }
 
-Result_t
-SP_GetCurrentConfig(
-        SP_COMPort_t *port,
-        SP_Config_t *config
+MdvResult_t
+mdv_serialport_get_current_configuration(
+        MdvSerialPort_t *port,
+        MdvSerialPortConfig_t *config
 )
 {
         if(!port||!config){
-                return SP_ERROR_INVALID_POINTER;
+                return MDV_SERIALPORT_ERROR_INVALID_POINTER;
         }
 
         // Configuration data output.
         *config=port->cfg;
-        return RESULT_OK;
+        return MDV_RESULT_OK;
 }
 
-Result_t
-SP_Open(
-        SP_COMPort_t *port,
-        SP_Config_t *config,
-        Handle_t *handle
+MdvResult_t
+mdv_serialport_open(
+        MdvSerialPort_t *port,
+        MdvSerialPortConfig_t *config,
+        MdvHandle_t *handle
 )
 {
-        Result_t result;
+        MdvResult_t result;
 
         if(!port||!config||!handle){
-                return SP_ERROR_INVALID_POINTER;
+                return MDV_SERIALPORT_ERROR_INVALID_POINTER;
         }
         // Check the handle (it should be null).
         if(*handle){
-                return SP_ERROR_RESOURCE_IN_USE;
+                return MDV_SERIALPORT_ERROR_RESOURCE_IN_USE;
         }
         // Check the port initialization status.
         if(!port->init){
-                return SP_ERROR_PORT_NOT_INITIALIZED;
+                return MDV_SERIALPORT_ERROR_PORT_NOT_INITIALIZED;
         }
         // Configure and open the port.
         port->cfg=*config;
-        result=port->drvfuncOpen(&port->cfg);
-        if(!SUCCESSFUL(result)){
+        result=port->drv->funcOpen(&port->cfg);
+        if(!MDV_SUCCESSFUL(result)){
                 return result;
         }
         // Handle output.
-        *handle=(Handle_t)port;
-        return RESULT_OK;
+        *handle=(MdvHandle_t)port;
+        return MDV_RESULT_OK;
 }
 
 
-Result_t
-SP_Close(
-        Handle_t *handle
+MdvResult_t
+mdv_serialport_close(
+        MdvHandle_t *handle
 )
 {
-        Result_t result;
-        SP_COMPort_t *port;
+        MdvResult_t result;
+        MdvSerialPort_t *port;
 
         // Check the handle.
         if(!handle){
-                return SP_ERROR_INVALID_POINTER;
+                return MDV_SERIALPORT_ERROR_INVALID_POINTER;
         }
-        port=(SP_COMPort_t*)*handle;
+        port=(MdvSerialPort_t*)*handle;
         // Cancel possibly ongoing asynchronous transfers.
-        spCancelTransfer(&port->rxd);
-        spCancelTransfer(&port->txd);
+        serialport_cancel_transfer(&port->rxd);
+        serialport_cancel_transfer(&port->txd);
         // Close the port.
-        result=port->drvfuncClose();
-        if(!SUCCESSFUL(result)){
+        result=port->drv->funcClose();
+        if(!MDV_SUCCESSFUL(result)){
                 return result;
         }
         // Handle reset.
-        *handle=(Handle_t)0;
-        return RESULT_OK;
+        *handle=(MdvHandle_t)0;
+        return MDV_RESULT_OK;
 }
 
-Result_t
-SP_ChangeConfig(
-        Handle_t handle,
-        SP_Config_t *config
+MdvResult_t
+mdv_serialport_change_configuration(
+        MdvHandle_t handle,
+        MdvSerialPortConfig_t *config
 )
 {
-        SP_COMPort_t *port;
-        Result_t result;
+        MdvSerialPort_t *port;
+        MdvResult_t result;
 
         if(!config){
-                return SP_ERROR_INVALID_POINTER;
+                return MDV_SERIALPORT_ERROR_INVALID_POINTER;
         }
         // Check the handle.
         if(!handle){
-                return SP_ERROR_INVALID_PARAMETER;
+                return MDV_SERIALPORT_ERROR_INVALID_PARAMETER;
         }
         // Port access.
-        port=(SP_COMPort_t*)handle;
+        port=(MdvSerialPort_t*)handle;
         // Cancel possibly ongoing asynchronous transfers.
-        spCancelTransfer(&port->rxd);
-        spCancelTransfer(&port->txd);
+        serialport_cancel_transfer(&port->rxd);
+        serialport_cancel_transfer(&port->txd);
         // Close the port.
-        result=port->drvfuncClose();
-        if(!SUCCESSFUL(result)){
+        result=port->drv->funcClose();
+        if(!MDV_SUCCESSFUL(result)){
                 return result;
         }
         // Port re-configuration and re-opening.
         port->cfg=*config;
-        return port->drvfuncOpen(&port->cfg);
+        return port->drv->funcOpen(&port->cfg);
 }
 
-Result_t
-SP_Read(
-        Handle_t handle,
+MdvResult_t
+mdv_serialport_read(
+        MdvHandle_t handle,
         uint32_t length,
         uint8_t *data,
         uint32_t *bytesRead,
         uint32_t timeout
 )
 {
-        SP_COMPort_t *port;
+        MdvSerialPort_t *port;
 
         if(!data){
-                return SP_ERROR_INVALID_POINTER;
+                return MDV_SERIALPORT_ERROR_INVALID_POINTER;
         }
         // Check the port handle.
         if(!handle){
-                return SP_ERROR_INVALID_PARAMETER;
+                return MDV_SERIALPORT_ERROR_INVALID_PARAMETER;
         }
         // Port access.
-        port=(SP_COMPort_t*)handle;
+        port=(MdvSerialPort_t*)handle;
         // Start transfer.
-        return spTransfer(
-                port->drvfuncRead,
+        return serialport_transfer(
+                port->drv->funcRead,
                 &port->rxd,
                 length,
                 data,
@@ -508,29 +511,29 @@ SP_Read(
         );
 }
 
-Result_t
-SP_Write(
-        Handle_t handle,
+MdvResult_t
+mdv_serialport_write(
+        MdvHandle_t handle,
         uint32_t length,
         uint8_t *data,
         uint32_t *bytesWritten,
         uint32_t timeout
 )
 {
-        SP_COMPort_t *port;
+        MdvSerialPort_t *port;
 
         if(!data){
-                return SP_ERROR_INVALID_POINTER;
+                return MDV_SERIALPORT_ERROR_INVALID_POINTER;
         }
         // Check the port handle.
         if(!handle){
-                return SP_ERROR_INVALID_PARAMETER;
+                return MDV_SERIALPORT_ERROR_INVALID_PARAMETER;
         }
         // Port access.
-        port=(SP_COMPort_t*)handle;
+        port=(MdvSerialPort_t*)handle;
         // Init transfer.
-        return spTransfer(
-                port->drvfuncWrite,
+        return serialport_transfer(
+                port->drv->funcWrite,
                 &port->txd,
                 length,
                 data,
@@ -539,50 +542,51 @@ SP_Write(
         );
 }
 
-Result_t
-SP_GetChar(
-        Handle_t handle,
+MdvResult_t
+mdv_serialport_getchar(
+        MdvHandle_t handle,
         uint8_t *data
 )
 {
-        return SP_Read(handle,1,data,0,0);
+        return mdv_serialport_read(handle,1,data,0,0);
 }
 
-Result_t
-SP_PutChar(
-        Handle_t handle,
+MdvResult_t
+mdv_serialport_putchar(
+        MdvHandle_t handle,
         uint8_t data
 )
 {
-        return SP_Write(handle,1,&data,0,0);
+        return mdv_serialport_write(handle,1,&data,0,0);
 }
 
-Result_t
-SP_Run(
-        Handle_t handle
+MdvResult_t
+mdv_serialport_runtime_process(
+        MdvHandle_t handle
 )
 {
-        SP_COMPort_t *port;
-        Result_t result;
+        MdvSerialPort_t *port;
+        MdvResult_t result;
 
         // Check the handle.
         if(!handle){
-                return SP_ERROR_INVALID_PARAMETER;
+                return MDV_SERIALPORT_ERROR_INVALID_PARAMETER;
         }
         // Port access.
-        port=(SP_COMPort_t*)handle;
+        port=(MdvSerialPort_t*)handle;
 
         // Run the driver.
-        if(port->drvfuncRunDriver){
-                result=port->drvfuncRunDriver(&port->rxd,&port->txd);
-                if(!SUCCESSFUL(result)){
+        if(port->drv->funcRun){
+                result=port->drv->funcRun(&port->rxd,&port->txd);
+                if(!MDV_SUCCESSFUL(result)){
                         return result;
                 }
         }
 
         // Perform asynchronous transfers.
-        spAsyncTransfer(port->drvfuncRead,&port->rxd);
-        spAsyncTransfer(port->drvfuncWrite,&port->txd);
-        return RESULT_OK;
+        serialport_asynchronous_transfer(port->drv->funcRead,&port->rxd);
+        serialport_asynchronous_transfer(port->drv->funcWrite,&port->txd);
+        return MDV_RESULT_OK;
 }
+
 /* EOF */

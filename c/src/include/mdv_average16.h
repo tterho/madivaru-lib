@@ -1,7 +1,7 @@
 /***************************************************************************//**
 **
-**  @file       average16.h
-**  @ingroup    utils
+**  @file       mdv_average16.h
+**  @ingroup    madivaru-lib
 **  @brief      Calculates an average value from 16-bit sample stream.
 **  @copyright  Copyright (C) 2012-2018 Tuomas Terho. All rights reserved.
 **
@@ -40,10 +40,10 @@
 **
 \******************************************************************************/
 
-#ifndef average16_H
-#define average16_H
+#ifndef mdv_average16_H
+#define mdv_average16_H
 
-#include "types.h"
+#include "mdv_types.h"
 
 /******************************************************************************\
 **
@@ -51,39 +51,42 @@
 **
 \******************************************************************************/
 
-#define AVERAGE_ERROR_INVALID_POINTER -1
+#define MDV_AVERAGE_ERROR_INVALID_POINTER -1
 
 /******************************************************************************\
 **
-**  PUBLIC MACRO AND TYPE DEFINITIONS
+**  TYPE DEFINITIONS
 **
 \******************************************************************************/
 
 /*-------------------------------------------------------------------------*//**
 **  @brief Average filter mode
-**
-**  In contiguous mode all samples are summed and divided by the total sample
-**  count. This mode saves memory but have one limitation. The summary value is 
-**  32-bit, so the calculation will be stopped for long sample streams to 
-**  prevent an overflow.
-**
-**  In floating mode the sample count is unlimited. Samples are stored in a
-**  FIFO-type buffer. Only samples in the buffer are included into the average.
 */
 typedef enum
-Average16_Mode_t{
-        AVERAGE16_MODE_CONTIGUOUS,
-        AVERAGE16_MODE_FLOATING
-} Average16_Mode_t;
+MdvAverage16FilterMode_t{
+        /// @brief Contiguous filter mode.
+        ///
+        /// In contiguous mode all samples are summed and divided by the total 
+        /// sample count.This mode saves memory but have one limitation.The 
+        /// summary value is 32-bit,so the calculation will be stopped for long 
+        /// sample streams to prevent an overflow.
+        MDV_AVERAGE16_FILTER_MODE_CONTIGUOUS=0,
+        /// @brief Floating filter mode.
+        ///
+        /// In floating mode the sample count is unlimited.Samples are stored in 
+        /// a FIFO-type buffer. Only samples in the buffer are included into the 
+        /// average.
+        MDV_AVERAGE16_FILTER_MODE_FLOATING
+} MdvAverage16FilterMode_t;
 
 /*-------------------------------------------------------------------------*//** 
-**  @brief Average structure
+**  @brief Average calculator structure
 */
 typedef struct 
-Average16_t
+MdvAverage16_t
 {
         /// Average calculation mode.
-        Average16_Mode_t mod;
+        MdvAverage16FilterMode_t mod;
         /// Pointer to a sample buffer (floating mode only).
         uint16_t *bfr;
         /// Write index (floating mode only).
@@ -96,15 +99,19 @@ Average16_t
         uint32_t sum;
         /// Current average value.
         uint16_t val;
-} Average16_t;
+} MdvAverage16_t;
 
 /******************************************************************************\
 **
-**  PUBLIC FUNCTION DEFINITIONS
+**  API FUNCTION DECLARATIONS
 **
 \******************************************************************************/
 
-/*-------------------------------------------------------------------------*//** 
+#ifdef __cplusplus
+extern "C"{
+#endif // ifdef __cplusplus
+
+/*-------------------------------------------------------------------------*//**
 **  @brief Initializes an average calculator.
 **
 **  @param[in] average A pointer to an average structure being initialized.
@@ -114,14 +121,14 @@ Average16_t
 **  @param[in] buffer Buffer to store samples in floating mode. For contiguous 
 **      mode set this parameter to null.
 **
-**  @retval RESULT_OK Initialization successful.
+**  @retval MDV_RESULT_OK Initialization successful.
 **  @retval AVERAGE_ERROR_INVALID_POINTER Either the average or the buffer 
 **      pointer points to null.
 */
-Result_t
-Average16_Init(
-        Average16_t *average,
-        Average16_Mode_t mode,
+MdvResult_t
+mdv_average16_init(
+        MdvAverage16_t *average,
+        MdvAverage16FilterMode_t mode,
         uint16_t size,
         uint16_t *buffer
 );
@@ -131,12 +138,12 @@ Average16_Init(
 **
 **  @param[in] average A pointer to an average structure being reset.
 **
-**  @retval RESULT_OK Reset successful.
+**  @retval MDV_RESULT_OK Reset successful.
 **  @retval AVERAGE_ERROR_INVALID_POINTER The average pointer points to null.
 */
-Result_t
-Average16_Reset(
-        Average16_t *average
+MdvResult_t
+mdv_average16_reset(
+        MdvAverage16_t *average
 );
 
 /*-------------------------------------------------------------------------*//** 
@@ -149,11 +156,15 @@ Average16_Reset(
 **  @return The current average value.
 */
 uint16_t
-Average16_Put(
-        Average16_t *average,
+mdv_average16_put(
+        MdvAverage16_t *average,
         uint16_t sample
 );
 
-#endif // average16_H
+#ifdef __cplusplus
+}
+#endif // ifdef __cplusplus
+
+#endif // ifndef mdv_average16_H
 
 /* EOF */
