@@ -26,10 +26,9 @@ class mdv_serialport : public ::testing::Test
                 ud=0xDEADBEEF;
 
                 memset(&port,0xFF,sizeof(MdvSerialPort_t));
-                memset(&drv,0,sizeof(MdvSerialPortDriverInterface_t));
+                memset(&port.drv,0,sizeof(MdvSerialPortDriverInterface_t));
                 memset(&config,0xFF,sizeof(MdvSerialPortConfig_t));
                 port.init=false;
-                port.drv=0;
                 spInitReturnValue=MDV_RESULT_OK;
                 spOpenReturnValue=MDV_RESULT_OK;
                 spCloseReturnValue=MDV_RESULT_OK;
@@ -51,9 +50,9 @@ class mdv_serialport : public ::testing::Test
 
         }
 
-        void SetupDriverInterface(MdvSerialPortDriverInterface_t *_drv){
+        void SetupDriverInterface(MdvSerialPort_t *_port){
                 mdv_serialport_setup_driver_interface(
-                        _drv,
+                        _port,
                         spInit,
                         spOpen,
                         spClose,
@@ -66,7 +65,6 @@ class mdv_serialport : public ::testing::Test
         void InitPort(MdvSerialPort_t *_port){
                 mdv_serialport_init(
                         _port,
-                        &drv,
                         spRxCompletedCbk,
                         spTxCompletedCbk,
                         &tsys,
@@ -77,14 +75,13 @@ class mdv_serialport : public ::testing::Test
 
         void OpenPort(MdvHandle_t *_handle){
                 *_handle=0;
-                SetupDriverInterface(&drv);
+                SetupDriverInterface(&port);
                 InitPort(&port);
                 mdv_serialport_get_current_configuration(&port,&config);
                 mdv_serialport_open(&port,&config,_handle);
         }
 
         MdvSerialPort_t port;
-        MdvSerialPortDriverInterface_t drv;
         MdvSerialPortConfig_t config;
         MdvResult_t result;
         MdvHandle_t handle;
@@ -255,7 +252,7 @@ TEST_F(mdv_serialport,_setup_driver_interface__RequiredParameter_driver)
 TEST_F(mdv_serialport,_setup_driver_interface__RequiredParameter_funcInit)
 {
         result=mdv_serialport_setup_driver_interface(
-                &drv,
+                &port,
                 0,
                 spOpen,
                 spClose,
@@ -270,7 +267,7 @@ TEST_F(mdv_serialport,_setup_driver_interface__RequiredParameter_funcInit)
 TEST_F(mdv_serialport,_setup_driver_interface__RequiredParameter_funcOpen)
 {
         result=mdv_serialport_setup_driver_interface(
-                &drv,
+                &port,
                 spInit,
                 0,
                 spClose,
@@ -285,7 +282,7 @@ TEST_F(mdv_serialport,_setup_driver_interface__RequiredParameter_funcOpen)
 TEST_F(mdv_serialport,_setup_driver_interface__RequiredParameter_funcClose)
 {
         result=mdv_serialport_setup_driver_interface(
-                &drv,
+                &port,
                 spInit,
                 spOpen,
                 0,
@@ -300,7 +297,7 @@ TEST_F(mdv_serialport,_setup_driver_interface__RequiredParameter_funcClose)
 TEST_F(mdv_serialport,_setup_driver_interface__RequiredParameter_funcRead)
 {
         result=mdv_serialport_setup_driver_interface(
-                &drv,
+                &port,
                 spInit,
                 spOpen,
                 spClose,
@@ -315,7 +312,7 @@ TEST_F(mdv_serialport,_setup_driver_interface__RequiredParameter_funcRead)
 TEST_F(mdv_serialport,_setup_driver_interface__RequiredParameter_funcWrite)
 {
         result=mdv_serialport_setup_driver_interface(
-                &drv,
+                &port,
                 spInit,
                 spOpen,
                 spClose,
@@ -330,7 +327,7 @@ TEST_F(mdv_serialport,_setup_driver_interface__RequiredParameter_funcWrite)
 TEST_F(mdv_serialport,_setup_driver_interface__OptionalParameter_funcRunDriver)
 {
         result=mdv_serialport_setup_driver_interface(
-                &drv,
+                &port,
                 spInit,
                 spOpen,
                 spClose,
@@ -345,7 +342,7 @@ TEST_F(mdv_serialport,_setup_driver_interface__OptionalParameter_funcRunDriver)
 TEST_F(mdv_serialport,_setup_driver_interface__SetupFinished)
 {
         mdv_serialport_setup_driver_interface(
-                &drv,
+                &port,
                 spInit,
                 spOpen,
                 spClose,
@@ -354,34 +351,18 @@ TEST_F(mdv_serialport,_setup_driver_interface__SetupFinished)
                 spRunDriver
         );
 
-        EXPECT_EQ((MdvSerialPortDriverInterface_Init_t)spInit,drv.funcInit);
-        EXPECT_EQ((MdvSerialPortDriverInterface_Open_t)spOpen,drv.funcOpen);
-        EXPECT_EQ((MdvSerialPortDriverInterface_Close_t)spClose,drv.funcClose);
-        EXPECT_EQ((MdvSerialPortDriverInterface_Transfer_t)spRead,drv.funcRead);
-        EXPECT_EQ((MdvSerialPortDriverInterface_Transfer_t)spWrite,drv.funcWrite);
-        EXPECT_EQ((MdvSerialPortDriverInterface_Run_t)spRunDriver,drv.funcRun);
-        EXPECT_EQ(true,drv.init);
+        EXPECT_EQ((MdvSerialPortDriverInterface_Init_t)spInit,port.drv.funcInit);
+        EXPECT_EQ((MdvSerialPortDriverInterface_Open_t)spOpen,port.drv.funcOpen);
+        EXPECT_EQ((MdvSerialPortDriverInterface_Close_t)spClose,port.drv.funcClose);
+        EXPECT_EQ((MdvSerialPortDriverInterface_Transfer_t)spRead,port.drv.funcRead);
+        EXPECT_EQ((MdvSerialPortDriverInterface_Transfer_t)spWrite,port.drv.funcWrite);
+        EXPECT_EQ((MdvSerialPortDriverInterface_Run_t)spRunDriver,port.drv.funcRun);
+        EXPECT_EQ(true,port.drv.init);
 }
 
 TEST_F(mdv_serialport,_init__RequiredParameter_port)
 {
         result=mdv_serialport_init(
-                0,
-                (MdvSerialPortDriverInterface_t*)0x01,
-                (MdvSerialPortTransferCompletedCallback_t)0x1,
-                (MdvSerialPortTransferCompletedCallback_t)0x1,
-                (MdvTimerSystem_t*)0x1,
-                (MdvTimeUnit_t)0x1,
-                (void*)0x1
-        );
-
-        EXPECT_EQ(MDV_SERIALPORT_ERROR_INVALID_POINTER,result);
-}
-
-TEST_F(mdv_serialport,_init__RequiredParameter_driver)
-{
-        result=mdv_serialport_init(
-                &port,
                 0,
                 (MdvSerialPortTransferCompletedCallback_t)0x1,
                 (MdvSerialPortTransferCompletedCallback_t)0x1,
@@ -397,7 +378,6 @@ TEST_F(mdv_serialport,_init__DriverNotInitialized)
 {
         result=mdv_serialport_init(
                 &port,
-                &drv,
                 (MdvSerialPortTransferCompletedCallback_t)0x1,
                 (MdvSerialPortTransferCompletedCallback_t)0x1,
                 (MdvTimerSystem_t*)0x1,
@@ -408,30 +388,12 @@ TEST_F(mdv_serialport,_init__DriverNotInitialized)
         EXPECT_EQ(MDV_SERIALPORT_ERROR_NO_DRIVER_INTERFACE,result);
 }
 
-TEST_F(mdv_serialport,_init__DriverAssociatedWithPort)
-{
-        SetupDriverInterface(&drv);
-
-        mdv_serialport_init(
-                &port,
-                &drv,
-                (MdvSerialPortTransferCompletedCallback_t)0x1,
-                (MdvSerialPortTransferCompletedCallback_t)0x1,
-                (MdvTimerSystem_t*)0x1,
-                (MdvTimeUnit_t)0x1,
-                (void*)0x1
-        );
-
-        EXPECT_EQ(port.drv,&drv);
-}
-
 TEST_F(mdv_serialport,_init__OptionalParameter_rxCompleted)
 {
-        SetupDriverInterface(&drv);
+        SetupDriverInterface(&port);
 
         result=mdv_serialport_init(
                 &port,
-                &drv,
                 0,
                 (MdvSerialPortTransferCompletedCallback_t)0x1,
                 (MdvTimerSystem_t*)0x1,
@@ -444,11 +406,10 @@ TEST_F(mdv_serialport,_init__OptionalParameter_rxCompleted)
 
 TEST_F(mdv_serialport,_init__OptionalParameter_txCompleted)
 {
-        SetupDriverInterface(&drv);
+        SetupDriverInterface(&port);
 
         result=mdv_serialport_init(
                 &port,
-                &drv,
                 (MdvSerialPortTransferCompletedCallback_t)0x1,
                 0,
                 (MdvTimerSystem_t*)0x1,
@@ -461,11 +422,10 @@ TEST_F(mdv_serialport,_init__OptionalParameter_txCompleted)
 
 TEST_F(mdv_serialport,_init__OptionalParameter_timerSys)
 {
-        SetupDriverInterface(&drv);
+        SetupDriverInterface(&port);
 
         result=mdv_serialport_init(
                 &port,
-                &drv,
                 (MdvSerialPortTransferCompletedCallback_t)0x1,
                 (MdvSerialPortTransferCompletedCallback_t)0x1,
                 0,
@@ -478,11 +438,10 @@ TEST_F(mdv_serialport,_init__OptionalParameter_timerSys)
 
 TEST_F(mdv_serialport,_init__OptionalParameter_timeUnit)
 {
-        SetupDriverInterface(&drv);
+        SetupDriverInterface(&port);
 
         result=mdv_serialport_init(
                 &port,
-                &drv,
                 (MdvSerialPortTransferCompletedCallback_t)0x1,
                 (MdvSerialPortTransferCompletedCallback_t)0x1,
                 (MdvTimerSystem_t*)0x1,
@@ -495,11 +454,10 @@ TEST_F(mdv_serialport,_init__OptionalParameter_timeUnit)
 
 TEST_F(mdv_serialport,_init__OptionalParameter_userData)
 {
-        SetupDriverInterface(&drv);
+        SetupDriverInterface(&port);
 
         result=mdv_serialport_init(
                 &port,
-                &drv,
                 (MdvSerialPortTransferCompletedCallback_t)0x1,
                 (MdvSerialPortTransferCompletedCallback_t)0x1,
                 (MdvTimerSystem_t*)0x1,
@@ -512,23 +470,23 @@ TEST_F(mdv_serialport,_init__OptionalParameter_userData)
 
 TEST_F(mdv_serialport,_init__PortFunctionPointersUntouched)
 {
-        SetupDriverInterface(&drv);
+        SetupDriverInterface(&port);
 
-        mdv_serialport_init(&port,&drv,0,0,0,(MdvTimeUnit_t)0,0);
+        mdv_serialport_init(&port,0,0,0,(MdvTimeUnit_t)0,0);
 
-        EXPECT_EQ((MdvSerialPortDriverInterface_Init_t)spInit,port.drv->funcInit);
-        EXPECT_EQ((MdvSerialPortDriverInterface_Open_t)spOpen,port.drv->funcOpen);
-        EXPECT_EQ((MdvSerialPortDriverInterface_Close_t)spClose,port.drv->funcClose);
-        EXPECT_EQ((MdvSerialPortDriverInterface_Transfer_t)spRead,port.drv->funcRead);
-        EXPECT_EQ((MdvSerialPortDriverInterface_Transfer_t)spWrite,port.drv->funcWrite);
-        EXPECT_EQ((MdvSerialPortDriverInterface_Run_t)spRunDriver,port.drv->funcRun);
+        EXPECT_EQ((MdvSerialPortDriverInterface_Init_t)spInit,port.drv.funcInit);
+        EXPECT_EQ((MdvSerialPortDriverInterface_Open_t)spOpen,port.drv.funcOpen);
+        EXPECT_EQ((MdvSerialPortDriverInterface_Close_t)spClose,port.drv.funcClose);
+        EXPECT_EQ((MdvSerialPortDriverInterface_Transfer_t)spRead,port.drv.funcRead);
+        EXPECT_EQ((MdvSerialPortDriverInterface_Transfer_t)spWrite,port.drv.funcWrite);
+        EXPECT_EQ((MdvSerialPortDriverInterface_Run_t)spRunDriver,port.drv.funcRun);
 }
 
 TEST_F(mdv_serialport,_init__PortDefaultConfigurationApplied)
 {
-        SetupDriverInterface(&drv);
+        SetupDriverInterface(&port);
 
-        mdv_serialport_init(&port,&drv,0,0,0,(MdvTimeUnit_t)0,0);
+        mdv_serialport_init(&port,0,0,0,(MdvTimeUnit_t)0,0);
 
         EXPECT_EQ(MDV_SERIALPORT_BAUDRATE_9600,port.cfg.baudRate);
         EXPECT_EQ(MDV_SERIALPORT_DATABITS_8,port.cfg.dataBits);
@@ -539,11 +497,10 @@ TEST_F(mdv_serialport,_init__PortDefaultConfigurationApplied)
 
 TEST_F(mdv_serialport,_init__PortTransferDescriptorsInitialized)
 {
-        SetupDriverInterface(&drv);
+        SetupDriverInterface(&port);
 
         mdv_serialport_init(
                 &port,
-                &drv,
                 spRxCompletedCbk,
                 spTxCompletedCbk,
                 &tsys,
@@ -580,11 +537,10 @@ TEST_F(mdv_serialport,_init__PortTransferDescriptorsInitialized)
 
 TEST_F(mdv_serialport,_init__PortInitialized)
 {
-        SetupDriverInterface(&drv);
+        SetupDriverInterface(&port);
 
         mdv_serialport_init(
                 &port,
-                &drv,
                 spRxCompletedCbk,
                 spTxCompletedCbk,
                 &tsys,
@@ -597,13 +553,12 @@ TEST_F(mdv_serialport,_init__PortInitialized)
 
 TEST_F(mdv_serialport,_init__CallDriverFunction_Init)
 {
-        SetupDriverInterface(&drv);
+        SetupDriverInterface(&port);
 
         spInitReturnValue=MDV_SERIALPORT_ERROR_DRIVER_INTERNAL_ERROR;
 
         result=mdv_serialport_init(
                 &port,
-                &drv,
                 spRxCompletedCbk,
                 spTxCompletedCbk,
                 &tsys,
@@ -630,11 +585,10 @@ TEST_F(mdv_serialport,_get_current_configuration__RequiredParameter_config)
 
 TEST_F(mdv_serialport,_get_current_configuration__ConfigurationInitialized)
 {
-        SetupDriverInterface(&drv);
+        SetupDriverInterface(&port);
 
         mdv_serialport_init(
                 &port,
-                &drv,
                 spRxCompletedCbk,
                 spTxCompletedCbk,
                 &tsys,
@@ -688,7 +642,7 @@ TEST_F(mdv_serialport,_open__ConfigurePort)
 {
         handle=0;
 
-        SetupDriverInterface(&drv);
+        SetupDriverInterface(&port);
         InitPort(&port);
         config.baudRate=MDV_SERIALPORT_BAUDRATE_115200;
 
@@ -702,7 +656,7 @@ TEST_F(mdv_serialport,_open__CallDriverFunction_Open)
         handle=0;
         spOpenReturnValue=MDV_SERIALPORT_ERROR_DRIVER_INTERNAL_ERROR;
 
-        SetupDriverInterface(&drv);
+        SetupDriverInterface(&port);
         InitPort(&port);
 
         result=mdv_serialport_open(&port,&config,&handle);
@@ -714,7 +668,7 @@ TEST_F(mdv_serialport,_open__HandleOccupied)
 {
         handle=0;
 
-        SetupDriverInterface(&drv);
+        SetupDriverInterface(&port);
         InitPort(&port);
 
         mdv_serialport_open(&port,&config,&handle);
@@ -960,7 +914,7 @@ TEST_F(mdv_serialport,_read__TransferSuccessfulOnRxBufferEmpty)
 TEST_F(mdv_serialport,_read__AsyncTransfer_Full8byteTransfer)
 {
         OpenPort(&handle);
-        port.drv->funcRead=spRead8bytes;
+        port.drv.funcRead=spRead8bytes;
 
         mdv_serialport_read(handle,8,data,&bytesRead,1000);
 
@@ -971,7 +925,7 @@ TEST_F(mdv_serialport,_read__AsyncTransfer_Full8byteTransfer)
 TEST_F(mdv_serialport,_read__AsyncTransfer_Initial8bytes)
 {
         OpenPort(&handle);
-        port.drv->funcRead=spRead8bytes;
+        port.drv.funcRead=spRead8bytes;
 
         result=mdv_serialport_read(handle,128,data,&bytesRead,0);
 
@@ -983,7 +937,7 @@ TEST_F(mdv_serialport,_read__SyncTransfer_WithoutTimeout)
 {
         OpenPort(&handle);
         port.rxd.cbk=0;
-        port.drv->funcRead=spRead8bytes;
+        port.drv.funcRead=spRead8bytes;
 
         result=mdv_serialport_read(handle,128,data,&bytesRead,0);
 
@@ -995,7 +949,7 @@ TEST_F(mdv_serialport,_read__SyncTransfer_WithTimeout_NoTimeoutBeforeAllAvailabl
 {
         OpenPort(&handle);
         port.rxd.cbk=0;
-        port.drv->funcRead=spReadTimeout;
+        port.drv.funcRead=spReadTimeout;
 
         result=mdv_serialport_read(handle,128,data,&bytesRead,10);
 
@@ -1113,7 +1067,7 @@ TEST_F(mdv_serialport,_write__TransferSuccessfulOnRxBufferEmpty)
 TEST_F(mdv_serialport,_write__AsyncTransfer_Full8byteTransfer)
 {
         OpenPort(&handle);
-        port.drv->funcWrite=spWrite8bytes;
+        port.drv.funcWrite=spWrite8bytes;
 
         mdv_serialport_write(handle,8,data,&bytesWritten,1000);
 
@@ -1124,7 +1078,7 @@ TEST_F(mdv_serialport,_write__AsyncTransfer_Full8byteTransfer)
 TEST_F(mdv_serialport,_write__AsyncTransfer_Initial8bytes)
 {
         OpenPort(&handle);
-        port.drv->funcWrite=spWrite8bytes;
+        port.drv.funcWrite=spWrite8bytes;
 
         result=mdv_serialport_write(handle,128,data,&bytesWritten,0);
 
@@ -1136,7 +1090,7 @@ TEST_F(mdv_serialport,_write__SyncTransfer_WithoutTimeout)
 {
         OpenPort(&handle);
         port.txd.cbk=0;
-        port.drv->funcWrite=spWrite8bytes;
+        port.drv.funcWrite=spWrite8bytes;
 
         result=mdv_serialport_write(handle,128,data,&bytesWritten,0);
 
@@ -1148,7 +1102,7 @@ TEST_F(mdv_serialport,_write__SyncTransfer_WithTimeout_NoTimeoutBeforeAllAvailab
 {
         OpenPort(&handle);
         port.txd.cbk=0;
-        port.drv->funcWrite=spWriteTimeout;
+        port.drv.funcWrite=spWriteTimeout;
 
         result=mdv_serialport_write(handle,128,data,&bytesWritten,10);
 
@@ -1177,7 +1131,7 @@ TEST_F(mdv_serialport,_runtime_process__CallDriverFunction_RunDriver)
 TEST_F(mdv_serialport,_runtime_process__DontFallInUndefinedFunction_RunDriver)
 {
         OpenPort(&handle);
-        port.drv->funcRun=0;
+        port.drv.funcRun=0;
 
         mdv_serialport_runtime_process(handle);
 }

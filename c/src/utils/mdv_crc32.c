@@ -1,7 +1,7 @@
 /***************************************************************************//**
 **
-**  @file       crc32.c
-**  @ingroup    utils
+**  @file       mdv_crc32.c
+**  @ingroup    madivaru-lib
 **  @brief      CRC-32 checksum calculator
 **  @copyright  Copyright (C) 2012-2018 Tuomas Terho. All rights reserved.
 **
