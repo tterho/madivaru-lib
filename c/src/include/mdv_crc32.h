@@ -1,7 +1,7 @@
 /***************************************************************************//**
 **
-**  @file       crc32.h
-**  @ingroup    utils
+**  @file       mdv_crc32.h
+**  @ingroup    madivaru-lib
 **  @brief      CRC-32 checksum calculator
 **  @copyright  Copyright (C) 2012-2018 Tuomas Terho. All rights reserved.
 **
@@ -40,14 +40,14 @@
 **
 \******************************************************************************/
 
-#ifndef crc32_H
-#define crc32_H
+#ifndef mdv_crc32_H
+#define mdv_crc32_H
 
-#include "types.h"
+#include "mdv_types.h"
 
 /******************************************************************************\
 **
-**  PUBLIC FUNCTION DEFINITIONS
+**  API FUNCTION DECLARATIONS
 **
 \******************************************************************************/
 
@@ -66,12 +66,12 @@
 **  calculation the crc value is the result of the previous calculation.
 */
 uint32_t
-CRC32(
+mdv_crc32(
         uint32_t crc,
         uint32_t size,
         const uint8_t *data
 );
 
-#endif // crc32_H
+#endif // ifndef mdv_crc32_H
 
 /* EOF */

@@ -1,7 +1,7 @@
 /**************************************************************************-----
 **
-**  @file       average16.c
-**  @ingroup    utils
+**  @file       mdv_average16.c
+**  @ingroup    madivaru-lib
 **  @brief      Calculates an average value from a 16-bit sample stream.
 **  @copyright  Copyright (C) 2012-2018 Tuomas Terho. All rights reserved.
 **
@@ -40,51 +40,51 @@
 **
 \******************************************************************************/
 
-#include "average16.h"
+#include "mdv_average16.h"
 
 /******************************************************************************\
 **
-**  PUBLIC FUNCTION DECLARATIONS
+**  API FUNCTION DEFINITIONS
 **
 \******************************************************************************/
 
 /*------------------------------------------------------------------------------
 **  Initializes an average calculator.
 */
-Result_t
-Average16_Init(
-        Average16_t *average,
-        Average16_Mode_t mode,
+MdvResult_t
+mdv_average16_init(
+        MdvAverage16_t *average,
+        MdvAverage16FilterMode_t mode,
         uint16_t size,
         uint16_t *buffer
 )
 {
         if(!average||!buffer){
-                return AVERAGE_ERROR_INVALID_POINTER;
+                return MDV_AVERAGE_ERROR_INVALID_POINTER;
         }        
         average->mod=mode;
         average->sz=size;
         average->bfr=buffer;
-        Average16_Reset(average);
-        return RESULT_OK;
+        mdv_average16_reset(average);
+        return MDV_RESULT_OK;
 }
 
 /*------------------------------------------------------------------------------
 **  Resets an average calculator.
 */
-Result_t
-Average16_Reset(
-        Average16_t *average
+MdvResult_t
+mdv_average16_reset(
+        MdvAverage16_t *average
 )
 {
         if(!average){
-                return AVERAGE_ERROR_INVALID_POINTER;
+                return MDV_AVERAGE_ERROR_INVALID_POINTER;
         }
         average->wr=0;
         average->cnt=0;
         average->sum=0;
         average->val=0;
-        return RESULT_OK;
+        return MDV_RESULT_OK;
 }
 
 /*------------------------------------------------------------------------------
@@ -92,15 +92,15 @@ Average16_Reset(
 **  value. If there is not enough samples for average calculation, returns 0.
 */
 uint16_t
-Average16_Put(
-        Average16_t *average,
+mdv_average16_put(
+        MdvAverage16_t *average,
         uint16_t sample
 )
 {
         uint16_t fs; // The first sample.
 
         switch(average->mod){
-        case AVERAGE16_MODE_FLOATING:
+        case MDV_AVERAGE16_FILTER_MODE_FLOATING:
                 // The first sample in the buffer will be overwritten
                 // (if buffer is full of samples), so keep it temporarily in
                 // memory for further use.
@@ -124,7 +124,7 @@ Average16_Put(
                 }
                 break;
         default:
-        case AVERAGE16_MODE_CONTIGUOUS:
+        case MDV_AVERAGE16_FILTER_MODE_CONTIGUOUS:
                 // Wrap-around check (stops calculation before an overflow).
                 if(average->sum+sample<average->sum){
                         return average->val;

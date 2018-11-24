@@ -40,11 +40,11 @@
 **
 \******************************************************************************/
 
-#include "crc32.h"
+#include "mdv_crc32.h"
 
 /******************************************************************************\
 **
-**  MACRO DEFINITIONS
+**  CONSTANT DEFINITIONS
 **
 \******************************************************************************/
 
@@ -52,7 +52,7 @@
 **  @brief CRC32 lookup table.
 */
 static const uint32_t 
-crc32_Table[256]={
+crc32Table[256]={
         0x00000000,0x77073096,0xEE0E612C,0x990951BA,
         0x076DC419,0x706AF48F,0xE963A535,0x9E6495A3,
         0x0EDB8832,0x79DCB8A4,0xE0D5E91E,0x97D2D988,
@@ -124,7 +124,7 @@ crc32_Table[256]={
 
 /******************************************************************************\
 **
-**  PUBLIC FUNCTION DECLARATIONS
+**  API FUNCTION DEFINITIONS
 **
 \******************************************************************************/
 
@@ -132,7 +132,7 @@ crc32_Table[256]={
 **  Calculates a CRC-32 checksum for the input data. 
 */
 uint32_t
-CRC32(
+mdv_crc32(
         uint32_t crc,
         uint32_t size,
         const uint8_t *data
@@ -143,7 +143,7 @@ CRC32(
 
         for(i=0;i<size;++i){
                 uint8_t octet=data[i];
-                crc32=(crc32>>8)^crc32_Table[octet^(crc32&0xFF)];
+                crc32=(crc32>>8)^crc32Table[octet^(crc32&0xFF)];
         }
         return ~crc32;
 }

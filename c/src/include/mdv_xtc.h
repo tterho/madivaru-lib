@@ -1,7 +1,7 @@
 /***************************************************************************//**
 **
-**  @file       xtc_api.h
-**  @ingroup    utils
+**  @file       mdv_xtc.h
+**  @ingroup    madivaru-lib
 **  @brief      An API for NTC and PTC temperature sensors.
 **  @copyright  Copyright (C) 2012-2018 Tuomas Terho
 **
@@ -38,14 +38,14 @@
 **
 *******************************************************************************/
 
-#ifndef xtc_api_H
-#define xtc_api_H
+#ifndef mdv_xtc_H
+#define mdv_xtc_H
 
-#include "types.h"
+#include "mdv_types.h"
 
 /******************************************************************************\
 **
-**  MACROS AND TYPES
+**  TYPE DEFINITIONS
 **
 \******************************************************************************/
 
@@ -53,14 +53,14 @@
 **  @brief Type of the sensor.
 */
 typedef enum
-XTC_Type_t{
+MdvXtcType_t{
     /// Sensor type not set.
-    XTC_TYPE_UNKNOWN=0,
+    MDV_XTC_TYPE_UNKNOWN=0,
     /// Negative temperature coefficient (NTC) type.
-    XTC_TYPE_NTC,
+    MDV_XTC_TYPE_NTC,
     /// Positive temperature coefficient (PTC) type.
-    XTC_TYPE_PTC
-} XTC_Type_t;
+    MDV_XTC_TYPE_PTC
+} MdvXtcType_t;
 
 /*-------------------------------------------------------------------------*//**
 **  @brief NTC/PTC characteristic curve table element
@@ -70,29 +70,29 @@ XTC_Type_t{
 **  are floating point values in °C.
 */
 typedef struct
-XTC_Curve_t{
+MdvXtcCurve_t{
         /// Temperature in °C.
         float T;
         /// Resistance in ohms.
         float R;
-} XTC_Curve_t;
+} MdvXtcCurve_t;
 
 /*-------------------------------------------------------------------------*//**
 **  @brief NTC/PTC characteristic curve table
 */
 typedef struct
-XTC_t{
+MdvXtc_t{
         /// The type of the sensor.
-        XTC_Type_t tp;
+        MdvXtcType_t tp;
         /// The size of the table.
         uint16_t crvsz;
         /// A pointer to the curve elements.
-        const XTC_Curve_t *crv;
-} XTC_t;
+        const MdvXtcCurve_t *crv;
+} MdvXtc_t;
 
 /******************************************************************************\
 **
-**  API FUNCTIONS
+**  API FUNCTION DECLARATIONS
 **
 \******************************************************************************/
 
@@ -105,8 +105,8 @@ XTC_t{
 **  @return Temperature in °C.
 */
 float
-XTC_Convert_R_to_T(
-        XTC_t *xtc,
+mdv_xtc_get_temperature(
+        MdvXtc_t *xtc,
         float R
 );
 
@@ -119,11 +119,11 @@ XTC_Convert_R_to_T(
 **  @return Resistance in ohms.
 */
 float
-XTC_Convert_T_to_R(
-        XTC_t *xtc,
+mdv_xtc_get_resistance(
+        MdvXtc_t *xtc,
         float T
 );
 
-#endif // xtc_api_H
+#endif // ifndef mdv_xtc_H
 
 /* EOF */

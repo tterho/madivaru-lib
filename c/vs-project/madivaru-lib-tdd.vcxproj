@@ -33,23 +33,38 @@
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros" />
   <ItemGroup>
-    <ClCompile Include="..\src\cli\cli_api.c" />
-    <ClCompile Include="..\src\sensor_framework\sensor_api.c" />
-    <ClCompile Include="..\src\serialport\serialport.c" />
-    <ClCompile Include="..\src\spi\spi_api.c" />
-    <ClCompile Include="..\src\utils\average16.c" />
-    <ClCompile Include="..\src\utils\fifo.c" />
-    <ClCompile Include="..\src\utils\timer.c" />
-    <ClCompile Include="..\src\xtc\xtc_api.c" />
+    <ClCompile Include="..\src\mdv_cli.c" />
+    <ClCompile Include="..\src\mdv_sensor_api.c" />
+    <ClCompile Include="..\src\mdv_serialport.c" />
+    <ClCompile Include="..\src\mdv_serialport_driver_interface.c" />
+    <ClCompile Include="..\src\mdv_spi.c" />
+    <ClCompile Include="..\src\mdv_xtc.c" />
+    <ClCompile Include="..\src\utils\mdv_average16.c" />
+    <ClCompile Include="..\src\utils\mdv_crc16.c" />
+    <ClCompile Include="..\src\utils\mdv_crc32.c" />
+    <ClCompile Include="..\src\utils\mdv_fifo.c" />
+    <ClCompile Include="..\src\utils\mdv_timer.c" />
     <ClCompile Include="..\test\main.cc" />
-    <ClCompile Include="..\test\utils\test_fifo.cc" />
-    <ClCompile Include="..\test\utils\test_serialport.cc" />
+    <ClCompile Include="..\test\test_cli.cc" />
+    <ClCompile Include="..\test\test_serialport.cc" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\src\types.h" />
+    <ClInclude Include="..\src\include\mdv_average16.h" />
+    <ClInclude Include="..\src\include\mdv_cli.h" />
+    <ClInclude Include="..\src\include\mdv_crc16.h" />
+    <ClInclude Include="..\src\include\mdv_crc32.h" />
+    <ClInclude Include="..\src\include\mdv_fifo.h" />
+    <ClInclude Include="..\src\include\mdv_sensor_api.h" />
+    <ClInclude Include="..\src\include\mdv_serialport.h" />
+    <ClInclude Include="..\src\include\mdv_serialport_driver_interface.h" />
+    <ClInclude Include="..\src\include\mdv_serialport_types.h" />
+    <ClInclude Include="..\src\include\mdv_spi.h" />
+    <ClInclude Include="..\src\include\mdv_timer.h" />
+    <ClInclude Include="..\src\include\mdv_types.h" />
+    <ClInclude Include="..\src\include\mdv_xtc.h" />
   </ItemGroup>
   <ItemDefinitionGroup />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
@@ -82,7 +97,7 @@
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <WarningLevel>Level3</WarningLevel>
-      <AdditionalIncludeDirectories>$(ProjectDir)..\src\sensor_framework;$(ProjectDir)..\src\cli;$(ProjectDir)..\src\xtc;$(ProjectDir)..\src\serialport;$(ProjectDir)..\src\spi;$(ProjectDir)..\src;$(ProjectDir)..\src\utils;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)..\src\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -113,7 +128,7 @@
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <AdditionalIncludeDirectories>$(ProjectDir)..\src\sensor_framework;$(ProjectDir)..\src\cli;$(ProjectDir)..\src\xtc;$(ProjectDir)..\src\serialport;$(ProjectDir)..\src\spi;$(ProjectDir)..\src;$(ProjectDir)..\src\utils;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)..\src\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>

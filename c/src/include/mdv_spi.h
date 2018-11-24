@@ -1,12 +1,9 @@
 /***************************************************************************//**
 **
-**  @file       spi_api.h
-**  @ingroup    serialcomm
+**  @file       mdv_spi.h
+**  @ingroup    madivaru-lib
 **  @brief      SPI communication API.
 **  @copyright  Copyright (C) 2012-2018 Tuomas Terho. All rights reserved.
-**
-**  Common synchronous serial port interface which can be easily ported for 
-**  different platforms without need to change the control interface.
 **
 *******************************************************************************/
 /*
@@ -43,10 +40,10 @@
 **
 *******************************************************************************/
 
-#ifndef spi_api_H
-#define spi_api_H
+#ifndef mdv_spi_H
+#define mdv_spi_H
 
-#include "types.h"
+#include "mdv_types.h"
 
 /******************************************************************************\
 **
@@ -57,37 +54,37 @@
 /// @brief Invalid pointer.
 ///
 /// At least one of the pointer parameters is invalid (points to null).
-#define SPI_ERROR_INVALID_POINTER -1
+#define MDV_SPI_ERROR_INVALID_POINTER -1
 
 /// @brief Invalid pointer.
 ///
 /// At least one of the parameter values is invalid.
-#define SPI_ERROR_INVALID_PARAMETER -2
+#define MDV_SPI_ERROR_INVALID_PARAMETER -2
 
 /// @brief Driver initialization failed.
 ///
 /// Something went wrong during the driver initialization. Check the driver
 /// configuration.
-#define SPI_ERROR_DRIVER_INITIALIZATION_FAILED -3
+#define MDV_SPI_ERROR_DRIVER_INITIALIZATION_FAILED -3
 
 /// @brief Transmission error.
 ///
 /// Something went wrong during the data transmission.
-#define SPI_ERROR_TRANSMISSION_FAILED -4
+#define MDV_SPI_ERROR_TRANSMISSION_FAILED -4
 
 /// @brief Invalid operation.
 ///
 /// The operation is invalid. Check the port configuration.
-#define SPI_ERROR_INVALID_OPERATION -5
+#define MDV_SPI_ERROR_INVALID_OPERATION -5
 
 /// @brief Invalid buffer size.
 ///
 /// The driver supports only equal size Rx and Tx buffers.
-#define SPI_ERROR_INVALID_BUFFER_SIZE -6
+#define MDV_SPI_ERROR_INVALID_BUFFER_SIZE -6
 
 /******************************************************************************\
 **
-**  PORT CONFIGURATION DATA TYPES
+**  TYPE DEFINITIONS
 **
 \******************************************************************************/
 
@@ -95,23 +92,23 @@
 **  @brief SPI operating modes.
 */
 typedef enum
-SPI_OperatingMode_t{
+MdvSpiOperatingMode_t{
         /// The SPI device operates in Master mode (default).
-        SPI_OM_MASTER=0,
+        MDV_SPI_OPERATING_MODE_MASTER=0,
         /// The SPI device operates in Slave mode.
-        SPI_OM_SLAVE,
-} SPI_OperatingMode_t;
+        MDV_SPI_OPERATING_MODE_SLAVE,
+} MdvSpiOperatingMode_t;
 
 /*-------------------------------------------------------------------------*//**
 **  @brief SPI configuration structure.
 */
 typedef struct
-SPI_Config_t{
+MdvSpiConfig_t{
         /// @brief Operating mode of the SPI device.
-        SPI_OperatingMode_t OperatingMode;
+        MdvSpiOperatingMode_t operatingMode;
         union{
                 /// @brief Configuration bits.
-                uint8_t Bits;
+                uint8_t bits;
                 struct{
                         /// @brief Clock phase option (default = 0).
                         ///
@@ -146,12 +143,27 @@ SPI_Config_t{
         ///
         /// Specifies the transfer rate of the SPI communication. The nearest
         /// possible value is used depending on the hardware capability.
-        uint32_t ClkSpeed;
-} SPI_Config_t;
+        uint32_t clkSpeed;
+} MdvSpiConfig_t;
+
+/*-------------------------------------------------------------------------*//**
+**  @brief Transfer completion callback.
+**
+**  @param[in] userData A pointer to user specified data to be passed to the
+**      callback handler.
+**
+**  This callback is invoked by the driver on the completion of an asynchronous
+**  transfer.
+*/
+typedef void
+(*MdvSpiTransferCompletedCallback_t)(
+        void *userData
+);
+
 
 /******************************************************************************\
 **
-**  DRIVER API FUNCTIONS
+**  DRIVER INTERFACE FUNCTION TYPES
 **
 \******************************************************************************/
 
@@ -160,15 +172,15 @@ SPI_Config_t{
 **
 **  @param[in] config SPI port configuration.
 **
-**  @retval RESULT_OK Initialization successful.
-**  @retval SPI_ERROR_INVALID_POINTER The config parameter points to null.
-**  @return Negative value: a driver specific error code. See the driver 
+**  @retval MDV_RESULT_OK Initialization successful.
+**  @retval MDV_SPI_ERROR_INVALID_POINTER The config parameter points to null.
+**  @return Negative value: a driver specific error code. See the driver
 **      implementation.
 */
-typedef 
-Result_t 
-(*SPIDrv_Init_t)(
-        SPI_Config_t *config
+typedef
+MdvResult_t
+(*MdvSpiDriverInterface_Init_t)(
+        MdvSpiConfig_t *config
 );
 
 /*-------------------------------------------------------------------------*//**
@@ -178,9 +190,9 @@ Result_t
 */
 typedef
 void
-(*SPIDrv_Open_t)(
+(*MdvSpiDriverInterface_Open_t)(
         void
-);                 
+);
 
 /*-------------------------------------------------------------------------*//**
 **  @brief Closes a SPI port.
@@ -188,8 +200,8 @@ void
 **  @return No return value.
 */
 typedef
-void 
-(*SPIDrv_Close_t)(
+void
+(*MdvSpiDriverInterface_Close_t)(
         void
 );
 
@@ -198,12 +210,12 @@ void
 **
 **  @param[in] slaveAddress The address of the slave to select.
 **
-**  @retval RESULT_OK Slave selected successfully.
-**  @retval SPI_ERROR_INVALID_PARAMETER Slave address out of range.
+**  @retval MDV_RESULT_OK Slave selected successfully.
+**  @retval MDV_SPI_ERROR_INVALID_PARAMETER Slave address out of range.
 */
 typedef
-Result_t
-(*SPIDrv_SelectSlave_t)(
+MdvResult_t
+(*MdvSpiDriverInterface_SelectSlave_t)(
         uint8_t slaveAddress
 );
 
@@ -211,18 +223,18 @@ Result_t
 **  @brief Transfers one byte of data in both directions.
 **
 **  @param[in] dout Data to send. If there is no data to send out, set to zero.
-**  @param[out] din Data to receive. If there is no data to receive, set to 
+**  @param[out] din Data to receive. If there is no data to receive, set to
 **      null.
 **
-**  @retval RESULT_OK Transmission successful.
+**  @retval MDV_RESULT_OK Transmission successful.
 **
-**  @remarks Implement this function if the driver is capable of to transmit one 
-**  byte at the time. Otherwise, implement the function @ref SPIDrv_Transfer_t 
-**  function.
+**  @remarks Implement this function if the driver is capable of to transmit one
+**  byte at the time. Otherwise, implement the function
+**  @ref MdvSpiDriverInterface_Transfer_t.
 */
 typedef
-Result_t
-(*SPIDrv_TransferByte_t)(
+MdvResult_t
+(*MdvSpiDriverInterface_TransferByte_t)(
         uint8_t dout,
         uint8_t *din
 );
@@ -232,42 +244,28 @@ Result_t
 **
 **  @param[in] dout Data to send. If there is no data to send out, set to null.
 **  @param[in] outsz Size of the output data.
-**  @param[out] din Data to receive. If there is no data to receive, set to 
+**  @param[out] din Data to receive. If there is no data to receive, set to
 **      null.
 **  @param[in] dinsz Size of the input data.
 **
-**  @retval RESULT_OK Transmission successful.
+**  @retval MDV_RESULT_OK Transmission successful.
 **
-**  @remarks Implement this function if the driver is capable of to transmit 
-**  multiple bytes at the time. Otherwise, implement the function 
-**  @ref SPIDrv_TransferByte_t.
+**  @remarks Implement this function if the driver is capable of to transmit
+**  multiple bytes at the time. Otherwise, implement the function
+**  @ref MdvSpiDriverInterface_TransferByte_t.
 */
 typedef
-Result_t
-(*SPIDrv_Transfer_t)(
+MdvResult_t
+(*MdvSpiDriverInterface_Transfer_t)(
         uint8_t *dout,
         uint16_t outsz,
         uint8_t *din,
         uint16_t insz
 );
 
-/*-------------------------------------------------------------------------*//**
-**  @brief Transfer completion callback.
-**
-**  @param[in] userData A pointer to user specified data to be passed to the 
-**      callback handler.
-**
-**  This callback is invoked by the driver on the completion of an asynchronous
-**  transfer.
-*/
-typedef void
-(*SPI_TransferCompletedCbk_t)(
-        void *userData
-);
-
 /******************************************************************************\
 **
-**  DRIVER INTERFACE
+**  DRIVER INTERFACE DEFINITION
 **
 \******************************************************************************/
 
@@ -275,37 +273,88 @@ typedef void
 **  @brief SPI driver interface structure.
 */
 typedef struct
-SPIDrv_t{
+MdvSpiDriverInterface_t{
         /// Initializes the driver.
-        SPIDrv_Init_t Init;
+        MdvSpiDriverInterface_Init_t funcInit;
         /// Opens the driver.
-        SPIDrv_Open_t Open;
-        /// @brief 
-        SPIDrv_Close_t Close;
+        MdvSpiDriverInterface_Open_t funcOpen;
+        /// Closes the driver.
+        MdvSpiDriverInterface_Close_t funcClose;
         /// Selects a slave for communication.
-        SPIDrv_SelectSlave_t SelectSlave;
+        MdvSpiDriverInterface_SelectSlave_t funcSelectSlave;
         /// Transfers one byte in both directions.
-        SPIDrv_TransferByte_t TransferByte;
+        MdvSpiDriverInterface_TransferByte_t funcTransferByte;
         /// Transfers data in both directions.
-        SPIDrv_Transfer_t Transfer;
-        /// Stores the port configuration.
-        SPI_Config_t cfg;
-        /// Transfer completion callback.
-        SPI_TransferCompletedCbk_t cbk;
-        /// A pointer to user specified data.
-        void *ud;
-} SPIDrv_t;
+        MdvSpiDriverInterface_Transfer_t funcTransfer;
+        /// Initialization status of the interface.
+        bool init;
+} MdvSpiDriverInterface_t;
+
+#ifdef __cplusplus
+extern "C"{
+#endif // ifdef __cplusplus
 
 /******************************************************************************\
 **
-**  SPI API FUNCTIONS
+**  SPI DEFINITION
 **
 \******************************************************************************/
 
 /*-------------------------------------------------------------------------*//**
+**  @brief SPI structure.
+*/
+typedef struct
+MdvSpi_t{
+        /// Pointer to a SPI driver interface.
+        MdvSpiDriverInterface_t *drv;
+        /// Stores the port configuration.
+        MdvSpiConfig_t cfg;
+        /// Transfer completion callback.
+        MdvSpiTransferCompletedCallback_t cbk;
+        /// A pointer to user specified data.
+        void *ud;
+} MdvSpi_t;
+
+/******************************************************************************\
+**
+**  API FUNCTION DECLARATIONS
+**
+\******************************************************************************/
+
+/*-------------------------------------------------------------------------*//**
+**  @brief Sets up the driver interface.
+**
+**  @param[out] iface Driver interface to set up.
+**  @param[in] funcInit (Mandatory) A function to initialize the port hardware.
+**  @param[in] funcOpen (Mandatory) A function to open the port.
+**  @param[in] funcClose (Mandatory) A function to close the port.
+**  @param[in] funcSelectSlave (Optional) A function to select a SPI slave.
+**  @param[in] funcTransferByte (Optional) A function to transfer one byte of
+**      data in both directions.
+**  @param[in] funcTransfer (Optional) A function to transfer multiple bytes of
+**      data in both directions.
+**
+**  @retval MDV_RESULT_OK Successful.
+**  @retval MDV_SPI_ERROR_INVALID_POINTER The port parameter points to null.
+**  @retval MDV_SPI_ERROR_INVALID_PARAMETER At least one of the mandatory
+**      function pointers is null.
+*/
+MdvResult_t
+mdv_spi_setup_driver_interface(
+        MdvSpiDriverInterface_t *iface,
+        MdvSpiDriverInterface_Init_t funcInit,
+        MdvSpiDriverInterface_Open_t funcOpen,
+        MdvSpiDriverInterface_Close_t funcClose,
+        MdvSpiDriverInterface_SelectSlave_t funcSelectSlave,
+        MdvSpiDriverInterface_TransferByte_t funcTransferByte,
+        MdvSpiDriverInterface_Transfer_t funcTransfer
+);
+
+/*-------------------------------------------------------------------------*//**
 **  @brief Opens a SPI port.
 **
-**  @param[in] driver Driver to initialize.
+**  @param[in] spi SPI port to open.
+**  @param[in] drv SPI driver interface.
 **  @param[in] config SPI port configuration.
 **  @param[in] callback Callback for asynchronous transfer completed events.
 **      This parameter is optional and can be set to null.
@@ -313,19 +362,21 @@ SPIDrv_t{
 **      the transfer completed callback handler.
 **  @param[out] handle Handle to the opened port.
 **
-**  @retval RESULT_OK Port opened successfully.
-**  @retval SPI_ERROR_INVALID_POINTER Either the driver, config or handle 
+**  @retval MDV_RESULT_OK Port opened successfully.
+**  @retval MDV_SPI_ERROR_INVALID_POINTER Either the driver, config or handle 
 **      parameter points to null.
-**  @retval SPI_ERROR_INVALID_PARAMETER The handle is not null.
-**  @retval SPI_ERROR_DRIVER_INITIALIZATION_FAILED Driver initialization failed.
+**  @retval MDV_SPI_ERROR_INVALID_PARAMETER The handle is not null.
+**  @retval MDV_SPI_ERROR_DRIVER_INITIALIZATION_FAILED Driver initialization 
+**      failed.
 */
-Result_t
-SPI_Open(
-        SPIDrv_t *driver,
-        SPI_Config_t *config,
-        SPI_TransferCompletedCbk_t callback,
+MdvResult_t
+mdv_spi_open(
+        MdvSpi_t *spi,
+        MdvSpiDriverInterface_t *drv,
+        MdvSpiConfig_t *config,
+        MdvSpiTransferCompletedCallback_t callback,
         void *userData,
-        Handle_t *handle
+        MdvHandle_t *handle
 );
 
 /*-------------------------------------------------------------------------*//**
@@ -333,13 +384,13 @@ SPI_Open(
 **
 **  @param[in] handle A handle to the port to be closed.
 **
-**  @retval RESULT_OK Port closed successfully.
-**  @retval SPI_ERROR_INVALID_POINTER The handle parameter points to null.
-**  @retval SPI_ERROR_INVALID_PARAMETER The handle is invalid (null).
+**  @retval MDV_RESULT_OK Port closed successfully.
+**  @retval MDV_SPI_ERROR_INVALID_POINTER The handle parameter points to null.
+**  @retval MDV_SPI_ERROR_INVALID_PARAMETER The handle is invalid (null).
 */
-Result_t
-SPI_Close(
-        Handle_t *handle
+MdvResult_t
+mdv_spi_close(
+        MdvHandle_t *handle
 );
 
 /*-------------------------------------------------------------------------*//**
@@ -348,15 +399,15 @@ SPI_Close(
 **  @param[in] handle A handle to the port.
 **  @param[in] slaveAddress The address of the slave to select.
 **
-**  @retval RESULT_OK Slave selected successfully.
-**  @retval SPI_ERROR_INVALID_PARAMETER The handle is invalid (null), or the 
+**  @retval MDV_RESULT_OK Slave selected successfully.
+**  @retval MDV_SPI_ERROR_INVALID_PARAMETER The handle is invalid (null), or the 
 **      slave address is out of range.
-**  @retval SPI_ERROR_INVALID_OPERATION The slave selection works only on master
-**      device. Check the port configuration.
+**  @retval MDV_SPI_ERROR_INVALID_OPERATION The slave selection works only on 
+**      master device. Check the port configuration.
 */
-Result_t
-SPI_SelectSlave(
-        Handle_t handle,
+MdvResult_t
+mdv_spi_select_slave(
+        MdvHandle_t handle,
         uint8_t slaveAddress
 );                
 
@@ -369,11 +420,13 @@ SPI_SelectSlave(
 **  @param[out] din Data to be received.
 **  @param[in] insz Input data length in bytes.
 **
-**  @retval RESULT_OK Initialization successful.
-**  @retval SPI_ERROR_INVALID_POINTER The config parameter points to null.
-**  @retval SPI_ERROR_DRIVER_INITIALIZATION_FAILED Driver initialization failed.
-**  @retval SPI_ERROR_TRANSMISSION_FAILED Transmission failed for some reason.
-**  @retval SPI_ERROR_INVALID_BUFFER_SIZE The driver doesn't support inequal
+**  @retval MDV_RESULT_OK Initialization successful.
+**  @retval MDV_SPI_ERROR_INVALID_POINTER The config parameter points to null.
+**  @retval MDV_SPI_ERROR_DRIVER_INITIALIZATION_FAILED Driver initialization 
+**      failed.
+**  @retval MDV_SPI_ERROR_TRANSMISSION_FAILED Transmission failed for some 
+**      reason.
+**  @retval MDV_SPI_ERROR_INVALID_BUFFER_SIZE The driver doesn't support inequal
 **      buffer sizes.
 **
 **  Transfers equal amount of data in both directions. If the transmission 
@@ -386,15 +439,19 @@ SPI_SelectSlave(
 **  sizes. If the buffer sizes don't match, in that case the driver returns
 **  an error.
 */
-Result_t
-SPI_Transfer(
-        Handle_t handle,
+MdvResult_t
+mdv_spi_transfer(
+        MdvHandle_t handle,
         uint8_t *dout,
         uint16_t outsz,
         uint8_t *din,
         uint16_t insz
 );
 
-#endif // spi_api_H
+#ifdef __cplusplus
+}
+#endif // ifdef __cplusplus
+
+#endif // ifndef mdv_spi_H
 
 /* EOF */

@@ -1,7 +1,7 @@
 /***************************************************************************//**
 **
-**  @file       fifo.h
-**  @ingroup    utils
+**  @file       mdv_fifo.h
+**  @ingroup    madivaru-lib
 **  @brief      A general purpose first-in/first-out buffer (FIFO).
 **  @copyright  Copyright (C) 2012-2018 Tuomas Terho. All rights reserved.
 **
@@ -45,11 +45,11 @@
 #ifndef fifo_H
 #define fifo_H
 
-#include "types.h"
+#include "mdv_types.h"
 
 /******************************************************************************\
 **
-**  PROTECTION MACROS
+**  PROTECTION MACRO DECLARATIONS
 **
 \******************************************************************************/
 
@@ -58,14 +58,18 @@
 /// This macro is used in the Put and Get operations to prevent multiple 
 /// simultaneous accesses to the FIFO. Add code here according to your system
 /// needs, for example by disabling interrupts or by retrieving a mutex.
-#define FIFO_ENTER_CRITICAL()
+#ifndef MDV_FIFO_ENTER_CRITICAL
+        #define MDV_FIFO_ENTER_CRITICAL()
+#endif // ifndef MDV_FIFO_ENTER_CRITICAL
 
 /// @brief Exits a critical section of code.
 ///
 /// This macro is used in the Put and Get operations to prevent multiple
 /// simultaneous accesses to the FIFO. Add code here according to your system
 /// needs, for example by enabling interrupts or by freeing a mutex.
-#define FIFO_EXIT_CRITICAL()
+#ifndef MDV_FIFO_EXIT_CRITICAL
+        #define MDV_FIFO_EXIT_CRITICAL()
+#endif // ifndef MDV_FIFO_EXIT_CRITICAL
 
 /******************************************************************************\
 **
@@ -76,26 +80,26 @@
 /// @brief Invalid pointer.
 ///
 /// At least one of the pointer parameters is invalid (points to null).
-#define FIFO_ERROR_INVALID_POINTER -1
+#define MDV_FIFO_ERROR_INVALID_POINTER -1
 
 /// @brief Invalid parameter.
 ///
 /// At least one of the value parameters is invalid.
-#define FIFO_ERROR_INVALID_PARAMETER -2
+#define MDV_FIFO_ERROR_INVALID_PARAMETER -2
 
 /// @brief FIFO is full.
 ///
 /// The FIFO is full. Performing a Put operation loses data.
-#define FIFO_ERROR_FULL -3
+#define MDV_FIFO_ERROR_FULL -3
 
 /// @brief FIFO is empty.
 ///
 /// The FIFO is empty. Performing a Get operation doesn't return data.
-#define FIFO_ERROR_EMPTY -4
+#define MDV_FIFO_ERROR_EMPTY -4
 
 /******************************************************************************\
 **
-**  DATA TYPE DEFINITIONS
+**  TYPE DEFINITIONS
 **
 \******************************************************************************/
 
@@ -103,7 +107,7 @@
 **  @brief FIFO structure
 */
 typedef struct 
-FIFO_t
+MdvFifo_t
 {
         /// Pointer to the FIFO data buffer.
         void *d;
@@ -123,11 +127,11 @@ FIFO_t
         void *wrp;
         /// Read pointer.
         void *rdp;
-} FIFO_t;
+} MdvFifo_t;
 
 /******************************************************************************\
 **
-**  PUBLIC FUNCTION DEFINITIONS
+**  API FUNCTION DECLARATIONS
 **
 \******************************************************************************/
 
@@ -139,18 +143,18 @@ FIFO_t
 **  @param[in] size The size of the buffer in bytes.
 **  @param[in] dsize The size of one data item in bytes.
 **
-**  @retval RESULT_OK Successful
-**  @retval FIFO_ERROR_INVALID_POINTER Either the fifo or data parameter points 
+**  @retval MDV_RESULT_OK Successful
+**  @retval MDV_FIFO_ERROR_INVALID_POINTER Either the fifo or data parameter points 
 **      to null.
-**  @retval FIFO_ERROR_INVALID_PARAMETER The size or the data size is zero, or
+**  @retval MDV_FIFO_ERROR_INVALID_PARAMETER The size or the data size is zero, or
 **      the size is smaller than the data size.
 **
 **  Initializes a FIFO by associating it with an externally allocated data
 **  buffer and resets the FIFO.
 */
-Result_t 
-FIFO_Init(
-        FIFO_t *fifo,
+MdvResult_t 
+mdv_fifo_init(
+        MdvFifo_t *fifo,
         void *data,        
         uint32_t size,
         uint16_t dsize
@@ -161,15 +165,15 @@ FIFO_Init(
 **
 **  @param[in] fifo FIFO to reset.
 **
-**  @retval RESULT_OK Successful
-**  @retval FIFO_ERROR_INVALID_POINTER fifo parameter points to null.
+**  @retval MDV_RESULT_OK Successful
+**  @retval MDV_FIFO_ERROR_INVALID_POINTER fifo parameter points to null.
 **
 **  Resets a FIFO by setting the read and write pointers to the beginning of the
 **  buffer and setting the data count to zero.
 */
-Result_t
-FIFO_Reset(
-        FIFO_t *fifo
+MdvResult_t
+mdv_fifo_reset(
+        MdvFifo_t *fifo
 );
 
 /*-------------------------------------------------------------------------*//** 
@@ -178,18 +182,18 @@ FIFO_Reset(
 **  @param[in] fifo FIFO to put data in.
 **  @param[in] data Item to put to the FIFO.
 **
-**  @retval RESULT_OK Successful
-**  @retval FIFO_ERROR_INVALID_POINTER Either the fifo or the data parameter 
+**  @retval MDV_RESULT_OK Successful
+**  @retval MDV_FIFO_ERROR_INVALID_POINTER Either the fifo or the data parameter 
 **      points to null.
-**  @retval FIFO_ERROR_FULL FIFO is full.
+**  @retval MDV_FIFO_ERROR_FULL FIFO is full.
 **
 **  Puts data to a FIFO, advances its write pointer and increases data count.
 **  The size of the data item must match with the size given in the 
 **  FIFO initialization.
 */
-Result_t
-FIFO_Put(
-        FIFO_t *fifo,
+MdvResult_t
+mdv_fifo_put(
+        MdvFifo_t *fifo,
         void *data
 );
 
@@ -199,19 +203,19 @@ FIFO_Put(
 **  @param[in] fifo FIFO to get data from.
 **  @param[in] data Pointer to a variable where to put data.
 **
-**  @retval RESULT_OK Successful
-**  @retval FIFO_ERROR_INVALID_POINTER Either the fifo or the data parameter 
+**  @retval MDV_RESULT_OK Successful
+**  @retval MDV_FIFO_ERROR_INVALID_POINTER Either the fifo or the data parameter 
 **      points to null.
-**  @return FIFO_ERROR_EMPTY FIFO is empty.
+**  @return MDV_FIFO_ERROR_EMPTY FIFO is empty.
 **
 **  Gets data from a FIFO, advances its read pointer and decreases data count.
 */
-Result_t
-FIFO_Get(
-        FIFO_t *fifo,
+MdvResult_t
+mdv_fifo_get(
+        MdvFifo_t *fifo,
         void *data
 );
 
-#endif // fifo_H
+#endif // ifndef mdv_fifo_H
 
 /* EOF */
