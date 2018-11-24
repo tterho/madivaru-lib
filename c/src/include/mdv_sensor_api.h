@@ -40,8 +40,8 @@
 **
 \******************************************************************************/
 
-#ifndef sensor_api_H
-#define sensor_api_H
+#ifndef mdv_sensor_api_H
+#define mdv_sensor_api_H
 
 #include "mdv_types.h"
 #include "mdv_timer.h"
@@ -872,6 +872,6 @@ mdv_sensor_run(
         MdvHandle_t handle
 );
 
-#endif // mdv_sensor_api_H
+#endif // ifndef mdv_sensor_api_H
 
 /* EOF */

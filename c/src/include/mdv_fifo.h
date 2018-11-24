@@ -42,8 +42,8 @@
 **
 *******************************************************************************/
 
-#ifndef fifo_H
-#define fifo_H
+#ifndef mdv_fifo_H
+#define mdv_fifo_H
 
 #include "mdv_types.h"
 

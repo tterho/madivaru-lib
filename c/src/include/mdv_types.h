@@ -44,8 +44,8 @@
 **
 \******************************************************************************/
 
-#ifndef types_H
-#define types_H
+#ifndef mdv_types_H
+#define mdv_types_H
 
 #include <stdio.h>
 #include <inttypes.h>
@@ -313,6 +313,6 @@ typedef int16_t MdvResult_t;
 */
 #define MDV_FTOI(FVAL) ((uint32_t)((FVAL)+0.5))
 
-#endif // ifndef types_H
+#endif // ifndef mdv_types_H
 
 /* EOF */
