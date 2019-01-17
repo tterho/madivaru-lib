@@ -62,9 +62,7 @@ mdv_spi_setup_driver_interface(
         if(!spi){
                 return MDV_SPI_ERROR_INVALID_POINTER;
         }
-        if(!funcInit||!funcOpen||!funcClose||!funcSelectSlave||
-                !funcTransferByte||!funcTransfer
-                ){
+        if(!funcInit||!funcOpen||!funcClose){
                 return MDV_SPI_ERROR_INVALID_PARAMETER;
         }
         spi->drv.funcInit=funcInit;
