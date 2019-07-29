@@ -3,39 +3,39 @@
 **  @file       mdv_serialport.c
 **  @ingroup    madivaru-lib
 **  @brief      Serial port API.
-**  @copyright  Copyright (C) 2012-2018 Tuomas Terho. All rights reserved.
+**  @copyright  Copyright (c) Tuomas Terho. All rights reserved.
 **
 *******************************************************************************/
 /*
 **  BSD 3-Clause License
 **
-**  COPYRIGHT (c) 2012-2018, Tuomas Terho
+**  COPYRIGHT (c) Tuomas Terho
 **  All rights reserved.
 **
 **  Redistribution and use in source and binary forms, with or without
 **  modification, are permitted provided that the following conditions are met:
-**  
-**  * Redistributions of source code must retain the above copyright notice, 
+**
+**  * Redistributions of source code must retain the above copyright notice,
 **    this list of conditions and the following disclaimer.
-**  
+**
 **  * Redistributions in binary form must reproduce the above copyright notice,
 **    this list of conditions and the following disclaimer in the documentation
 **    and/or other materials provided with the distribution.
-**  
+**
 **  * Neither the name of the copyright holder nor the names of its
 **    contributors may be used to endorse or promote products derived from
 **    this software without specific prior written permission.
-**  
+**
 **  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 **  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-**  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
-**  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE 
-**  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR 
-**  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF 
-**  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
-**  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
-**  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
-**  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+**  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+**  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+**  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+**  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+**  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+**  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+**  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+**  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 **  POSSIBILITY OF SUCH DAMAGE.
 **
 *******************************************************************************/
@@ -53,7 +53,7 @@
 /*-------------------------------------------------------------------------*//**
 **  @brief Default configuration for serial ports.
 */
-const MdvSerialPortConfig_t 
+const MdvSerialPortConfig_t
 serialPortDefaultConfig={
         /// Baud rate = 9600 bps.
         MDV_SERIALPORT_BAUDRATE_9600,
@@ -170,6 +170,7 @@ serialport_cancel_transfer(
 /*-------------------------------------------------------------------------*//**
 **  @brief Performs an asynchronous transfer.
 **
+**  @param[in] instance A pointer to a driver instance.
 **  @param[in] tferFunc Driver Read/Write operation.
 **  @param[in] tfer A pointer to a transfer descriptor.
 **
@@ -178,6 +179,7 @@ serialport_cancel_transfer(
 */
 static MdvResult_t
 serialport_asynchronous_transfer(
+        MdvDriverInstance_t *instance,
         MdvSerialPortDriverInterface_Transfer_t tferFunc,
         MdvSerialPortTransfer_t *tfer
 )
@@ -190,7 +192,7 @@ serialport_asynchronous_transfer(
                 return MDV_RESULT_OK;
         }
         // Retrieve data.
-        result=tferFunc(tfer);
+        result=tferFunc(instance,tfer);
         if(!MDV_SUCCESSFUL(result)&&
            result!=MDV_SERIALPORT_ERROR_RX_BUFFER_EMPTY&&
            result!=MDV_SERIALPORT_ERROR_TX_BUFFER_FULL){
@@ -230,6 +232,7 @@ serialport_asynchronous_transfer(
 /*-------------------------------------------------------------------------*//**
 **  @brief Performs a synchronous transfer.
 **
+**  @param[in] instance A pointer to a driver instance.
 **  @param[in] tferFunc Driver Read/Write operation.
 **  @param[in] tfer A pointer to a transfer descriptor.
 **
@@ -238,6 +241,7 @@ serialport_asynchronous_transfer(
 */
 static MdvResult_t
 serialport_synchronous_transfer(
+        MdvDriverInstance_t *instance,
         MdvSerialPortDriverInterface_Transfer_t tferFunc,
         MdvSerialPortTransfer_t *tfer
 )
@@ -248,7 +252,7 @@ serialport_synchronous_transfer(
         while(tfer->t_on){
                 // Use the asynchronous transfer function to retrieve data
                 // and manage timeouts.
-                result=serialport_asynchronous_transfer(tferFunc,tfer);
+                result=serialport_asynchronous_transfer(instance,tferFunc,tfer);
                 if(!MDV_SUCCESSFUL(result)){
                         return result;
                 }
@@ -258,6 +262,7 @@ serialport_synchronous_transfer(
 /*-------------------------------------------------------------------------*//**
 **  @brief Transfers data to/from serial port.
 **
+**  @param[in] instance A pointer to a driver instance.
 **  @param[in] tferFunc Driver Read/Write function.
 **  @param[in] tfer A pointer to a transfer descriptor.
 **  @param[in] length Data length;
@@ -270,6 +275,7 @@ serialport_synchronous_transfer(
 */
 static MdvResult_t
 serialport_transfer(
+        MdvDriverInstance_t *instance,
         MdvSerialPortDriverInterface_Transfer_t tferFunc,
         MdvSerialPortTransfer_t *tfer,
         uint32_t length,
@@ -297,12 +303,17 @@ serialport_transfer(
         }
         if(!tfer->cbk){
                 // No callback defined. Use synchronous transfer.
-                return serialport_synchronous_transfer(tferFunc,tfer);
+                return serialport_synchronous_transfer(
+                        instance,
+                        tferFunc,
+                        tfer
+                );
         }
-        else{
-                return serialport_asynchronous_transfer(tferFunc,tfer);
-        }
-        return MDV_RESULT_OK;
+        return serialport_asynchronous_transfer(
+                instance,
+                tferFunc,
+                tfer
+        );
 }
 
 /******************************************************************************\
@@ -314,9 +325,12 @@ serialport_transfer(
 MdvResult_t
 mdv_serialport_setup_driver_interface(
         MdvSerialPort_t *port,
-        MdvSerialPortDriverInterface_Init_t funcInit,
-        MdvSerialPortDriverInterface_Open_t funcOpen,
-        MdvSerialPortDriverInterface_Close_t funcClose,
+        MdvDriverInstance_t *instance,
+        MdvDriverInterface_Init_t funcInit,
+        MdvDriverInterface_Open_t funcOpen,
+        MdvDriverInterface_Close_t funcClose,
+        MdvDriverInterface_Sleep_t funcSleep,
+        MdvDriverInterface_Wakeup_t funcWakeup,
         MdvSerialPortDriverInterface_Transfer_t funcRead,
         MdvSerialPortDriverInterface_Transfer_t funcWrite,
         MdvSerialPortDriverInterface_Run_t funcRun
@@ -328,13 +342,16 @@ mdv_serialport_setup_driver_interface(
         if(!funcInit||!funcOpen||!funcClose||!funcRead||!funcWrite){
                 return MDV_SERIALPORT_ERROR_INVALID_PARAMETER;
         }
-        port->drv.funcInit=funcInit;
-        port->drv.funcOpen=funcOpen;
-        port->drv.funcClose=funcClose;
+        port->drv.essentials.instance=instance;
+        port->drv.essentials.funcInit=funcInit;
+        port->drv.essentials.funcOpen=funcOpen;
+        port->drv.essentials.funcClose=funcClose;
+        port->drv.essentials.funcSleep=funcSleep;
+        port->drv.essentials.funcWakeup=funcWakeup;
         port->drv.funcRead=funcRead;
         port->drv.funcWrite=funcWrite;
         port->drv.funcRun=funcRun;
-        port->drv.init=true;
+        port->drv.essentials.initialized=true;
         return MDV_RESULT_OK;
 }
 
@@ -351,7 +368,7 @@ mdv_serialport_init(
         if(!port){
                 return MDV_SERIALPORT_ERROR_INVALID_POINTER;
         }
-        if(!port->drv.init){
+        if(!port->drv.essentials.initialized){
                 return MDV_SERIALPORT_ERROR_NO_DRIVER_INTERFACE;
         }
         // Initialize the rx descriptor.
@@ -369,9 +386,9 @@ mdv_serialport_init(
         // Set default configuration.
         port->cfg=serialPortDefaultConfig;
         // Set initialization status.
-        port->init=true;
+        port->initialized=true;
         // Initialize the driver.
-        return port->drv.funcInit();        
+        return port->drv.essentials.funcInit(port->drv.essentials.instance);
 }
 
 MdvResult_t
@@ -406,12 +423,16 @@ mdv_serialport_open(
                 return MDV_SERIALPORT_ERROR_RESOURCE_IN_USE;
         }
         // Check the port initialization status.
-        if(!port->init){
+        if(!port->initialized){
                 return MDV_SERIALPORT_ERROR_PORT_NOT_INITIALIZED;
         }
         // Configure and open the port.
         port->cfg=*config;
-        result=port->drv.funcOpen(&port->cfg);
+        result=port->drv.essentials.funcWakeup(port->drv.essentials.instance);
+        if(!MDV_SUCCESSFUL(result)){
+                return result;
+        }
+        result=port->drv.essentials.funcOpen(port->drv.essentials.instance);
         if(!MDV_SUCCESSFUL(result)){
                 return result;
         }
@@ -438,7 +459,11 @@ mdv_serialport_close(
         serialport_cancel_transfer(&port->rxd);
         serialport_cancel_transfer(&port->txd);
         // Close the port.
-        result=port->drv.funcClose();
+        result=port->drv.essentials.funcClose(port->drv.essentials.instance);
+        if(!MDV_SUCCESSFUL(result)){
+                return result;
+        }
+        result=port->drv.essentials.funcSleep(port->drv.essentials.instance);
         if(!MDV_SUCCESSFUL(result)){
                 return result;
         }
@@ -469,13 +494,13 @@ mdv_serialport_change_configuration(
         serialport_cancel_transfer(&port->rxd);
         serialport_cancel_transfer(&port->txd);
         // Close the port.
-        result=port->drv.funcClose();
+        result=port->drv.essentials.funcClose(port->drv.essentials.instance);
         if(!MDV_SUCCESSFUL(result)){
                 return result;
         }
         // Port re-configuration and re-opening.
         port->cfg=*config;
-        return port->drv.funcOpen(&port->cfg);
+        return port->drv.essentials.funcOpen(port->drv.essentials.instance);
 }
 
 MdvResult_t
@@ -500,6 +525,7 @@ mdv_serialport_read(
         port=(MdvSerialPort_t*)handle;
         // Start transfer.
         return serialport_transfer(
+                port->drv.essentials.instance,
                 port->drv.funcRead,
                 &port->rxd,
                 length,
@@ -531,6 +557,7 @@ mdv_serialport_write(
         port=(MdvSerialPort_t*)handle;
         // Init transfer.
         return serialport_transfer(
+                port->drv.essentials.instance,
                 port->drv.funcWrite,
                 &port->txd,
                 length,
@@ -575,15 +602,26 @@ mdv_serialport_runtime_process(
 
         // Run the driver.
         if(port->drv.funcRun){
-                result=port->drv.funcRun(&port->rxd,&port->txd);
+                result=port->drv.funcRun(
+                        port->drv.essentials.instance,
+                        &port->rxd,&port->txd
+                );
                 if(!MDV_SUCCESSFUL(result)){
                         return result;
                 }
         }
 
         // Perform asynchronous transfers.
-        serialport_asynchronous_transfer(port->drv.funcRead,&port->rxd);
-        serialport_asynchronous_transfer(port->drv.funcWrite,&port->txd);
+        serialport_asynchronous_transfer(
+                port->drv.essentials.instance,
+                port->drv.funcRead,
+                &port->rxd
+        );
+        serialport_asynchronous_transfer(
+                port->drv.essentials.instance,
+                port->drv.funcWrite,
+                &port->txd
+        );
         return MDV_RESULT_OK;
 }
 
