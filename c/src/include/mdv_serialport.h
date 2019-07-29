@@ -3,42 +3,42 @@
 **  @file       mdv_serialport.h
 **  @ingroup    madivaru-lib
 **  @brief      Serial port API.
-**  @copyright  Copyright (C) 2012-2018 Tuomas Terho. All rights reserved.
+**  @copyright  Copyright (c) Tuomas Terho. All rights reserved.
 **
-**  Common serial port interface which can be easily ported for different 
+**  Common serial port interface which can be easily ported for different
 **  platforms without need to change the control interface.
 **
 *******************************************************************************/
 /*
 **  BSD 3-Clause License
 **
-**  COPYRIGHT (c) 2012-2018, Tuomas Terho
+**  COPYRIGHT (c) Tuomas Terho
 **  All rights reserved.
 **
 **  Redistribution and use in source and binary forms, with or without
 **  modification, are permitted provided that the following conditions are met:
-**  
-**  * Redistributions of source code must retain the above copyright notice, 
+**
+**  * Redistributions of source code must retain the above copyright notice,
 **    this list of conditions and the following disclaimer.
-**  
+**
 **  * Redistributions in binary form must reproduce the above copyright notice,
 **    this list of conditions and the following disclaimer in the documentation
 **    and/or other materials provided with the distribution.
-**  
+**
 **  * Neither the name of the copyright holder nor the names of its
 **    contributors may be used to endorse or promote products derived from
 **    this software without specific prior written permission.
-**  
+**
 **  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 **  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-**  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
-**  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE 
-**  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR 
-**  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF 
-**  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
-**  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
-**  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
-**  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+**  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+**  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+**  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+**  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+**  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+**  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+**  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+**  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 **  POSSIBILITY OF SUCH DAMAGE.
 **
 *******************************************************************************/
@@ -46,6 +46,7 @@
 #ifndef mdv_serialport_H
 #define mdv_serialport_H
 
+#include "mdv_driver_essentials.h"
 #include "mdv_timer.h"
 
 /******************************************************************************\
@@ -66,7 +67,7 @@
 
 /// @brief Driver interface not specified.
 ///
-/// The driver interface functions are not initialized. Use the @ref 
+/// The driver interface functions are not initialized. Use the @ref
 /// mdv_serialport_setup_driver_interface function to initialize the interface.
 #define MDV_SERIALPORT_ERROR_NO_DRIVER_INTERFACE -3
 
@@ -103,7 +104,7 @@
 
 /// @brief Error in driver.
 ///
-/// The driver has not been initialized correctly, e.g. the TimerSys pointer 
+/// The driver has not been initialized correctly, e.g. the TimerSys pointer
 /// points to null.
 #define MDV_SERIALPORT_ERROR_DRIVER_INTERNAL_ERROR -10
 
@@ -268,7 +269,7 @@ typedef void
 (*MdvSerialPortTransferCompletedCallback_t)(
         MdvResult_t result,
         void *userData
-        );
+);
 
 /*-------------------------------------------------------------------------*//**
 **  @brief Asynchronous transfer descriptor.
@@ -284,7 +285,7 @@ MdvSerialPortTransfer_t{
         };
         /// @brief Data length in bytes.
         ///
-        /// This value is set by the library and shouldn't be modified by the 
+        /// This value is set by the library and shouldn't be modified by the
         /// driver.
         uint32_t len;
         /// @brief Pointer to the length of data transferred.
@@ -348,52 +349,9 @@ MdvSerialPortTransfer_t{
 \******************************************************************************/
 
 /*-------------------------------------------------------------------------*//**
-**  @brief Initializes the serial port driver.
-**
-**  @return The result of the initialization.
-*/
-typedef
-MdvResult_t
-(*MdvSerialPortDriverInterface_Init_t)(
-        void
-);
-
-/*-------------------------------------------------------------------------*//**
-**  @brief Opens the serial port driver.
-**
-**  @param[in] cfg Port configuration.
-**
-**  @retval MDV_RESULT_OK Successful
-**  @return On error returns a negative error value specified by the driver
-**      implementation.
-**
-**  Opens the serial port by using its current configuration. Enables receiver,
-**  transmitter and interrupts if necessary and clears the RX and TX buffers.
-*/
-typedef
-MdvResult_t
-(*MdvSerialPortDriverInterface_Open_t)(
-        MdvSerialPortConfig_t *cfg
-);
-
-/*-------------------------------------------------------------------------*//**
-**  @brief Closes the serial port.
-**
-**  @retval MDV_RESULT_OK Successful
-**  @return On error returns a negative error value specified by the driver
-**      implementation.
-**
-**  Disables receiver, transmitter and interrupts if necessary.
-*/
-typedef
-MdvResult_t
-(*MdvSerialPortDriverInterface_Close_t)(
-        void
-);
-
-/*-------------------------------------------------------------------------*//**
 **  @brief Transfers data to/from the serial port.
 **
+**  @param[in] instance A pointer to driver instance data.
 **  @param[in] tfer A pointer to a transfer descriptor.
 **
 **  @retval MDV_RESULT_OK Successful.
@@ -403,12 +361,14 @@ MdvResult_t
 typedef
 MdvResult_t
 (*MdvSerialPortDriverInterface_Transfer_t)(
+        MdvDriverInstance_t *instance,
         MdvSerialPortTransfer_t *tfer
 );
 
 /*-------------------------------------------------------------------------*//**
 **  @brief Runs the driver.
 **
+**  @param[in] instance A pointer to driver instance data.
 **  @param[in] rxd A pointer to a reception descriptor.
 **  @param[in] txd A pointer to a transmission descriptor.
 **
@@ -419,6 +379,7 @@ MdvResult_t
 typedef
 MdvResult_t
 (*MdvSerialPortDriverInterface_Run_t)(
+        MdvDriverInstance_t *instance,
         MdvSerialPortTransfer_t *rxd,
         MdvSerialPortTransfer_t *txd
 );
@@ -436,25 +397,15 @@ MdvResult_t
 */
 typedef struct
 MdvSerialPortDriverInterface_t{
-        /// Initializes the driver.
-        MdvSerialPortDriverInterface_Init_t funcInit;
-        /// Opens the serial port.
-        MdvSerialPortDriverInterface_Open_t funcOpen;
-        /// Closes the serial port.
-        MdvSerialPortDriverInterface_Close_t funcClose;
-        /// Reads data from the serial port.
+        /// @brief Driver essentials.
+        MdvDriverEssentials_t essentials;
+        /// @brief Reads data from the serial port.
         MdvSerialPortDriverInterface_Transfer_t funcRead;
-        /// Writes data to the serial port.
+        /// @brief Writes data to the serial port.
         MdvSerialPortDriverInterface_Transfer_t funcWrite;
-        /// Runs the driver.
+        /// @brief Runs the driver.
         MdvSerialPortDriverInterface_Run_t funcRun;
-        /// Interface initialization status.
-        bool init;
 } MdvSerialPortDriverInterface_t;
-
-#ifdef __cplusplus
-extern "C"{
-#endif // ifdef __cplusplus
 
 /******************************************************************************\
 **
@@ -470,7 +421,7 @@ MdvSerialPort_t{
         /// Driver interface.
         MdvSerialPortDriverInterface_t drv;
         /// Port initialization status.
-        bool init;
+        bool initialized;
         /// Serial port configuration data.
         MdvSerialPortConfig_t cfg;
         /// Reception descriptor.
@@ -496,13 +447,21 @@ extern const MdvSerialPortConfig_t MdvSerialportDefaultConfig;
 **
 \******************************************************************************/
 
+#ifdef __cplusplus
+extern "C"{
+#endif // ifdef __cplusplus
+
 /*-------------------------------------------------------------------------*//**
 **  @brief Sets up the driver interface.
 **
-**  @param[out] port Seria port instance which driver interface to set up.
-**  @param[in] funcInit (Mandatory) A function to initialize the port hardware.
+**  @param[out] port Serial port instance whose driver interface to set up.
+**  @param[in] instance A pointer to a driver instance that will be associated
+**      to the port.
+**  @param[in] funcInit (Mandatory) A function to initialize the driver.
 **  @param[in] funcOpen (Mandatory) A function to open the port.
 **  @param[in] funcClose (Mandatory) A function to close the port.
+**  @param[in] funcSleep (Mandatory) A function to prepare for sleep mode.
+**  @param[in] funcWakeup (Mandatory) A function to run post-sleep operations.
 **  @param[in] funcRead (Mandatory) A function to read data from the port.
 **  @param[in] funcWrite (Mandatory) A function to write data to the port.
 **  @param[in] funcRun (Optional) A function to support asynchronous
@@ -517,9 +476,12 @@ extern const MdvSerialPortConfig_t MdvSerialportDefaultConfig;
 MdvResult_t
 mdv_serialport_setup_driver_interface(
         MdvSerialPort_t *port,
-        MdvSerialPortDriverInterface_Init_t funcInit,
-        MdvSerialPortDriverInterface_Open_t funcOpen,
-        MdvSerialPortDriverInterface_Close_t funcClose,
+        MdvDriverInstance_t *instance,
+        MdvDriverInterface_Init_t funcInit,
+        MdvDriverInterface_Open_t funcOpen,
+        MdvDriverInterface_Close_t funcClose,
+        MdvDriverInterface_Sleep_t funcSleep,
+        MdvDriverInterface_Wakeup_t funcWakeup,
         MdvSerialPortDriverInterface_Transfer_t funcRead,
         MdvSerialPortDriverInterface_Transfer_t funcWrite,
         MdvSerialPortDriverInterface_Run_t funcRun
@@ -539,10 +501,10 @@ mdv_serialport_setup_driver_interface(
 **
 **  @retval MDV_RESULT_OK Successful.
 **  @retval SP_ERROR_INVALID_POINTER The port parameter points to null.
-**  @return On a driver error returns a negative error code. See the driver 
+**  @return On a driver error returns a negative error code. See the driver
 **      implementation for more information.
 **
-**  Initializes the serial port and the hardware by calling driver's 
+**  Initializes the serial port and the hardware by calling driver's
 **  initialization method. The driver interface must be initialized before this
 **  operation.
 */
