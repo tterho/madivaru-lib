@@ -2,10 +2,10 @@
 **
 **  @file       mdv_driver_essentials.h
 **  @ingroup    madivaru-lib
-**  @brief      Essential driver definitions.
+**  @brief      Essential driver features.
 **  @copyright  Copyright (c) Tuomas Terho. All rights reserved.
 **
-**  Common driver definitions which are essential to any driver design.
+**  Common features which are essential to any driver design.
 **
 *******************************************************************************/
 /*
@@ -192,6 +192,48 @@ MdvDriverEssentials_t{
         /// @brief Interface initialization status.
         bool initialized;
 } MdvDriverEssentials_t;
+
+/******************************************************************************\
+**
+**  API FUNCTION DECLARATIONS
+**
+\******************************************************************************/
+
+#ifdef __cplusplus
+extern "C"{
+#endif // ifdef __cplusplus
+
+/*-------------------------------------------------------------------------*//**
+**  @brief Sets up the essential driver interface.
+**
+**  @param[out] essentials Essential driver interface instance to set up.
+**  @param[in] instance A pointer to a driver instance.
+**  @param[in] funcInit (Mandatory) A function to initialize the driver.
+**  @param[in] funcOpen (Mandatory) A function to open the port.
+**  @param[in] funcClose (Mandatory) A function to close the port.
+**  @param[in] funcSleep (Mandatory) A function to prepare for sleep mode.
+**  @param[in] funcWakeup (Mandatory) A function to run post-sleep operations.
+**
+**  @retval MDV_RESULT_OK Successful.
+**  @retval MDV_DRIVER_ERROR_INVALID_POINTER The port parameter points to
+**      null.
+**  @retval MDV_SERIALPORT_ERROR_INVALID_PARAMETER At least one of the mandatory
+**      function pointers is null.
+*/
+MdvResult_t
+mdv_setup_driver_essentials(
+        MdvDriverEssentials_t *essentials,
+        MdvDriverInstance_t *instance,
+        MdvDriverInterface_Init_t funcInit,
+        MdvDriverInterface_Open_t funcOpen,
+        MdvDriverInterface_Close_t funcClose,
+        MdvDriverInterface_Sleep_t funcSleep,
+        MdvDriverInterface_Wakeup_t funcWakeup
+);
+
+#ifdef __cplusplus
+}
+#endif // ifdef __cplusplus
 
 #endif // ifndef mdv_driver_essentials_H
 

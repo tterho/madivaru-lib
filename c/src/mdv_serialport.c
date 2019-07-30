@@ -325,12 +325,6 @@ serialport_transfer(
 MdvResult_t
 mdv_serialport_setup_driver_interface(
         MdvSerialPort_t *port,
-        MdvDriverInstance_t *instance,
-        MdvDriverInterface_Init_t funcInit,
-        MdvDriverInterface_Open_t funcOpen,
-        MdvDriverInterface_Close_t funcClose,
-        MdvDriverInterface_Sleep_t funcSleep,
-        MdvDriverInterface_Wakeup_t funcWakeup,
         MdvSerialPortDriverInterface_Transfer_t funcRead,
         MdvSerialPortDriverInterface_Transfer_t funcWrite,
         MdvSerialPortDriverInterface_Run_t funcRun
@@ -339,19 +333,12 @@ mdv_serialport_setup_driver_interface(
         if(!port){
                 return MDV_SERIALPORT_ERROR_INVALID_POINTER;
         }
-        if(!funcInit||!funcOpen||!funcClose||!funcRead||!funcWrite){
+        if(funcRead||!funcWrite){
                 return MDV_SERIALPORT_ERROR_INVALID_PARAMETER;
         }
-        port->drv.essentials.instance=instance;
-        port->drv.essentials.funcInit=funcInit;
-        port->drv.essentials.funcOpen=funcOpen;
-        port->drv.essentials.funcClose=funcClose;
-        port->drv.essentials.funcSleep=funcSleep;
-        port->drv.essentials.funcWakeup=funcWakeup;
         port->drv.funcRead=funcRead;
         port->drv.funcWrite=funcWrite;
         port->drv.funcRun=funcRun;
-        port->drv.essentials.initialized=true;
         return MDV_RESULT_OK;
 }
 

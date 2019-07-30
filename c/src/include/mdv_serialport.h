@@ -452,16 +452,11 @@ extern "C"{
 #endif // ifdef __cplusplus
 
 /*-------------------------------------------------------------------------*//**
-**  @brief Sets up the driver interface.
+**  @brief Sets up the serial port specific driver interface.
 **
 **  @param[out] port Serial port instance whose driver interface to set up.
 **  @param[in] instance A pointer to a driver instance that will be associated
 **      to the port.
-**  @param[in] funcInit (Mandatory) A function to initialize the driver.
-**  @param[in] funcOpen (Mandatory) A function to open the port.
-**  @param[in] funcClose (Mandatory) A function to close the port.
-**  @param[in] funcSleep (Mandatory) A function to prepare for sleep mode.
-**  @param[in] funcWakeup (Mandatory) A function to run post-sleep operations.
 **  @param[in] funcRead (Mandatory) A function to read data from the port.
 **  @param[in] funcWrite (Mandatory) A function to write data to the port.
 **  @param[in] funcRun (Optional) A function to support asynchronous
@@ -476,12 +471,6 @@ extern "C"{
 MdvResult_t
 mdv_serialport_setup_driver_interface(
         MdvSerialPort_t *port,
-        MdvDriverInstance_t *instance,
-        MdvDriverInterface_Init_t funcInit,
-        MdvDriverInterface_Open_t funcOpen,
-        MdvDriverInterface_Close_t funcClose,
-        MdvDriverInterface_Sleep_t funcSleep,
-        MdvDriverInterface_Wakeup_t funcWakeup,
         MdvSerialPortDriverInterface_Transfer_t funcRead,
         MdvSerialPortDriverInterface_Transfer_t funcWrite,
         MdvSerialPortDriverInterface_Run_t funcRun
