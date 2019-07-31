@@ -333,7 +333,7 @@ mdv_serialport_setup_driver_interface(
         if(!port){
                 return MDV_SERIALPORT_ERROR_INVALID_POINTER;
         }
-        if(funcRead||!funcWrite){
+        if(!funcRead||!funcWrite){
                 return MDV_SERIALPORT_ERROR_INVALID_PARAMETER;
         }
         port->drv.funcRead=funcRead;
