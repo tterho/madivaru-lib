@@ -48,7 +48,7 @@
 
 /******************************************************************************\
 **
-**  ERROR CODES AND RESULTS
+**  MODULE SPECIFIC RESULTS AND ERROR CODES
 **
 \******************************************************************************/
 
@@ -58,83 +58,92 @@
 /// @brief The help printed out and parsing stopped.
 #define MDV_CLI_RESULT_HELP_PRINTED 2
 
-/// @brief At least one of the pointer parameters is invalid.
-#define MDV_CLI_ERROR_INVALID_POINTER -1
-
-/// @brief At least one of the value parameters is invalid.
-#define MDV_CLI_ERROR_INVALID_PARAMETER -2
-
 /// @brief User sent an interrupt process command (Crtl+C).
-#define MDV_CLI_ERROR_INTERRUPT_PROCESS -10
+#define MDV_CLI_ERROR_INTERRUPT_PROCESS \
+        MDV_MODULE_SPECIFIC_ERROR(0)
 
 /// @brief A command handler is invalid.
-#define MDV_CLI_ERROR_INVALID_COMMAND_HANDLER -11
+#define MDV_CLI_ERROR_INVALID_COMMAND_HANDLER \
+        MDV_MODULE_SPECIFIC_ERROR(1)
 
 /// @brief An unsupported parameter value type.
-#define MDV_CLI_ERROR_UNSUPPORTED_PARAMETER_VALUE_TYPE -12
+#define MDV_CLI_ERROR_UNSUPPORTED_PARAMETER_VALUE_TYPE \
+        MDV_MODULE_SPECIFIC_ERROR(2)
 
 /// @brief A CLI command is invalid.
 ///
 /// The command must begin with a-z or A-Z (case sensitive).
-#define MDV_CLI_ERROR_PARSER_INVALID_COMMAND -20
+#define MDV_CLI_ERROR_PARSER_INVALID_COMMAND \
+        MDV_MODULE_SPECIFIC_ERROR(3)
 
 /// @brief A CLI command is not recognized.
 ///
 /// The command is not supported by the application.
-#define MDV_CLI_ERROR_PARSER_UNKNOWN_COMMAND -21
+#define MDV_CLI_ERROR_PARSER_UNKNOWN_COMMAND \
+        MDV_MODULE_SPECIFIC_ERROR(4)
 
 /// @brief A CLI parameter is missing.
 ///
 /// Not all mandatory parameters or none of the alternative parameters found.
-#define MDV_CLI_ERROR_PARSER_PARAMETER_MISSING -22
+#define MDV_CLI_ERROR_PARSER_PARAMETER_MISSING \
+        MDV_MODULE_SPECIFIC_ERROR(5)
 
 /// @brief A CLI parameter is invalid.
 ///
 /// The parameter must begin with - or / and it must contain a single character
 /// from the range a-z or A-Z (case sensitive).
-#define MDV_CLI_ERROR_PARSER_INVALID_PARAMETER -23
+#define MDV_CLI_ERROR_PARSER_INVALID_PARAMETER \
+        MDV_MODULE_SPECIFIC_ERROR(6)
 
 /// @brief A CLI parameter is not recognized.
 ///
 /// The parameter is not supported by the command.
-#define MDV_CLI_ERROR_PARSER_UNKNOWN_PARAMETER -24
+#define MDV_CLI_ERROR_PARSER_UNKNOWN_PARAMETER \
+        MDV_MODULE_SPECIFIC_ERROR(7)
 
 /// @brief A CLI parameter value is missing.
 ///
 /// The parameter requires a value, but no value specified on the command line.
-#define MDV_CLI_ERROR_PARSER_MISSING_PARAMETER_VALUE -25
+#define MDV_CLI_ERROR_PARSER_MISSING_PARAMETER_VALUE \
+        MDV_MODULE_SPECIFIC_ERROR(8)
 
 /// @brief A CLI parameter value is invalid.
 ///
 /// The parameter value is in invalid format (e.g. expected an integer, got a
 /// string).
-#define MDV_CLI_ERROR_PARSER_INVALID_PARAMETER_VALUE -26
+#define MDV_CLI_ERROR_PARSER_INVALID_PARAMETER_VALUE \
+        MDV_MODULE_SPECIFIC_ERROR(9)
 
 /// @brief A CLI parameter value is out of range.
 ///
 /// The parameter value is out of the expected range.
-#define MDV_CLI_ERROR_PARSER_PARAMETER_VALUE_OUT_OF_RANGE -27
+#define MDV_CLI_ERROR_PARSER_PARAMETER_VALUE_OUT_OF_RANGE \
+        MDV_MODULE_SPECIFIC_ERROR(10)
 
 /// @brief An extra parameter in the command line.
 ///
 /// There is at least one extra parameter in the command line.
-#define MDV_CLI_ERROR_PARSER_EXTRA_PARAMETER -28
+#define MDV_CLI_ERROR_PARSER_EXTRA_PARAMETER \
+        MDV_MODULE_SPECIFIC_ERROR(11)
 
 /// @brief An unexpected end of line.
 ///
 /// Found a parameter or a parameter value specifier, but not the parameter or
 /// the value.
-#define MDV_CLI_ERROR_PARSER_UNEXPECTED_EOL -29
+#define MDV_CLI_ERROR_PARSER_UNEXPECTED_EOL \
+        MDV_MODULE_SPECIFIC_ERROR(12)
 
 /// @brief An unexpected parameter value.
 ///
 /// Found a parameter value which was not expected.
-#define MDV_CLI_ERROR_PARSER_UNEXPECTED_PARAMETER_VALUE -30
+#define MDV_CLI_ERROR_PARSER_UNEXPECTED_PARAMETER_VALUE \
+        MDV_MODULE_SPECIFIC_ERROR(13)
 
 /// @brief A duplicated parameter.
 ///
 /// Found a parameter which already exists in the list.
-#define MDV_CLI_ERROR_PARSER_DUPLICATED_PARAMETER -31
+#define MDV_CLI_ERROR_PARSER_DUPLICATED_PARAMETER \
+        MDV_MODULE_SPECIFIC_ERROR(14)
 
 /******************************************************************************\
 **
@@ -327,7 +336,7 @@ extern "C"{
 **  @param[out] parser A pointer to a parser to create.
 **
 **  @retval MDV_RESULT_OK Successful.
-**  @retval CLI_ERROR_INVALID_POINTER One of the pointer parameters parser,
+**  @retval MDV_ERROR_INVALID_POINTER One of the pointer parameters parser,
 **      inputBuffer, clicmd or cliparam is invalid (points to null).
 */
 MdvResult_t
@@ -353,7 +362,7 @@ mdv_cli_init_parser(
 **  @param[in] parser A parser to use.
 **
 **  @retval MDV_RESULT_OK Successful.
-**  @retval CLI_ERROR_INVALID_POINTER The parser parameter points to null.
+**  @retval MDV_ERROR_INVALID_POINTER The parser parameter points to null.
 */
 MdvResult_t
 mdv_cli_enable_parser(
@@ -366,7 +375,7 @@ mdv_cli_enable_parser(
 **  @param[in] parser A parser to use.
 **
 **  @retval MDV_RESULT_OK Successful.
-**  @retval CLI_ERROR_INVALID_POINTER The parser parameter points to null.
+**  @retval MDV_ERROR_INVALID_POINTER The parser parameter points to null.
 */
 MdvResult_t
 mdv_cli_disable_parser(
@@ -379,7 +388,7 @@ mdv_cli_disable_parser(
 **  @param[in] parser A parser to use.
 **
 **  @retval MDV_RESULT_OK Successful.
-**  @retval CLI_ERROR_INVALID_POINTER The parser parameter points to null.
+**  @retval MDV_ERROR_INVALID_POINTER The parser parameter points to null.
 */
 MdvResult_t
 mdv_cli_enable_echo(
@@ -392,7 +401,7 @@ mdv_cli_enable_echo(
 **  @param[in] parser A parser to use.
 **
 **  @retval MDV_RESULT_OK Successful.
-**  @retval CLI_ERROR_INVALID_POINTER The parser parameter points to null.
+**  @retval MDV_ERROR_INVALID_POINTER The parser parameter points to null.
 */
 MdvResult_t
 mdv_cli_disable_echo(
@@ -406,7 +415,7 @@ mdv_cli_disable_echo(
 **  @param[in] newLine Add new line before the input (true) or not (false).
 **
 **  @retval MDV_RESULT_OK Successful.
-**  @retval CLI_ERROR_INVALID_POINTER The parser parameter points to null.
+**  @retval MDV_ERROR_INVALID_POINTER The parser parameter points to null.
 */
 MdvResult_t
 mdv_cli_begin_new_input(
@@ -422,7 +431,7 @@ mdv_cli_begin_new_input(
 **  @param[in] input An input character.
 **
 **  @retval MDV_RESULT_OK Successful.
-**  @retval CLI_ERROR_INVALID_POINTER The parser parameter points to null.
+**  @retval MDV_ERROR_INVALID_POINTER The parser parameter points to null.
 **  @return On parser errors returns negative error codes. See the error
 **      descriptions for more information.
 */

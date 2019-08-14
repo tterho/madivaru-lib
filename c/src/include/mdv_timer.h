@@ -16,28 +16,28 @@
 **
 **  Redistribution and use in source and binary forms, with or without
 **  modification, are permitted provided that the following conditions are met:
-**  
-**  * Redistributions of source code must retain the above copyright notice, 
+**
+**  * Redistributions of source code must retain the above copyright notice,
 **    this list of conditions and the following disclaimer.
-**  
+**
 **  * Redistributions in binary form must reproduce the above copyright notice,
 **    this list of conditions and the following disclaimer in the documentation
 **    and/or other materials provided with the distribution.
-**  
+**
 **  * Neither the name of the copyright holder nor the names of its
 **    contributors may be used to endorse or promote products derived from
 **    this software without specific prior written permission.
-**  
+**
 **  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 **  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-**  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
-**  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE 
-**  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR 
-**  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF 
-**  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
-**  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
-**  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
-**  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+**  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+**  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+**  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+**  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+**  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+**  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+**  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+**  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 **  POSSIBILITY OF SUCH DAMAGE.
 **
 \******************************************************************************/
@@ -57,15 +57,11 @@ extern "C"{
 **
 \******************************************************************************/
 
-/// @brief Invalid pointer.
-///
-/// At least one of the pointer parameters is invalid (points to null).
-#define MDV_TIMER_ERROR_INVALID_POINTER -1
-
 /// @brief Timer is not running.
 ///
 /// Timer system is not running. Timer tick counter don't increase as expected.
-#define MDV_TIMER_ERROR_TIMER_NOT_RUNNING -2
+#define MDV_TIMER_ERROR_TIMER_NOT_RUNNING \
+        MDV_MODULE_SPECIFIC_ERROR(0)
 
 /******************************************************************************\
 **
@@ -73,12 +69,12 @@ extern "C"{
 **
 \******************************************************************************/
 
-/*-------------------------------------------------------------------------*//** 
+/*-------------------------------------------------------------------------*//**
 **  @brief Timer type.
 */
 typedef uint32_t MdvTimer_t;
 
-/*-------------------------------------------------------------------------*//** 
+/*-------------------------------------------------------------------------*//**
 **  @brief Timer system structure.
 */
 typedef struct
@@ -95,7 +91,7 @@ MdvTimerSystem_t{
         uint32_t tb;
 } MdvTimerSystem_t;
 
-/*-------------------------------------------------------------------------*//** 
+/*-------------------------------------------------------------------------*//**
 **  @brief Time units.
 */
 typedef enum
@@ -107,7 +103,7 @@ MdvTimeUnit_t{
         // Time is in milliseconds.
         MDV_TIME_UNIT_MS,
         // Time is in seconds.
-        MDV_TIME_UNIT_S        
+        MDV_TIME_UNIT_S
 } MdvTimeUnit_t;
 
 /******************************************************************************\
@@ -116,25 +112,25 @@ MdvTimeUnit_t{
 **
 \******************************************************************************/
 
-/*-------------------------------------------------------------------------*//** 
+/*-------------------------------------------------------------------------*//**
 **  @brief Initializes the timer system.
 **
 **  @param[in] timerSys Timer system to be initialized.
 **  @param[in] timeBase Time base in microseconds. This value specifies how many
-**      microseconds one timer tick takes time. This timer system doesn't 
+**      microseconds one timer tick takes time. This timer system doesn't
 **      support timers faster than one microsecond.
 **  @param[in] timerInvocationLimit This limit specifies how many times the @ref
-**      mdv_timer_get_time function can be invoked without increase in the 
+**      mdv_timer_get_time function can be invoked without increase in the
 **      timer tick value before the system stops waiting. Set this value
-**      depending on the ratio between the system clock and the timer tick 
-**      frequency. Too small limit value causes the timer to  get tired 
-**      accidentally. However, keeping this as small as possible enhances the 
+**      depending on the ratio between the system clock and the timer tick
+**      frequency. Too small limit value causes the timer to  get tired
+**      accidentally. However, keeping this as small as possible enhances the
 **      system response on error situations.
 **
 **  @retval MDV_RESULT_OK Initialization successful.
-**  @retval MDV_TIMER_ERROR_INVALID_POINTER The timerSys points to null.
+**  @retval MDV_ERROR_INVALID_POINTER The timerSys points to null.
 */
-MdvResult_t 
+MdvResult_t
 mdv_timer_system_init(
         MdvTimerSystem_t *timerSys,
         uint32_t timeBase,
@@ -148,7 +144,7 @@ mdv_timer_system_init(
 **  @param[in] ticks Value to advance the timer.
 **
 **  @retval MDV_RESULT_OK Timer system advanced successfully.
-**  @retval MDV_TIMER_ERROR_INVALID_POINTER The timerSys pointer points to null.
+**  @retval MDV_ERROR_INVALID_POINTER The timerSys pointer points to null.
 **
 **  This function is used by the user application to run the timer system. The
 **  interval and accuracy of invokation of this function declares the timer
@@ -160,14 +156,14 @@ mdv_timer_system_tick(
         uint32_t ticks
 );
 
-/*-------------------------------------------------------------------------*//** 
+/*-------------------------------------------------------------------------*//**
 **  @brief Starts a timer.
 **
 **  @param[in] timerSys Timer system to use.
 **  @param[out] timer Timer to start.
 **
 **  @retval MDV_RESULT_OK Timer started successfully.
-**  @retval TIMER_ERROR_INVALID POINTER Either the timerSys or timer points to
+**  @retval MDV_ERROR_INVALID POINTER Either the timerSys or timer points to
 **      null.
 */
 MdvResult_t
@@ -176,7 +172,7 @@ mdv_timer_start(
         MdvTimer_t *timer
 );
 
-/*-------------------------------------------------------------------------*//** 
+/*-------------------------------------------------------------------------*//**
 **  @brief Returns the time elapsed from the timer start.
 **
 **  @param[in] timerSys Timer system to use.
@@ -185,7 +181,7 @@ mdv_timer_start(
 **  @param[out] timeElapsed Time elapsed from the timer start.
 **
 **  @retval MDV_RESULT_OK Got time lapse successfully.
-**  @retval MDV_TIMER_ERROR_INVALID_POINTER Either the timerSys or the timeLapse
+**  @retval MDV_ERROR_INVALID_POINTER Either the timerSys or the timeLapse
 **      points to null.
 */
 MdvResult_t
@@ -196,7 +192,7 @@ mdv_timer_get_time(
         uint32_t *timeElapsed
 );
 
-/*-------------------------------------------------------------------------*//** 
+/*-------------------------------------------------------------------------*//**
 **  @brief Makes a delay in timer ticks.
 **
 **  @param[in] timerSys Timer system to use.
@@ -204,7 +200,7 @@ mdv_timer_get_time(
 **  @param[in] delay Delay time in timer ticks.
 **
 **  @retval MDV_RESULT_OK Successful.
-**  @retval MDV_TIMER_ERROR_INVALID_POINTER The timerSys parameter points to null.
+**  @retval MDV_ERROR_INVALID_POINTER The timerSys parameter points to null.
 */
 MdvResult_t
 mdv_timer_delay(

@@ -63,28 +63,28 @@ typedef enum
 MdvVarType_t{
         MDV_VARTYPE_NONE=0,
 #ifdef USE_64BIT_VAR_T
-        MDV_VARTYPE_F64,  
+        MDV_VARTYPE_F64,
         MDV_VARTYPE_F64PTR,
-        MDV_VARTYPE_U64,  
+        MDV_VARTYPE_U64,
         MDV_VARTYPE_U64PTR,
-        MDV_VARTYPE_S64,  
+        MDV_VARTYPE_S64,
         MDV_VARTYPE_S64PTR,
 #endif // USE_64BIT_VAR_T
-        MDV_VARTYPE_F32,  
+        MDV_VARTYPE_F32,
         MDV_VARTYPE_F32PTR,
-        MDV_VARTYPE_U32,  
+        MDV_VARTYPE_U32,
         MDV_VARTYPE_U32PTR,
-        MDV_VARTYPE_S32,  
+        MDV_VARTYPE_S32,
         MDV_VARTYPE_S32PTR,
-        MDV_VARTYPE_U16,  
+        MDV_VARTYPE_U16,
         MDV_VARTYPE_U16PTR,
-        MDV_VARTYPE_S16,  
+        MDV_VARTYPE_S16,
         MDV_VARTYPE_S16PTR,
-        MDV_VARTYPE_U8,   
+        MDV_VARTYPE_U8,
         MDV_VARTYPE_U8PTR,
-        MDV_VARTYPE_S8,   
+        MDV_VARTYPE_S8,
         MDV_VARTYPE_S8PTR,
-        MDV_VARTYPE_BOOL, 
+        MDV_VARTYPE_BOOL,
         MDV_VARTYPE_BOOLPTR,
         MDV_VARTYPE_ENUM
 } MdvVarType_t;
@@ -95,11 +95,11 @@ MdvVarType_t{
 **  Maximum of 32-bit variables are used by the default. To get 64-bit variables
 **  in use, define a global macro USE_64BIT_VAR_T in the project options.
 */
-typedef struct 
+typedef struct
 MdvVar_t{
         /// Type of the variable.
         MdvVarType_t type;
-        /// Size of a variable array (when a pointer-type variable points to an 
+        /// Size of a variable array (when a pointer-type variable points to an
         /// array).
         uint16_t sz;
         union{
@@ -158,9 +158,44 @@ class MdvVariable_c
 #define MDV_BIT(A) (1<<(A))
 
 /*-------------------------------------------------------------------------*//**
-**  @brief Common result data type for function result handling.
+**  @brief Common result data type for function result handling, and common
+**      errors values.
 */
 typedef int16_t MdvResult_t;
+
+/// @brief A pointer parameter is invalid (points to null).
+#define MDV_ERROR_INVALID_POINTER -1
+
+/// @brief A parameter value is invalid.
+#define MDV_ERROR_INVALID_PARAMETER -2
+
+/// @brief A driver interface has not been initialized.
+#define MDV_ERROR_DRIVER_INTERFACE -3
+
+/// @brief A driver hardware error.
+#define MDV_ERROR_HARDWARE -4
+
+/// @brief A driver internal failure.
+#define MDV_ERROR_DRIVER_INTERNAL_FAILURE -5
+
+/// @brief A resource is in use (handle already occupied).
+#define MDV_ERROR_RESOURCE_IN_USE -6
+
+/// @brief A time-out occurred.
+#define MDV_ERROR_TIMEOUT -7
+
+/// @brief A configuration parameter value is invalid.
+#define MDV_ERROR_INVALID_CONFIGURATION -8
+
+/// @brief A device initialization has failed.
+#define MDV_ERROR_INITIALIZATION_FAILED -9
+
+/// @brief The requested operation is not allowed in the current operational
+///     state.
+#define MDV_ERROR_INVALID_OPERATION -10
+
+/// @brief A macro to specify module specific errors by an index.
+#define MDV_MODULE_SPECIFIC_ERROR(INDEX) (-100-(INDEX))
 
 /*-------------------------------------------------------------------------*//**
 **  @brief A macro to test a result.

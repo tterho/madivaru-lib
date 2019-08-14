@@ -175,7 +175,7 @@ serialport_cancel_transfer(
 **  @param[in] tfer A pointer to a transfer descriptor.
 **
 **  @retval MDV_RESULT_OK Successful.
-**  @retval MDV_SERIALPORT_ERROR_TIMEOUT Timeout.
+**  @retval MDV_ERROR_TIMEOUT Timeout.
 */
 static MdvResult_t
 serialport_asynchronous_transfer(
@@ -221,7 +221,7 @@ serialport_asynchronous_transfer(
         // Check the timeout.
         mdv_timer_get_time(tfer->tsys,tfer->tmr,tfer->tu,&time);
         if(time>tfer->tout){
-                result=MDV_SERIALPORT_ERROR_TIMEOUT;
+                result=MDV_ERROR_TIMEOUT;
                 serialport_complete_transfer(tfer,result);
                 return result;
         }
@@ -237,7 +237,7 @@ serialport_asynchronous_transfer(
 **  @param[in] tfer A pointer to a transfer descriptor.
 **
 **  @retval MDV_RESULT_OK Successful.
-**  @retval MDV_SERIALPORT_ERROR_TIMEOUT Timeout.
+**  @retval MDV_ERROR_TIMEOUT Timeout.
 */
 static MdvResult_t
 serialport_synchronous_transfer(
@@ -271,7 +271,7 @@ serialport_synchronous_transfer(
 **  @param[in] timeout Timeout time in milliseconds.
 **
 **  @retval MDV_RESULT_OK Successful.
-**  @retval MDV_SERIALPORT_ERROR_TIMEOUT Timeout.
+**  @retval MDV_ERROR_TIMEOUT Timeout.
 */
 static MdvResult_t
 serialport_transfer(
@@ -331,10 +331,10 @@ mdv_serialport_setup_driver_interface(
 )
 {
         if(!port){
-                return MDV_SERIALPORT_ERROR_INVALID_POINTER;
+                return MDV_ERROR_INVALID_POINTER;
         }
         if(!funcRead||!funcWrite){
-                return MDV_SERIALPORT_ERROR_INVALID_PARAMETER;
+                return MDV_ERROR_INVALID_PARAMETER;
         }
         port->drv.funcRead=funcRead;
         port->drv.funcWrite=funcWrite;
@@ -353,10 +353,10 @@ mdv_serialport_init(
 )
 {
         if(!port){
-                return MDV_SERIALPORT_ERROR_INVALID_POINTER;
+                return MDV_ERROR_INVALID_POINTER;
         }
         if(!port->drv.essentials.initialized){
-                return MDV_SERIALPORT_ERROR_NO_DRIVER_INTERFACE;
+                return MDV_ERROR_DRIVER_INTERFACE;
         }
         // Initialize the rx descriptor.
         memset(&port->rxd,0,sizeof(MdvSerialPortTransfer_t));
@@ -385,7 +385,7 @@ mdv_serialport_get_current_configuration(
 )
 {
         if(!port||!config){
-                return MDV_SERIALPORT_ERROR_INVALID_POINTER;
+                return MDV_ERROR_INVALID_POINTER;
         }
 
         // Configuration data output.
@@ -403,11 +403,11 @@ mdv_serialport_open(
         MdvResult_t result;
 
         if(!port||!config||!handle){
-                return MDV_SERIALPORT_ERROR_INVALID_POINTER;
+                return MDV_ERROR_INVALID_POINTER;
         }
         // Check the handle (it should be null).
         if(*handle){
-                return MDV_SERIALPORT_ERROR_RESOURCE_IN_USE;
+                return MDV_ERROR_RESOURCE_IN_USE;
         }
         // Check the port initialization status.
         if(!port->initialized){
@@ -439,7 +439,7 @@ mdv_serialport_close(
 
         // Check the handle.
         if(!handle){
-                return MDV_SERIALPORT_ERROR_INVALID_POINTER;
+                return MDV_ERROR_INVALID_POINTER;
         }
         port=(MdvSerialPort_t*)*handle;
         // Cancel possibly ongoing asynchronous transfers.
@@ -469,11 +469,11 @@ mdv_serialport_change_configuration(
         MdvResult_t result;
 
         if(!config){
-                return MDV_SERIALPORT_ERROR_INVALID_POINTER;
+                return MDV_ERROR_INVALID_POINTER;
         }
         // Check the handle.
         if(!handle){
-                return MDV_SERIALPORT_ERROR_INVALID_PARAMETER;
+                return MDV_ERROR_INVALID_PARAMETER;
         }
         // Port access.
         port=(MdvSerialPort_t*)handle;
@@ -502,11 +502,11 @@ mdv_serialport_read(
         MdvSerialPort_t *port;
 
         if(!data){
-                return MDV_SERIALPORT_ERROR_INVALID_POINTER;
+                return MDV_ERROR_INVALID_POINTER;
         }
         // Check the port handle.
         if(!handle){
-                return MDV_SERIALPORT_ERROR_INVALID_PARAMETER;
+                return MDV_ERROR_INVALID_PARAMETER;
         }
         // Port access.
         port=(MdvSerialPort_t*)handle;
@@ -534,11 +534,11 @@ mdv_serialport_write(
         MdvSerialPort_t *port;
 
         if(!data){
-                return MDV_SERIALPORT_ERROR_INVALID_POINTER;
+                return MDV_ERROR_INVALID_POINTER;
         }
         // Check the port handle.
         if(!handle){
-                return MDV_SERIALPORT_ERROR_INVALID_PARAMETER;
+                return MDV_ERROR_INVALID_PARAMETER;
         }
         // Port access.
         port=(MdvSerialPort_t*)handle;
@@ -582,7 +582,7 @@ mdv_serialport_runtime_process(
 
         // Check the handle.
         if(!handle){
-                return MDV_SERIALPORT_ERROR_INVALID_PARAMETER;
+                return MDV_ERROR_INVALID_PARAMETER;
         }
         // Port access.
         port=(MdvSerialPort_t*)handle;

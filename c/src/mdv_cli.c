@@ -262,9 +262,8 @@ cli_parse_parameter(
                                 // A parameter found, but the parameter count
                                 // exceeds the maximum amount of parameters per
                                 // command.
-                                if (parser->pcnt == parser->clipcnt)
-                                {
-                                    return MDV_CLI_ERROR_PARSER_EXTRA_PARAMETER;
+                                if(parser->pcnt==parser->clipcnt){
+                                        return MDV_CLI_ERROR_PARSER_EXTRA_PARAMETER;
                                 }
                                 // A parameter found. Put it into the list and
                                 // reset its value.
@@ -306,7 +305,7 @@ cli_parse_parameter(
         // Continue the process from the end of the parameter name.
         (*i)+=len;
         // An EOL or a space found. Check whether the parameter should have had
-        // a value or not. If yes, return an error. Otherwise, return 
+        // a value or not. If yes, return an error. Otherwise, return
         // MDV_RESULT_OK to continue parsing.
         if(*i==parser->icnt||parser->inp[*i]==32){
                 if(p->varType!=MDV_VARTYPE_NONE){
@@ -474,7 +473,7 @@ cli_parse_input(
                         return MDV_CLI_RESULT_HELP_PRINTED;
                 }
         }
-        // Search for the matching length commands. On a match, compare the 
+        // Search for the matching length commands. On a match, compare the
         // strings together to find an exact match.
         for(j=0;j<parser->cliccnt;j++){
                 if(strlen(parser->clicmd[j].cmd)==i){
@@ -503,7 +502,7 @@ cli_parse_input(
                 return MDV_RESULT_OK;
         }
         // Calculate the amount of mandatory and alternative parameters in the
-        // user defined list. Optional parameters doesn't need to be calculated 
+        // user defined list. Optional parameters doesn't need to be calculated
         // or checked, because... umm... they are optional.
         i=parser->pcmd*parser->clipcnt;
         for(j=0;j<parser->clipcnt;j++){
@@ -579,7 +578,7 @@ mdv_cli_init_parser(
            !cliParams||
            !parsedParams||
            !parser){
-                return MDV_CLI_ERROR_INVALID_POINTER;
+                return MDV_ERROR_INVALID_POINTER;
         }
         // Reset the parser structure.
         memset(parser,0,sizeof(MdvCliParser_t));
@@ -619,7 +618,7 @@ mdv_cli_enable_parser(
 )
 {
         if(!parser){
-                return MDV_CLI_ERROR_INVALID_POINTER;
+                return MDV_ERROR_INVALID_POINTER;
         }
         parser->pena=true;
         return MDV_RESULT_OK;
@@ -631,7 +630,7 @@ mdv_cli_disable_parser(
 )
 {
         if(!parser){
-                return MDV_CLI_ERROR_INVALID_POINTER;
+                return MDV_ERROR_INVALID_POINTER;
         }
         parser->pena=false;
         return MDV_RESULT_OK;
@@ -643,7 +642,7 @@ mdv_cli_enable_echo(
 )
 {
         if(!parser){
-                return MDV_CLI_ERROR_INVALID_POINTER;
+                return MDV_ERROR_INVALID_POINTER;
         }
         parser->eena=true;
         return MDV_RESULT_OK;
@@ -656,7 +655,7 @@ mdv_cli_begin_new_input(
 )
 {
         if(!parser){
-                return MDV_CLI_ERROR_INVALID_POINTER;
+                return MDV_ERROR_INVALID_POINTER;
         }
         cli_begin_new_input(parser,newLine);
         return MDV_RESULT_OK;
@@ -668,7 +667,7 @@ mdv_cli_disable_echo(
 )
 {
         if(!parser){
-                return MDV_CLI_ERROR_INVALID_POINTER;
+                return MDV_ERROR_INVALID_POINTER;
         }
         parser->eena=false;
         return MDV_RESULT_OK;
@@ -683,7 +682,7 @@ mdv_cli_putchar(
         MdvResult_t result=MDV_RESULT_OK;
 
         if(!parser){
-                return MDV_CLI_ERROR_INVALID_POINTER;
+                return MDV_ERROR_INVALID_POINTER;
         }
         // Handle character input.
         if(input>=32){
@@ -709,7 +708,7 @@ mdv_cli_putchar(
         // Interrupt process command (Ctrl+C).
         case 3:
                 // Clear the input and send an echo. Then return the value
-                // MDV_CLI_ERROR_INTERRUPT_PROCESS to indicate that the user 
+                // MDV_CLI_ERROR_INTERRUPT_PROCESS to indicate that the user
                 // interrupted the operation.
                 cli_echo(parser," ^C",3);
                 cli_begin_new_input(parser,true);

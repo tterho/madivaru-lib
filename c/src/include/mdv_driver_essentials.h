@@ -49,27 +49,6 @@
 
 /******************************************************************************\
 **
-**  ERROR CODES
-**
-\******************************************************************************/
-
-/// @brief Invalid pointer.
-///
-/// At least one of the pointer parameters is invalid (points to null).
-#define MDV_DRIVER_ERROR_INVALID_POINTER -1
-
-/// @brief Invalid parameter.
-///
-/// At least one of the parameter values is invalid (out of range).
-#define MDV_DRIVER_ERROR_INVALID_PARAMETER -2
-
-/// @brief Error in driver.
-///
-/// The driver has not been initialized correctly.
-#define MDV_DRIVER_INTERNAL_ERROR -3
-
-/******************************************************************************\
-**
 **  TYPE DEFINITIONS
 **
 \******************************************************************************/
@@ -215,10 +194,9 @@ extern "C"{
 **  @param[in] funcWakeup (Mandatory) A function to run post-sleep operations.
 **
 **  @retval MDV_RESULT_OK Successful.
-**  @retval MDV_DRIVER_ERROR_INVALID_POINTER The port parameter points to
-**      null.
-**  @retval MDV_SERIALPORT_ERROR_INVALID_PARAMETER At least one of the mandatory
-**      function pointers is null.
+**  @retval MDV_ERROR_INVALID_POINTER The port parameter points to null.
+**  @retval MDV_ERROR_INVALID_PARAMETER At least one of the mandatory function
+**      pointers is null.
 */
 MdvResult_t
 mdv_setup_driver_essentials(

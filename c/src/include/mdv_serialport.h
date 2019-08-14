@@ -55,68 +55,35 @@
 **
 \******************************************************************************/
 
-/// @brief Invalid pointer.
-///
-/// At least one of the pointer parameters is invalid (points to null).
-#define MDV_SERIALPORT_ERROR_INVALID_POINTER -1
-
-/// @brief Invalid parameter.
-///
-/// At least one of the parameter values is invalid (out of range).
-#define MDV_SERIALPORT_ERROR_INVALID_PARAMETER -2
-
-/// @brief Driver interface not specified.
-///
-/// The driver interface functions are not initialized. Use the @ref
-/// mdv_serialport_setup_driver_interface function to initialize the interface.
-#define MDV_SERIALPORT_ERROR_NO_DRIVER_INTERFACE -3
-
-/// @brief Resource is in use.
-///
-/// The serial port handle already points to an opened port and can't be used
-/// to open another port before closing.
-#define MDV_SERIALPORT_ERROR_RESOURCE_IN_USE -4
-
 /// @brief Port not initialized.
 ///
 /// The serial port has not been initialized.
-#define MDV_SERIALPORT_ERROR_PORT_NOT_INITIALIZED -5
+#define MDV_SERIALPORT_ERROR_PORT_NOT_INITIALIZED \
+        MDV_MODULE_SPECIFIC_ERROR(0)
 
 /// @brief Asynchronous transfer cancelled.
 ///
 /// An asynchronous transfer was cancelled by user.
-#define MDV_SERIALPORT_ERROR_ASYNC_TRANSFER_CANCELLED -6
+#define MDV_SERIALPORT_ERROR_ASYNC_TRANSFER_CANCELLED \
+        MDV_MODULE_SPECIFIC_ERROR(1)
 
 /// @brief Asynchronous transfer in progress.
 ///
 /// Incompleted asynchronous transfers can't be queued.
-#define MDV_SERIALPORT_ERROR_ASYNC_TRANSFER_IN_PROGRESS -7
+#define MDV_SERIALPORT_ERROR_ASYNC_TRANSFER_IN_PROGRESS \
+        MDV_MODULE_SPECIFIC_ERROR(2)
 
 /// @brief Rx buffer is empty.
 ///
 /// The receiver buffer is empty.
-#define MDV_SERIALPORT_ERROR_RX_BUFFER_EMPTY -8
+#define MDV_SERIALPORT_ERROR_RX_BUFFER_EMPTY \
+        MDV_MODULE_SPECIFIC_ERROR(3)
 
 /// @brief Tx buffer is full.
 ///
 /// The transmission buffer is full.
-#define MDV_SERIALPORT_ERROR_TX_BUFFER_FULL -9
-
-/// @brief Error in driver.
-///
-/// The driver has not been initialized correctly, e.g. the TimerSys pointer
-/// points to null.
-#define MDV_SERIALPORT_ERROR_DRIVER_INTERNAL_ERROR -10
-
-/// @brief Timeout.
-///
-/// The operation has been timed out.
-#define MDV_SERIALPORT_ERROR_TIMEOUT -11
-
-/// @brief Invalid configuration.
-///
-/// One or more of the configuration values are not supported by the driver.
-#define MDV_SERIALPORT_ERROR_INVALID_CONFIGURATION -12
+#define MDV_SERIALPORT_ERROR_TX_BUFFER_FULL \
+        MDV_MODULE_SPECIFIC_ERROR(4)
 
 /******************************************************************************\
 **
@@ -463,10 +430,9 @@ extern "C"{
 **      data transfer processing.
 **
 **  @retval MDV_RESULT_OK Successful.
-**  @retval MDV_SERIALPORT_ERROR_INVALID_POINTER The port parameter points to
-**      null.
-**  @retval MDV_SERIALPORT_ERROR_INVALID_PARAMETER At least one of the mandatory
-**      function pointers is null.
+**  @retval MDV_ERROR_INVALID_POINTER The port parameter points to null.
+**  @retval MDV_ERROR_INVALID_PARAMETER At least one of the mandatory function
+**      pointers is null.
 */
 MdvResult_t
 mdv_serialport_setup_driver_interface(
@@ -489,7 +455,7 @@ mdv_serialport_setup_driver_interface(
 **  @param[in] userData A pointer to user specified data.
 **
 **  @retval MDV_RESULT_OK Successful.
-**  @retval SP_ERROR_INVALID_POINTER The port parameter points to null.
+**  @retval MDV_ERROR_INVALID_POINTER The port parameter points to null.
 **  @return On a driver error returns a negative error code. See the driver
 **      implementation for more information.
 **
@@ -515,7 +481,7 @@ mdv_serialport_init(
 **      information will be copied.
 **
 **  @retval MDV_RESULT_OK Configuration got successfully.
-**  @return SP_ERROR_INVALID_POINTER The port or config parameter points to
+**  @return MDV_ERROR_INVALID_POINTER The port or config parameter points to
 **      null.
 */
 MdvResult_t
@@ -533,8 +499,8 @@ mdv_serialport_get_current_configuration(
 **      be stored.
 **
 **  @retval MDV_RESULT_OK Open successful.
-**  @retval SP_ERROR_INVALID_POINTER The port, config or handle parameter points
-**      to null.
+**  @retval MDV_ERROR_INVALID_POINTER The port, config or handle parameter
+**      points to null.
 **  @return On a driver error returns a negative error code. See the driver
 **      implementation for more information.
 **
@@ -554,7 +520,7 @@ mdv_serialport_open(
 **  @param[out] handle Pointer to the handle of the port being closed.
 **
 **  @retval MDV_RESULT_OK Closed successfully.
-**  @retval SP_ERROR_INVALID_POINTER The handle parameter points to null.
+**  @retval MDV_ERROR_INVALID_POINTER The handle parameter points to null.
 **  @return On a driver error returns a negative error code. See the driver
 **      implementation for more information.
 **
@@ -572,8 +538,8 @@ mdv_serialport_close(
 **  @param[in] config Pointer to a configuration structure.
 **
 **  @retval MDV_RESULT_OK Successful
-**  @retval SP_ERROR_INVALID_POINTER The config parameter points to null.
-**  @retval MDV_SERIALPORT_ERROR_INVALID_PARAMETER The handle is invalid.
+**  @retval MDV_ERROR_INVALID_POINTER The config parameter points to null.
+**  @retval MDV_ERROR_INVALID_PARAMETER The handle is invalid.
 **  @return On a driver error returns a negative error code. See the driver
 **      implementation for more information.
 **
@@ -597,10 +563,10 @@ mdv_serialport_change_configuration(
 **      initial wait timeout.
 **
 **  @retval MDV_RESULT_OK Read successful.
-**  @retval SP_ERROR_INVALID_POINTER The data or bytesRead parameter points to
+**  @retval MDV_ERROR_INVALID_POINTER The data or bytesRead parameter points to
 **      null.
-**  @retval MDV_SERIALPORT_ERROR_INVALID_PARAMETER The handle is invalid.
-**  @retval MDV_SERIALPORT_ERROR_TIMEOUT Reception timed out.
+**  @retval MDV_ERROR_INVALID_PARAMETER The handle is invalid.
+**  @retval MDV_ERROR_TIMEOUT Reception timed out.
 **  @return On a driver error returns a negative error code. See the driver
 **      implementation for more information.
 **
@@ -628,10 +594,10 @@ mdv_serialport_read(
 **      initial wait timeout.
 **
 **  @retval MDV_RESULT_OK Write successful.
-**  @retval SP_ERROR_INVALID_POINTER One or more of the pointer parameters
+**  @retval MDV_ERROR_INVALID_POINTER One or more of the pointer parameters
 **      handle and data points to null.
-**  @retval MDV_SERIALPORT_ERROR_INVALID_PARAMETER The handle is invalid.
-**  @retval MDV_SERIALPORT_ERROR_TIMEOUT Transmission timed out.
+**  @retval MDV_ERROR_INVALID_PARAMETER The handle is invalid.
+**  @retval MDV_ERROR_TIMEOUT Transmission timed out.
 **  @return On a driver error returns a negative error code. See the driver
 **      implementation for more information.
 **
@@ -653,9 +619,9 @@ mdv_serialport_write(
 **  @param[out] data Pointer to a character variable.
 **
 **  @retval MDV_RESULT_OK Character got successfully.
-**  @retval SP_ERROR_INVALID_POINTER One or more of the pointer parameters
+**  @retval MDV_ERROR_INVALID_POINTER One or more of the pointer parameters
 **      handle and data points to null.
-**  @retval MDV_SERIALPORT_ERROR_INVALID_PARAMETER The handle is invalid.
+**  @retval MDV_ERROR_INVALID_PARAMETER The handle is invalid.
 **  @retval MDV_SERIALPORT_ERROR_RX_BUFFER_EMPTY The RX buffer is empty.
 **
 **  Gets a single character from the serial port. If the RX buffer is empty,
@@ -674,8 +640,8 @@ mdv_serialport_getchar(
 **  @param[in] data Character to put.
 **
 **  @retval MDV_RESULT_OK Character put successfully.
-**  @retval SP_ERROR_INVALID_POINTER Pointer parameter handle points to null.
-**  @retval MDV_SERIALPORT_ERROR_INVALID_PARAMETER The handle is invalid.
+**  @retval MDV_ERROR_INVALID_POINTER Pointer parameter handle points to null.
+**  @retval MDV_ERROR_INVALID_PARAMETER The handle is invalid.
 **  @retval MDV_SERIALPORT_ERROR_TX_BUFFER_FULL The TX buffer is full.
 **  @return On a driver error returns a negative error code. See the driver
 **      implementation for more information.
@@ -695,7 +661,7 @@ mdv_serialport_putchar(
 **  @param[in] handle Serial port handle.
 **
 **  @return MDV_RESULT_OK Successful.
-**  @return MDV_SERIALPORT_ERROR_INVALID_PARAMETER The handle is invalid.
+**  @return MDV_ERROR_INVALID_PARAMETER The handle is invalid.
 **
 **  This function must be called periodically in order to run asynchronous
 **  transfers. The callback functions are called in this context.
