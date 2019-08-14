@@ -60,10 +60,10 @@ mdv_setup_driver_essentials(
 )
 {
         if(!essentials||!instance){
-                return MDV_DRIVER_ERROR_INVALID_POINTER;
+                return MDV_ERROR_INVALID_POINTER;
         }
         if(!funcInit||!funcOpen||!funcClose||!funcSleep||!funcWakeup){
-                return MDV_DRIVER_ERROR_INVALID_PARAMETER;
+                return MDV_ERROR_INVALID_PARAMETER;
         }
         essentials->instance=instance;
         essentials->funcInit=funcInit;

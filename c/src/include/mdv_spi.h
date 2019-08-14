@@ -51,36 +51,17 @@
 **
 \******************************************************************************/
 
-/// @brief Invalid pointer.
-///
-/// At least one of the pointer parameters is invalid (points to null).
-#define MDV_SPI_ERROR_INVALID_POINTER -1
-
-/// @brief Invalid pointer.
-///
-/// At least one of the parameter values is invalid.
-#define MDV_SPI_ERROR_INVALID_PARAMETER -2
-
-/// @brief Driver initialization failed.
-///
-/// Something went wrong during the driver initialization. Check the driver
-/// configuration.
-#define MDV_SPI_ERROR_DRIVER_INITIALIZATION_FAILED -3
-
 /// @brief Transmission error.
 ///
 /// Something went wrong during the data transmission.
-#define MDV_SPI_ERROR_TRANSMISSION_FAILED -4
-
-/// @brief Invalid operation.
-///
-/// The operation is invalid. Check the port configuration.
-#define MDV_SPI_ERROR_INVALID_OPERATION -5
+#define MDV_SPI_ERROR_TRANSMISSION_FAILED \
+        MDV_MODULE_SPECIFIC_ERROR(0)
 
 /// @brief Invalid buffer size.
 ///
 /// The driver supports only equal size Rx and Tx buffers.
-#define MDV_SPI_ERROR_INVALID_BUFFER_SIZE -6
+#define MDV_SPI_ERROR_INVALID_BUFFER_SIZE \
+        MDV_MODULE_SPECIFIC_ERROR(1)
 
 /******************************************************************************\
 **
@@ -173,7 +154,7 @@ typedef void
 **  @param[in] slaveAddress The address of the slave to select.
 **
 **  @retval MDV_RESULT_OK Slave selected successfully.
-**  @retval MDV_SPI_ERROR_INVALID_PARAMETER Slave address out of range.
+**  @retval MDV_ERROR_INVALID_PARAMETER Slave address out of range.
 */
 typedef
 MdvResult_t
@@ -262,7 +243,7 @@ MdvSpiDriverInterface_t{
 */
 typedef struct
 MdvSpi_t{
-        /// Pointer to a SPI driver interface.
+        /// Driver interface.
         MdvSpiDriverInterface_t drv;
         /// Stores the port configuration.
         MdvSpiConfig_t cfg;
@@ -293,8 +274,8 @@ extern "C"{
 **      data in both directions.
 **
 **  @retval MDV_RESULT_OK Successful.
-**  @retval MDV_SPI_ERROR_INVALID_POINTER The port parameter points to null.
-**  @retval MDV_SPI_ERROR_INVALID_PARAMETER At least one of the mandatory
+**  @retval MDV_ERROR_INVALID_POINTER The port parameter points to null.
+**  @retval MDV_ERROR_INVALID_PARAMETER At least one of the mandatory
 **      function pointers is null.
 */
 MdvResult_t
@@ -317,11 +298,12 @@ mdv_spi_setup_driver_interface(
 **  @param[out] handle Handle to the opened port.
 **
 **  @retval MDV_RESULT_OK Port opened successfully.
-**  @retval MDV_SPI_ERROR_INVALID_POINTER Either the driver, config or handle
+**  @retval MDV_ERROR_INVALID_POINTER Either the driver, config or handle
 **      parameter points to null.
-**  @retval MDV_SPI_ERROR_INVALID_PARAMETER The handle is not null.
-**  @retval MDV_SPI_ERROR_DRIVER_INITIALIZATION_FAILED Driver initialization
-**      failed.
+**  @retval MDV_ERROR_INVALID_PARAMETER The handle is not null.
+**  @retval MDV_ERROR_DRIVER_INTERFACE The driver interface has not been
+**      initialized.
+**  @retval MDV_ERROR_INITIALIZATION_FAILED Driver initialization failed.
 */
 MdvResult_t
 mdv_spi_open(
@@ -338,8 +320,8 @@ mdv_spi_open(
 **  @param[in] handle A handle to the port to be closed.
 **
 **  @retval MDV_RESULT_OK Port closed successfully.
-**  @retval MDV_SPI_ERROR_INVALID_POINTER The handle parameter points to null.
-**  @retval MDV_SPI_ERROR_INVALID_PARAMETER The handle is invalid (null).
+**  @retval MDV_ERROR_INVALID_POINTER The handle parameter points to null.
+**  @retval MDV_ERROR_INVALID_PARAMETER The handle is invalid (null).
 */
 MdvResult_t
 mdv_spi_close(
@@ -353,9 +335,9 @@ mdv_spi_close(
 **  @param[in] slaveAddress The address of the slave to select.
 **
 **  @retval MDV_RESULT_OK Slave selected successfully.
-**  @retval MDV_SPI_ERROR_INVALID_PARAMETER The handle is invalid (null), or the
+**  @retval MDV_ERROR_INVALID_PARAMETER The handle is invalid (null), or the
 **      slave address is out of range.
-**  @retval MDV_SPI_ERROR_INVALID_OPERATION The slave selection works only on
+**  @retval MDV_ERROR_INVALID_OPERATION The slave selection works only on
 **      master device. Check the port configuration.
 */
 MdvResult_t
@@ -374,12 +356,12 @@ mdv_spi_select_slave(
 **  @param[in] insz Input data length in bytes.
 **
 **  @retval MDV_RESULT_OK Initialization successful.
-**  @retval MDV_SPI_ERROR_INVALID_POINTER The config parameter points to null.
-**  @retval MDV_SPI_ERROR_DRIVER_INITIALIZATION_FAILED Driver initialization
-**      failed.
+**  @retval MDV_ERROR_INVALID_POINTER The config parameter points to null.
+**  @retval MDV_ERROR_DRIVER_INTERFACE Driver interface initialization error.
+**      At least one type of transmission implementation is required.
 **  @retval MDV_SPI_ERROR_TRANSMISSION_FAILED Transmission failed for some
 **      reason.
-**  @retval MDV_SPI_ERROR_INVALID_BUFFER_SIZE The driver doesn't support inequal
+**  @retval MDV_ERROR_INVALID_BUFFER_SIZE The driver doesn't support inequal
 **      buffer sizes.
 **
 **  Transfers equal amount of data in both directions. If the transmission

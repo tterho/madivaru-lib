@@ -57,7 +57,7 @@ mdv_spi_setup_driver_interface(
 )
 {
         if(!spi){
-                return MDV_SPI_ERROR_INVALID_POINTER;
+                return MDV_ERROR_INVALID_POINTER;
         }
         spi->drv.funcSelectSlave=funcSelectSlave;
         spi->drv.funcTransferByte=funcTransferByte;
@@ -77,18 +77,18 @@ mdv_spi_open(
         MdvResult_t result;
 
         if(!spi||!config||!handle){
-                return MDV_SPI_ERROR_INVALID_POINTER;
+                return MDV_ERROR_INVALID_POINTER;
         }
         if(!spi->drv.essentials.initialized){
-                return MDV_SPI_ERROR_DRIVER_INITIALIZATION_FAILED;
+                return MDV_ERROR_DRIVER_INTERFACE;
         }
         if(*handle){
-                return MDV_SPI_ERROR_INVALID_PARAMETER;
+                return MDV_ERROR_INVALID_PARAMETER;
         }
         // Initialize the spi.
-        result=spi->drv.essentials.funcInit(&(spi->drv.essentials.instance));
+        result=spi->drv.essentials.funcInit(spi->drv.essentials.instance);
         if(!MDV_SUCCESSFUL(result)){
-                return MDV_SPI_ERROR_DRIVER_INITIALIZATION_FAILED;
+                return MDV_ERROR_INITIALIZATION_FAILED;
         }
         // Store the port configuration.
         spi->cfg=*config;
@@ -96,13 +96,14 @@ mdv_spi_open(
         spi->cbk=callback;
         spi->ud=userData;
         // Setup the port hardware and open the port.
-        result=spi->drv.essentials.funcWakeup(&(spi->drv.essentials.instance));
+        result=spi->drv.essentials.funcWakeup(spi->drv.essentials.instance);
         if(!MDV_SUCCESSFUL(result)){
-                return MDV_SPI_ERROR_DRIVER_INITIALIZATION_FAILED;
+                return result;
         }
-        result=spi->drv.essentials.funcOpen(&(spi->drv.essentials.instance));
+        result=spi->drv.essentials.funcOpen(spi->drv.essentials.instance);
         if(!MDV_SUCCESSFUL(result)){
-                return MDV_SPI_ERROR_DRIVER_INITIALIZATION_FAILED;
+                spi->drv.essentials.funcSleep(spi->drv.essentials.instance);
+                return result;
         }
         // Set the handle to point to the spi.
         *handle=(MdvHandle_t)spi;
@@ -117,16 +118,16 @@ mdv_spi_close(
         MdvSpi_t *spi;
 
         if(!handle){
-                return MDV_SPI_ERROR_INVALID_POINTER;
+                return MDV_ERROR_INVALID_POINTER;
         }
         if(!*handle){
-                return MDV_SPI_ERROR_INVALID_PARAMETER;
+                return MDV_ERROR_INVALID_PARAMETER;
         }
         // Get an access to the driver.
         spi=(MdvSpi_t*)*handle;
         // Close the port.
-        spi->drv.essentials.funcClose(&(spi->drv.essentials.instance));
-        spi->drv.essentials.funcSleep(&(spi->drv.essentials.instance));
+        spi->drv.essentials.funcClose(spi->drv.essentials.instance);
+        spi->drv.essentials.funcSleep(spi->drv.essentials.instance);
         // Set the handle to null.
         *handle=(MdvHandle_t)0;
         return MDV_RESULT_OK;
@@ -142,22 +143,22 @@ mdv_spi_select_slave(
         MdvResult_t result;
 
         if(!handle){
-                return MDV_SPI_ERROR_INVALID_PARAMETER;
+                return MDV_ERROR_INVALID_PARAMETER;
         }
         // Get an access to the driver.
         spi=(MdvSpi_t*)handle;
         // Check the port configuration. The operation is not allowed for
         // a port configured as a slave.
         if(spi->cfg.operatingMode==MDV_SPI_OPERATING_MODE_SLAVE){
-                return MDV_SPI_ERROR_INVALID_OPERATION;
+                return MDV_ERROR_INVALID_OPERATION;
         }
         // Select the slave.
         result=spi->drv.funcSelectSlave(
-                &(spi->drv.essentials.instance),
+                spi->drv.essentials.instance,
                 slaveAddress
         );
         if(!MDV_SUCCESSFUL(result)){
-                return MDV_SPI_ERROR_INVALID_PARAMETER;
+                return MDV_ERROR_INVALID_PARAMETER;
         }
         return MDV_RESULT_OK;
 }
@@ -176,10 +177,10 @@ mdv_spi_transfer(
         MdvResult_t result;
 
         if(!dout||!din){
-                return MDV_SPI_ERROR_INVALID_POINTER;
+                return MDV_ERROR_INVALID_POINTER;
         }
         if(!handle){
-                return MDV_SPI_ERROR_INVALID_PARAMETER;
+                return MDV_ERROR_INVALID_PARAMETER;
         }
         // Get an access to the driver.
         spi=(MdvSpi_t*)handle;
@@ -187,7 +188,7 @@ mdv_spi_transfer(
         if(spi->drv.funcTransfer){
                 // Transfer data.
                 result=spi->drv.funcTransfer(
-                        &(spi->drv.essentials.instance),
+                        spi->drv.essentials.instance,
                         dout,
                         outsz,
                         din,
@@ -205,14 +206,14 @@ mdv_spi_transfer(
                 return MDV_RESULT_OK;
         }
         // Both Transfer and TransferByte implementations are missing. This is
-        // an initialization error.
+        // an interface initialization error.
         if(!spi->drv.funcTransferByte){
-                return MDV_SPI_ERROR_DRIVER_INITIALIZATION_FAILED;
+                return MDV_ERROR_DRIVER_INTERFACE;
         }
         // Transfer all bi-directional data.
         while(outsz&&insz){
                 result=spi->drv.funcTransferByte(
-                        &(spi->drv.essentials.instance),
+                        spi->drv.essentials.instance,
                         *dout,
                         din
                 );
@@ -227,7 +228,7 @@ mdv_spi_transfer(
         // Transfer remaining output data (if any).
         while(outsz){
                 result=spi->drv.funcTransferByte(
-                        &(spi->drv.essentials.instance),
+                        spi->drv.essentials.instance,
                         *dout,
                         &tmp
                 );
@@ -240,7 +241,7 @@ mdv_spi_transfer(
         // Transfer remaining input data (if any).
         while(insz){
                 result=spi->drv.funcTransferByte(
-                        &(spi->drv.essentials.instance),
+                        spi->drv.essentials.instance,
                         tmp,
                         din
                 );

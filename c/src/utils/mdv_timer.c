@@ -14,28 +14,28 @@
 **
 **  Redistribution and use in source and binary forms, with or without
 **  modification, are permitted provided that the following conditions are met:
-**  
-**  * Redistributions of source code must retain the above copyright notice, 
+**
+**  * Redistributions of source code must retain the above copyright notice,
 **    this list of conditions and the following disclaimer.
-**  
+**
 **  * Redistributions in binary form must reproduce the above copyright notice,
 **    this list of conditions and the following disclaimer in the documentation
 **    and/or other materials provided with the distribution.
-**  
+**
 **  * Neither the name of the copyright holder nor the names of its
 **    contributors may be used to endorse or promote products derived from
 **    this software without specific prior written permission.
-**  
+**
 **  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 **  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-**  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
-**  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE 
-**  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR 
-**  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF 
-**  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
-**  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
-**  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
-**  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+**  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+**  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+**  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+**  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+**  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+**  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+**  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+**  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 **  POSSIBILITY OF SUCH DAMAGE.
 **
 \******************************************************************************/
@@ -56,8 +56,8 @@ mdv_timer_system_init(
 )
 {
         if(!timerSys){
-                return MDV_TIMER_ERROR_INVALID_POINTER;
-        }  
+                return MDV_ERROR_INVALID_POINTER;
+        }
         timerSys->tck=0;
         timerSys->icnt=0;
         timerSys->tb=timeBase;
@@ -72,7 +72,7 @@ mdv_timer_system_tick(
 )
 {
         if(!timerSys){
-                return MDV_TIMER_ERROR_INVALID_POINTER;
+                return MDV_ERROR_INVALID_POINTER;
         }
         timerSys->tck+=ticks;
         return MDV_RESULT_OK;
@@ -85,7 +85,7 @@ mdv_timer_start(
 )
 {
         if(!timerSys||!timer){
-                return MDV_TIMER_ERROR_INVALID_POINTER;
+                return MDV_ERROR_INVALID_POINTER;
         }
         *timer=timerSys->tck;
         timerSys->icnt=0;
@@ -101,11 +101,11 @@ mdv_timer_get_time(
 )
 {
         uint32_t tl;
-    
+
         if(!timerSys||!timeElapsed){
-                return MDV_TIMER_ERROR_INVALID_POINTER;
+                return MDV_ERROR_INVALID_POINTER;
         }
-        // If there is no change between the current timer value and the 
+        // If there is no change between the current timer value and the
         // running tick counter, advance the invokation counter. Otherwise,
         // reset the invokation counter.
         if(timerSys->ctim==timerSys->tck){
@@ -119,13 +119,13 @@ mdv_timer_get_time(
                 return MDV_TIMER_ERROR_TIMER_NOT_RUNNING;
         }
         // Store the running tick counter and compare it to the given timer.
-        // Handle a wrap-around of the tick counter. Store the difference to the 
+        // Handle a wrap-around of the tick counter. Store the difference to the
         // output parameter.
         timerSys->ctim=timerSys->tck;
         tl=(timer<=timerSys->ctim)
            ?(timerSys->ctim-timer)
            :(0xffffffff-timer)+timerSys->ctim+1;
-        // Calculate the time lapse based on the time base and the requested 
+        // Calculate the time lapse based on the time base and the requested
         // time units.
         switch(timeUnit){
         default:
@@ -155,9 +155,9 @@ mdv_timer_delay(
         MdvTimer_t t;
         uint32_t tl=0;
         MdvResult_t result;
-    
+
         if(!timerSys){
-                return MDV_TIMER_ERROR_INVALID_POINTER;
+                return MDV_ERROR_INVALID_POINTER;
         }
         // Start a timer.
         mdv_timer_start(timerSys,&t);
