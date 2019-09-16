@@ -1,5 +1,6 @@
 # madivaru-lib
-General purpose C libraries.
+General purpose C libraries especially for embedded systems.
+NOTE! The C++ part is heavily under construction.
 
 ## CLI API
 
