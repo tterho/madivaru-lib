@@ -3,11 +3,11 @@
 **  @file       mdv_xtc.c
 **  @ingroup    madivaru-lib
 **  @brief      An API for NTC and PTC temperature sensors.
-**  @copyright  Copyright (C) 2012-2018 Tuomas Terho
+**  @copyright  Copyright (c) Tuomas Terho
 **
 *******************************************************************************/
 /*
-**  COPYRIGHT (c) 2012-2018, Tuomas Terho
+**  COPYRIGHT (c) Tuomas Terho
 **  All rights reserved.
 **
 **  Redistribution and use in source and binary forms, with or without

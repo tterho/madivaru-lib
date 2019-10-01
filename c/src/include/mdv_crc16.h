@@ -3,13 +3,13 @@
 **  @file       mdv_crc16.h
 **  @ingroup    madivaru-lib
 **  @brief      CRC-16-IBM checksum calculator
-**  @copyright  Copyright (C) 2012-2018 Tuomas Terho. All rights reserved.
+**  @copyright  Copyright (c) Tuomas Terho. All rights reserved.
 **
 *******************************************************************************/
 /*
 **  BSD 3-Clause License
 **
-**  Copyright (c) 2018, Tuomas Terho
+**  Copyright (c) Tuomas Terho
 **  All rights reserved.
 **
 **  Redistribution and use in source and binary forms, with or without
