@@ -111,7 +111,7 @@ mdv_sensor_init(
         MdvSensorInputCallback_t inputCallback,
         MdvSensorOutputCallback_t outputCallback,
         MdvSensorControlCommandCallback_t ctrlCmdCallback,
-        MdvTimerSystem_t *timerSys,
+        MdvTimerSystem_t *tsys,
         void *userData
 )
 {
@@ -139,7 +139,6 @@ mdv_sensor_init(
         sensor->dd.ccbk=ctrlCmdCallback;
         sensor->dd.ctrl=MDV_SENSOR_DISABLE;
         sensor->dd.rreq=false;
-        sensor->dd.tsys=timerSys;
         sensor->dd.ud=userData;
         // If the sensor supports calibration, the initial calibration state is
         // false. Otherwise it is true (no calibration required).

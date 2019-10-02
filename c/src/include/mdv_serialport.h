@@ -278,7 +278,7 @@ MdvSerialPortTransfer_t{
         /// The library uses this value to track chaegs in data transfer state.
         /// The driver must not use this.
         uint32_t ptleft;
-        /// @brief Transfer timeout in time units.
+        /// @brief Transfer timeout in milliseconds.
         ///
         /// Timeouts are fully controlled by the library. Do not use them in the
         /// driver.
@@ -288,16 +288,6 @@ MdvSerialPortTransfer_t{
         /// Timeouts are fully controlled by the library. Do not use them in the
         /// driver.
         MdvTimer_t tmr;
-        /// @brief Timer system to use.
-        ///
-        /// Timeouts are fully controlled by the library. Do not use them in the
-        /// driver.
-        MdvTimerSystem_t *tsys;
-        /// @brief Time units.
-        ///
-        /// Timeouts are fully controlled by the library. Do not use them in the
-        /// driver.
-        MdvTimeUnit_t tu;
         /// @brief Transfer completed callback.
         ///
         /// Callbacks are fully controlled by the library. Do not use them in
@@ -436,8 +426,7 @@ mdv_serialport_setup_driver_interface(
 **             operations. Set to NULL for synchronous reads.
 **  @param[in] txCompleted TX completed callback for asynchronous write
 **             operations. Set to NULL for synchronous writes.
-**  @param[in] timerSys Timer system to use.
-**  @param[in] timeUnit Time units to use.
+**  @param[in] tsys Timer system to use for timeouts.
 **  @param[in] userData A pointer to user specified data.
 **
 **  @retval MDV_RESULT_OK Successful.
@@ -457,8 +446,7 @@ mdv_serialport_init(
         MdvSerialPort_t *const port,
         MdvSerialPortTransferCompletedCallback_t rxCompleted,
         MdvSerialPortTransferCompletedCallback_t txCompleted,
-        MdvTimerSystem_t *const timerSys,
-        MdvTimeUnit_t timeUnit,
+        MdvTimerSystem_t *const tsys,
         void *const userData
 );
 

@@ -537,7 +537,7 @@ extern "C"{
 **      (mandatory).
 **  @param[in] ctrlCmdCallback Callback routine for special control commands
 **      (optional, driver specific).
-**  @param[in] timerSys Timer system to be used for timings.
+**  @param[in] tsys Timer system to be used for timings.
 **  @param[in] userData A pointer to user defined data.
 **
 **  @return No return value.
@@ -567,7 +567,7 @@ mdv_sensor_init(
         MdvSensorInputCallback_t inputCallback,
         MdvSensorOutputCallback_t outputCallback,
         MdvSensorControlCommandCallback_t ctrlCmdCallback,
-        MdvTimerSystem_t *timerSys,
+        MdvTimerSystem_t *tsys,
         void *userData
 );
 

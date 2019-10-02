@@ -108,7 +108,7 @@ serialport_init_transfer(
         }
         // Start the timeout timer.
         if(tfer->tout){
-                mdv_timer_start(tfer->tsys,&(tfer->tmr));
+                mdv_timer_start(&(tfer->tmr));
         }
 }
 
@@ -215,11 +215,14 @@ serialport_asynchronous_transfer(
         // reception.
         if(tfer->tleft!=tfer->ptleft){
                 tfer->ptleft=tfer->tleft;
-                mdv_timer_start(tfer->tsys,&tfer->tmr);
+                mdv_timer_start(&(tfer->tmr));
                 return MDV_RESULT_OK;
         }
         // Check the timeout.
-        mdv_timer_get_time(tfer->tsys,tfer->tmr,tfer->tu,&time);
+        result=mdv_timer_get_time(&(tfer->tmr),MDV_TIMER_OM_MS,&time);
+        if(!MDV_SUCCESSFUL(result)){
+                return result;
+        }
         if(time>tfer->tout){
                 result=MDV_ERROR_TIMEOUT;
                 serialport_complete_transfer(tfer,result);
@@ -347,8 +350,7 @@ mdv_serialport_init(
         MdvSerialPort_t *const port,
         MdvSerialPortTransferCompletedCallback_t rxCallback,
         MdvSerialPortTransferCompletedCallback_t txCallback,
-        MdvTimerSystem_t *const timerSys,
-        MdvTimeUnit_t timeUnit,
+        MdvTimerSystem_t *const tsys,
         void *const userData
 )
 {
@@ -360,14 +362,12 @@ mdv_serialport_init(
         }
         // Initialize the rx transfer descriptor.
         memset(&port->rxd,0,sizeof(MdvSerialPortTransfer_t));
-        port->rxd.tsys=timerSys;
-        port->rxd.tu=timeUnit;
+        mdv_timer_init(&(port->rxd.tmr),tsys);
         port->rxd.cbk=rxCallback;
         port->rxd.ud=userData;
         // Initialize the tx transfer descriptor.
         memset(&port->txd,0,sizeof(MdvSerialPortTransfer_t));
-        port->txd.tsys=timerSys;
-        port->txd.tu=timeUnit;
+        mdv_timer_init(&(port->txd.tmr),tsys);
         port->txd.cbk=txCallback;
         port->txd.ud=userData;
         // Set the port initialization status.
