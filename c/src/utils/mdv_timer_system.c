@@ -1,6 +1,6 @@
 /***************************************************************************//**
 **
-**  @file       mdv_timer.c
+**  @file       mdv_timer_system.c
 **  @ingroup    madivaru-lib
 **  @brief      A general purpose timer API.
 **  @copyright  Copyright (c) Tuomas Terho. All rights reserved.
@@ -40,7 +40,7 @@
 **
 \******************************************************************************/
 
-#include "mdv_timer.h"
+#include "mdv_timer_system.h"
 
 /******************************************************************************\
 **
@@ -49,72 +49,61 @@
 \******************************************************************************/
 
 MdvResult_t
-mdv_timer_init(
-        MdvTimer_t *const timer,
-        MdvTimerSystem_t *const tsys
+mdv_timer_system_init(
+        MdvTimerSystem_t *const tsys,
+        uint32_t ttd,
+        uint32_t ilim
 )
 {
-        if(!tsys||!timer){
+        if(!tsys){
                 return MDV_ERROR_INVALID_POINTER;
         }
-        timer->tsys=tsys;
-        timer->ttd=tsys->ttd;
+        tsys->tck=0;
+        tsys->ctck=0;
+        tsys->icnt=0;
+        tsys->ttd=ttd;
+        tsys->ilim=ilim;
         return MDV_RESULT_OK;
 }
 
 MdvResult_t
-mdv_timer_start(
-        MdvTimer_t *const timer
+mdv_timer_system_tick(
+        MdvTimerSystem_t *const tsys,
+        uint32_t ticks
 )
 {
-        if(!timer){
+        if(!tsys){
                 return MDV_ERROR_INVALID_POINTER;
         }
-        return mdv_timer_system_get_tick_count(timer->tsys,&(timer->tck));
+        tsys->tck+=ticks;
+        return MDV_RESULT_OK;
 }
 
 MdvResult_t
-mdv_timer_get_time(
-        MdvTimer_t *const timer,
-        MdvTimerOrderOfMagnitude_t om,
-        uint32_t *const time
+mdv_timer_system_get_tick_count(
+        MdvTimerSystem_t *tsys,
+        uint32_t *ticks
 )
 {
-        MdvResult_t result;
-        uint32_t tck;
-        uint32_t tl;
-
-        if(!timer||!time){
+        if(!tsys||!ticks){
                 return MDV_ERROR_INVALID_POINTER;
         }
-        // Get the current tick count.
-        result=mdv_timer_system_get_tick_count(timer->tsys,&tck);
-        if(!MDV_SUCCESSFUL(result)){
-                return result;
+        // If there is no change between the last tick count value and the
+        // running tick counter, advance the invocation counter. Otherwise,
+        // reset the invocation counter.
+        if(tsys->ctck==tsys->tck){
+                ++tsys->icnt;
+        }else{
+                tsys->icnt=0;
         }
-        // Compare the tick count to the given timer. Handle a possible wrap-
-        // around of the tick counter. Store the difference to the output
-        // parameter.
-        tl=(timer->tck<=tck)
-           ?(tck-timer->tck)
-           :(0xffffffff-timer->tck)+tck+1;
-        // Calculate the time lapse based on the time base and the requested
-        // order of magnitude.
-        switch(om){
-        default:
-        case MDV_TIMER_OM_TIMERTICK:
-                // The time value is in correct units. Nothing to do.
-                break;
-        case MDV_TIMER_OM_US:
-                tl=(tl*timer->ttd);
-        case MDV_TIMER_OM_MS:
-                tl=(tl*timer->ttd)/1000;
-                break;
-        case MDV_TIMER_OM_S:
-                tl=(tl*timer->ttd)/1000000;
-                break;
+        // If the invokation counter has reached the timer invokation limit,
+        // the timer is not running properly.
+        if(tsys->icnt>tsys->ilim){
+                return MDV_TIMER_SYSTEM_ERROR_TIMER_NOT_RUNNING;
         }
-        *time=tl;
+        // Store the running tick counter.
+        tsys->ctck=tsys->tck;
+        *ticks=tsys->tck;
         return MDV_RESULT_OK;
 }
 
