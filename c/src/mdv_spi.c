@@ -50,28 +50,29 @@
 
 MdvResult_t
 mdv_spi_setup_driver_interface(
-        MdvSpi_t *spi,
-        MdvSpiDriverInterface_SelectSlave_t funcSelectSlave,
-        MdvSpiDriverInterface_TransferByte_t funcTransferByte,
-        MdvSpiDriverInterface_Transfer_t funcTransfer
+        MdvSpi_t *const spi,
+        MdvSpiDriverSelectSlave_t funcSelectSlave,
+        MdvSpiDriverTransferByte_t funcTransferByte,
+        MdvSpiDriverTransfer_t funcTransfer
 )
 {
         if(!spi){
                 return MDV_ERROR_INVALID_POINTER;
         }
-        spi->drv.funcSelectSlave=funcSelectSlave;
-        spi->drv.funcTransferByte=funcTransferByte;
-        spi->drv.funcTransfer=funcTransfer;
+        spi->drv.specific.func.selectSlave=funcSelectSlave;
+        spi->drv.specific.func.transferByte=funcTransferByte;
+        spi->drv.specific.func.transfer=funcTransfer;
+        spi->drv.specific.initialized=true;
         return MDV_RESULT_OK;
 }
 
 MdvResult_t
 mdv_spi_open(
-        MdvSpi_t *spi,
-        MdvSpiConfig_t *config,
+        MdvSpi_t *const spi,
+        MdvSpiConfig_t *const config,
         MdvSpiTransferCompletedCallback_t callback,
-        void *userData,
-        MdvHandle_t *handle
+        void *const userData,
+        MdvHandle_t *const handle
 )
 {
         MdvResult_t result;
@@ -79,63 +80,55 @@ mdv_spi_open(
         if(!spi||!config||!handle){
                 return MDV_ERROR_INVALID_POINTER;
         }
-        if(!spi->drv.essentials.initialized){
+        if(!spi->drv.specific.initialized){
                 return MDV_ERROR_DRIVER_INTERFACE;
         }
-        if(*handle){
-                return MDV_ERROR_INVALID_PARAMETER;
+        // Check the handle (it should be invalid).
+        if(mdv_handle_is_valid(handle)){
+                return MDV_ERROR_RESOURCE_IN_USE;
         }
         // Initialize the spi.
-        result=spi->drv.essentials.funcInit(spi->drv.essentials.instance);
+        result=mdv_driver_safe_init(&(spi->drv.common));
         if(!MDV_SUCCESSFUL(result)){
-                return MDV_ERROR_INITIALIZATION_FAILED;
+                return result;
         }
         // Store the port configuration.
         spi->cfg=*config;
         // Set the transfer completion callback and user data.
         spi->cbk=callback;
         spi->ud=userData;
-        // Setup the port hardware and open the port.
-        result=spi->drv.essentials.funcWakeup(spi->drv.essentials.instance);
+        // Open the port.
+        result=mdv_driver_safe_open(&(spi->drv.common));
         if(!MDV_SUCCESSFUL(result)){
                 return result;
         }
-        result=spi->drv.essentials.funcOpen(spi->drv.essentials.instance);
-        if(!MDV_SUCCESSFUL(result)){
-                spi->drv.essentials.funcSleep(spi->drv.essentials.instance);
-                return result;
-        }
-        // Set the handle to point to the spi.
-        *handle=(MdvHandle_t)spi;
-        return MDV_RESULT_OK;
+        // Handle output.
+        return mdv_handle_create(handle,spi,1);
 }
 
 MdvResult_t
 mdv_spi_close(
-        MdvHandle_t *handle
+        MdvHandle_t *const handle
 )
 {
+        MdvResult_t result;
         MdvSpi_t *spi;
 
         if(!handle){
                 return MDV_ERROR_INVALID_POINTER;
         }
-        if(!*handle){
-                return MDV_ERROR_INVALID_PARAMETER;
+        result=mdv_handle_request_object(handle,(void*)&spi);
+        if(!MDV_SUCCESSFUL(result)){
+                return result;
         }
-        // Get an access to the driver.
-        spi=(MdvSpi_t*)*handle;
-        // Close the port.
-        spi->drv.essentials.funcClose(spi->drv.essentials.instance);
-        spi->drv.essentials.funcSleep(spi->drv.essentials.instance);
-        // Set the handle to null.
-        *handle=(MdvHandle_t)0;
-        return MDV_RESULT_OK;
+        mdv_driver_safe_close(&(spi->drv.common));
+        mdv_handle_release_object(handle,(void*)&spi);
+        return mdv_handle_destroy(handle);
 }
 
 MdvResult_t
 mdv_spi_select_slave(
-        MdvHandle_t handle,
+        MdvHandle_t *const handle,
         uint8_t slaveAddress
 )
 {
@@ -143,29 +136,34 @@ mdv_spi_select_slave(
         MdvResult_t result;
 
         if(!handle){
-                return MDV_ERROR_INVALID_PARAMETER;
+                return MDV_ERROR_INVALID_POINTER;
         }
-        // Get an access to the driver.
-        spi=(MdvSpi_t*)handle;
+        result=mdv_handle_request_object(handle,(void*)&spi);
+        if(!MDV_SUCCESSFUL(result)){
+                return result;
+        }
         // Check the port configuration. The operation is not allowed for
         // a port configured as a slave.
         if(spi->cfg.operatingMode==MDV_SPI_OPERATING_MODE_SLAVE){
+                mdv_handle_release_object(handle,(void*)&spi);
                 return MDV_ERROR_INVALID_OPERATION;
         }
         // Select the slave.
-        result=spi->drv.funcSelectSlave(
-                spi->drv.essentials.instance,
+        result=spi->drv.specific.func.selectSlave(
+                spi->drv.common.instance,
                 slaveAddress
         );
         if(!MDV_SUCCESSFUL(result)){
+                mdv_handle_release_object(handle,(void*)&spi);
                 return MDV_ERROR_INVALID_PARAMETER;
         }
+        mdv_handle_release_object(handle,(void*)&spi);
         return MDV_RESULT_OK;
 }
 
 MdvResult_t
 mdv_spi_transfer(
-        MdvHandle_t handle,
+        MdvHandle_t *const handle,
         uint8_t *dout,
         uint16_t outsz,
         uint8_t *din,
@@ -176,19 +174,18 @@ mdv_spi_transfer(
         uint8_t tmp=0;
         MdvResult_t result;
 
-        if(!dout||!din){
+        if(!handle||!dout||!din){
                 return MDV_ERROR_INVALID_POINTER;
         }
-        if(!handle){
-                return MDV_ERROR_INVALID_PARAMETER;
+        result=mdv_handle_request_object(handle,(void*)&spi);
+        if(!MDV_SUCCESSFUL(result)){
+                return result;
         }
-        // Get an access to the driver.
-        spi=(MdvSpi_t*)handle;
         // Check if the driver is capable of to transfer all data at once.
-        if(spi->drv.funcTransfer){
+        if(spi->drv.specific.func.transfer){
                 // Transfer data.
-                result=spi->drv.funcTransfer(
-                        spi->drv.essentials.instance,
+                result=spi->drv.specific.func.transfer(
+                        spi->drv.common.instance,
                         dout,
                         outsz,
                         din,
@@ -197,60 +194,68 @@ mdv_spi_transfer(
                 // If the driver doesn't support inequal buffer sizes, it
                 // returns this error code.
                 if(result==MDV_SPI_ERROR_INVALID_BUFFER_SIZE){
+                        mdv_handle_release_object(handle,(void*)&spi);
                         return result;
                 }
                 // Check other possible driver errors.
                 if(!MDV_SUCCESSFUL(result)){
+                        mdv_handle_release_object(handle,(void*)&spi);
                         return MDV_SPI_ERROR_TRANSMISSION_FAILED;
                 }
+                mdv_handle_release_object(handle,(void*)&spi);
                 return MDV_RESULT_OK;
         }
         // Both Transfer and TransferByte implementations are missing. This is
         // an interface initialization error.
-        if(!spi->drv.funcTransferByte){
+        if(!spi->drv.specific.func.transferByte){
+                mdv_handle_release_object(handle,(void*)&spi);
                 return MDV_ERROR_DRIVER_INTERFACE;
         }
         // Transfer all bi-directional data.
         while(outsz&&insz){
-                result=spi->drv.funcTransferByte(
-                        spi->drv.essentials.instance,
+                result=spi->drv.specific.func.transferByte(
+                        spi->drv.common.instance,
                         *dout,
                         din
                 );
                 if(!MDV_SUCCESSFUL(result)){
+                        mdv_handle_release_object(handle,(void*)&spi);
                         return MDV_SPI_ERROR_TRANSMISSION_FAILED;
                 }
-                dout++;
-                din++;
-                outsz--;
-                insz--;
+                ++dout;
+                ++din;
+                --outsz;
+                --insz;
         }
         // Transfer remaining output data (if any).
         while(outsz){
-                result=spi->drv.funcTransferByte(
-                        spi->drv.essentials.instance,
+                result=spi->drv.specific.func.transferByte(
+                        spi->drv.common.instance,
                         *dout,
                         &tmp
                 );
                 if(!MDV_SUCCESSFUL(result)){
+                        mdv_handle_release_object(handle,(void*)&spi);
                         return MDV_SPI_ERROR_TRANSMISSION_FAILED;
                 }
-                dout++;
-                outsz--;
+                ++dout;
+                --outsz;
         }
         // Transfer remaining input data (if any).
         while(insz){
-                result=spi->drv.funcTransferByte(
-                        spi->drv.essentials.instance,
+                result=spi->drv.specific.func.transferByte(
+                        spi->drv.common.instance,
                         tmp,
                         din
                 );
                 if(!MDV_SUCCESSFUL(result)){
+                        mdv_handle_release_object(handle,(void*)&spi);
                         return MDV_SPI_ERROR_TRANSMISSION_FAILED;
                 }
-                din++;
-                insz--;
+                ++din;
+                --insz;
         }
+        mdv_handle_release_object(handle,(void*)&spi);
         return MDV_RESULT_OK;
 }
 

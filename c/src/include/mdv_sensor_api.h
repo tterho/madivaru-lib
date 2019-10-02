@@ -45,28 +45,8 @@
 
 #include "mdv_types.h"
 #include "mdv_timer.h"
-
-/******************************************************************************\
-**
-**  ERROR CODES
-**
-\******************************************************************************/
-
-/// @brief Invalid pointer parameter.
-///
-/// At least one pointer parameter points to null.
-#define MDV_SENSORAPI_ERROR_INVALID_POINTER -1
-
-/// @brief Invalid parameter value.
-///
-/// At least one parameter value is out of range.
-#define MDV_SENSORAPI_ERROR_INVALID_PARAMETER -2
-
-/// @brief Function not implemented in the driver.
-///
-/// Trying to use a function which is not supported by the driver (not
-/// implemented). Refer to the documentation of the particular driver.
-#define MDV_SENSORAPI_ERROR_NOT_IMPLEMENTED -3
+#include "mdv_handle.h"
+#include "mdv_driver.h"
 
 /******************************************************************************\
 **
@@ -88,9 +68,8 @@
 **  @remarks This is a mandatory function which must be implemented in the user
 **  application separately for each sensor.
 */
-typedef
-MdvVar_t
-(*MdvSensorInputCallback_t)(
+typedef MdvVar_t
+(MdvSensorInputCallback_t)(
         uint8_t index
 );
 
@@ -109,9 +88,8 @@ MdvVar_t
 **  @remarks This is a mandatory function which must be implemented in the user
 **  application separately for each sensor.
 */
-typedef
-void
-(*MdvSensorOutputCallback_t)(
+typedef void
+(MdvSensorOutputCallback_t)(
         uint8_t index,
         MdvVar_t data
 );
@@ -120,10 +98,10 @@ void
 **  @brief Sensor control command callback.
 **
 **  @param[in] cmdId The ID of the calibration command.
--**  @param[in] data Data related to the command.
+**  @param[in] data Data related to the command.
 **
 **  @return Caller may require data returned by the callback (see the
-**      description of the particular command for details).
+**          description of the particular command for details).
 **
 **  Sensor framework invokes this type of callback when the sensor needs to have
 **  control to a certain function in the user application, e.g. to adjust PWM,
@@ -131,11 +109,11 @@ void
 **  driver.
 **
 **  @remarks This is an optional function which may be implemented in the user
-**  application separately for each sensor supporting control commands.
+**           application separately for each sensor supporting control commands.
 */
 typedef
 MdvVar_t
-(*MdvSensorControlCommandCallback_t)(
+(MdvSensorControlCommandCallback_t)(
         uint8_t cmdId,
         MdvVar_t data
 );
@@ -153,11 +131,11 @@ MdvVar_t
 */
 typedef enum
 MdvSensorControl_t{
-        /// Turns a sensor off.
+        /// @brief Turns a sensor off.
         MDV_SENSOR_DISABLE=0,
-        /// Turns a sensor on.
+        /// @brief Turns a sensor on.
         MDV_SENSOR_ENABLE,
-        /// Halts a sensor.
+        /// @brief Halts a sensor.
         MDV_SENSOR_HALT
 } MdvSensorControl_t;
 
@@ -168,13 +146,13 @@ MdvSensorControl_t{
 */
 typedef enum
 MdvSensorOutputDataStatus_t{
-        /// Sensor data is not valid, for example, sensor initialization hasn't
-        /// been completed yet.
+        /// @brief Sensor data is not valid, for example, sensor initialization
+        ///        hasn't been completed yet.
         MDV_SENSOR_OUTPUT_DATA_UNKNOWN,
-        /// There is a failure in reading the sensor data, thus the data is not
-        /// valid.
+        /// @brief There is a failure in reading the sensor data, thus the data
+        ///        is not valid.
         MDV_SENSOR_OUTPUT_DATA_FAILURE,
-        /// Sensor data is valid.
+        /// @brief Sensor data is valid.
         MDV_SENSOR_OUTPUT_DATA_OK
 } MdvSensorOutputDataStatus_t;
 
@@ -186,28 +164,29 @@ MdvSensorOutputDataStatus_t{
 */
 typedef struct
 MdvSensorOutput_t{
-        /// Status of the sensor output.
+        /// @brief Status of the sensor output.
         /// @remarks This value is set by a sensor driver by using the function
-        /// @ref mdv_sensor_set_output_status.
+        ///          @ref mdv_sensor_set_output_status.
         MdvSensorOutputDataStatus_t st;
-        /// Indicator for changes in data and status.
+        /// @brief Indicator for changes in data and status.
         /// @remarks This value is set by functions
-        /// @ref mdv_sensor_set_output_status and @ref mdv_sensor_set_output_data. The
-        /// value is resetted automatically by the API when the change is
-        /// handled in the function @ref mdv_sensor_run. Do not write this value
-        /// manually.
+        ///          @ref mdv_sensor_set_output_status and
+        ///          @ref mdv_sensor_set_output_data. The value is resetted
+        ///          automatically by the API when the change is handled in the
+        ///          function @ref mdv_sensor_run. Do not write this value
+        ///          manually.
         bool ci;
-        /// Output data.
+        /// @brief Output data.
         /// @remarks This value is set by a sensor driver by using the function
-        /// @ref mdv_sensor_set_output_data.
+        ///          @ref mdv_sensor_set_output_data.
         MdvVar_t data;
-        /// Data refresh cycle timer.
+        /// @brief Data refresh cycle timer.
         /// @remarks This value is used internally by the API. The value must be
-        /// initialized in the sensor driver's initialization function.
+        ///          initialized in the sensor driver's initialization function.
         MdvTimer_t tim;
-        /// Data refresh cycle length in milliseconds.
+        /// @brief Data refresh cycle length in milliseconds.
         /// @remarks This value is used internally by the API. The value must be
-        /// initialized in the sensor driver's initialization function.
+        ///          initialized in the sensor driver's initialization function.
         uint16_t rc;
 } MdvSensorOutput_t;
 
@@ -218,29 +197,10 @@ MdvSensorOutput_t{
 \******************************************************************************/
 
 /*-------------------------------------------------------------------------*//**
-**  @brief Initializes the driver.
-**
-**  @param[in] userData User defined data.
-**
-**  @return No return value.
-**
-**  This function is implemented in the sensor driver and the pointer to the
-**  function is stored into the driver instance. The function must initialize
-**  the parameters of the output data set. It may initialize also the driver
-**  specific parameters.
-**
-**  @remarks This function is mandatory and must be implemented in the driver.
-*/
-typedef void
-(*MdvSensorDriverInterface_Init_t)(
-        void *userData
-);
-
-/*-------------------------------------------------------------------------*//**
 **  @brief Sets calibration parameters.
 **
 **  @param[in] calibrationParams Pointer to sensor specific calibration
-**      parameters.
+**             parameters.
 **  @param[in] userData User defined data.
 **
 **  @return No return value.
@@ -249,12 +209,12 @@ typedef void
 **  function is stored into the driver instance.
 **
 **  @remarks This function is optional. If implemented, it shall copy the
-**  calibration parameters to the instance of the driver.
+**           calibration parameters to the instance of the driver.
 */
 typedef void
-(*MdvSensorDriverInterface_SetCalibrationParams_t)(
-        void *calibrationParams,
-        void *userData
+(MdvSensorDriverInterfaceSetCalibrationParams_t)(
+        void *const calibrationParams,
+        void *const userData
 );
 
 /*-------------------------------------------------------------------------*//**
@@ -268,12 +228,12 @@ typedef void
 **  function is stored into the driver instance.
 **
 **  @remarks This function is optional. The driver may implement this function
-**  if it supports calibration and requires initializations during calibration
-**  startup.
+**           if it supports calibration and requires initializations during
+**           calibration startup.
 */
 typedef void
-(*MdvSensorDriverInterface_StartCalibration_t)(
-        void *userData
+(MdvSensorDriverInterfaceStartCalibration_t)(
+        void *const userData
 );
 
 /*-------------------------------------------------------------------------*//**
@@ -290,12 +250,13 @@ typedef void
 **  function is stored into the driver instance.
 **
 **  @remarks This function is optional. The driver may implement this function
-**  if the calibration is performed in steps. The states are driver specific.
+**           if the calibration is performed in steps. The states are driver
+**           specific.
 */
 typedef MdvResult_t
-(*MdvSensorDriverInterface_GetCalibrationState_t)(
-        void *calibrationState,
-        void *userData
+(MdvSensorDriverInterfaceGetCalibrationState_t)(
+        void *const calibrationState,
+        void *const userData
 );
 
 /*-------------------------------------------------------------------------*//**
@@ -310,12 +271,12 @@ typedef MdvResult_t
 **  function is stored into the driver instance.
 **
 **  @remarks This function is optional. The driver must implement this function
-**  if it supports calibration.
+**           if it supports calibration.
 */
 typedef void
-(*MdvSensorDriverInterface_GetCalibrationData_t)(
-        void *calibrationData,
-        void *userData
+(MdvSensorDriverInterfaceGetCalibrationData_t)(
+        void *const calibrationData,
+        void *const userData
 );
 
 /*-------------------------------------------------------------------------*//**
@@ -330,12 +291,12 @@ typedef void
 **  function is stored into the driver instance.
 **
 **  @remarks This function is optional. The driver must implement this function
-**  if it supports calibration.
+**           if it supports calibration.
 */
 typedef void
-(*MdvSensorDriverInterface_SetCalibrationData_t)(
-        void *calibrationData,
-        void *userData
+(MdvSensorDriverInterfaceSetCalibrationData_t)(
+        void *const calibrationData,
+        void *const userData
 );
 
 /*-------------------------------------------------------------------------*//**
@@ -350,13 +311,13 @@ typedef void
 **  function is stored into the driver instance.
 **
 **  @remarks This function is optional. The driver may implement this function
-**  to support configuration. This function can be used to return the current
-**  configuration state as well as the default configuration.
+**           to support configuration. This function can be used to return the
+**           current configuration state as well as the default configuration.
 */
 typedef void
-(*MdvSensorDriverInterface_GetConfiguration_t)(
-        void *configurationData,
-        void *userData
+(MdvSensorDriverInterfaceGetConfiguration_t)(
+        void *const configurationData,
+        void *const userData
 );
 
 /*-------------------------------------------------------------------------*//**
@@ -373,50 +334,14 @@ typedef void
 **  function is stored into the driver instance.
 **
 **  @remarks This function is optional. The driver may implement this function
-**  to support configuration. The function must perform comparison between the
-**  new and old configuration data. It must return true if the configuration
-**  data has changed or false otherwise.
+**           to support configuration. The function must perform comparison
+**           between the new and old configuration data. It must return true if
+**           the configuration data has changed or false otherwise.
 */
 typedef bool
-(*MdvSensorDriverInterface_SetConfiguration_t)(
-        void *configurationData,
-        void *userData
-);
-
-/*-------------------------------------------------------------------------*//**
-**  @brief Turns the sensor ON.
-**
-**  @param[in] userData User defined data.
-**
-**  @return No return value.
-**
-**  This function is implemented in the sensor driver and the pointer to the
-**  function is stored into the driver instance.
-**
-**  @remarks This function is optional. The driver may implement this function
-**  to support on/off functionality.
-*/
-typedef void
-(*MdvSensorDriverInterface_On_t)(
-        void *userData
-);
-
-/*-------------------------------------------------------------------------*//**
-**  @brief Turns the sensor OFF.
-**
-**  @param[in] userData User defined data.
-**
-**  @return No return value.
-**
-**  This function is implemented in the sensor driver and the pointer to the
-**  function is stored into the driver instance.
-**
-**  @remarks This function is optional. The driver may implement this function
-**  to support on/off functionality.
-*/
-typedef void
-(*MdvSensorDriverInterface_Off_t)(
-        void *userData
+(MdvSensorDriverInterfaceSetConfiguration_t)(
+        void *const configurationData,
+        void *const userData
 );
 
 /*-------------------------------------------------------------------------*//**
@@ -432,13 +357,13 @@ typedef void
 **  function is stored into the driver instance.
 **
 **  @remarks This function is mandatory. The driver must use this function to
-**  store input data to the input data set of the driver instance.
+**           store input data to the input data set of the driver instance.
 */
 typedef void
-(*MdvSensorDriverInterface_SetInput_t)(
+(MdvSensorDriverInterfaceSetInput_t)(
         uint8_t index,
         MdvVar_t inputData,
-        void *userData
+        void *const userData
 );
 
 /*-------------------------------------------------------------------------*//**
@@ -453,34 +378,14 @@ typedef void
 **  function is stored into the driver instance.
 **
 **  @remarks This function is mandatory. The driver must use this function to
-**  return the output data from the output data set of the driver instance.
-**  The driver may use this function to produce the output data from the input
-**  data.
+**           return the output data from the output data set of the driver
+**           instance. The driver may use this function to produce the output
+**           data from the input data.
 */
 typedef MdvSensorOutput_t *
-(*MdvSensorDriverInterface_GetOutput_t)(
+(MdvSensorDriverInterfaceGetOutput_t)(
         uint8_t index,
-        void *userData
-);
-
-/*-------------------------------------------------------------------------*//**
-**  @brief Runs the driver state machine.
-**
-**  @param[in] userData User defined data.
-**
-**  @return No return value.
-**
-**  This function is implemented in the sensor driver and the pointer to the
-**  function is stored into the driver instance.
-**
-**  @remarks This function is optional. The driver may implement this function
-**  to support a state machine.
-**
-*/
-typedef
-void
-(*MdvSensorDriverInterface_Run_t)(
-        void *userData
+        void *const userData
 );
 
 /******************************************************************************\
@@ -496,32 +401,26 @@ void
 */
 typedef struct
 MdvSensor_t{
-        /// A function to initialize the driver (mandatory).
-        MdvSensorDriverInterface_Init_t Init;
+        /// @brief Driver common API.
+        MdvDriver_t common;
         /// A function to set calibration parameters (optional).
-        MdvSensorDriverInterface_SetCalibrationParams_t SetCalibrationParams;
+        MdvSensorDriverInterfaceSetCalibrationParams_t setCalibrationParams;
         /// A function to start calibration sequence (optional).
-        MdvSensorDriverInterface_StartCalibration_t StartCalibration;
+        MdvSensorDriverInterfaceStartCalibration_t startCalibration;
         /// A function to get calibration state (optional).
-        MdvSensorDriverInterface_GetCalibrationState_t GetCalibrationState;
+        MdvSensorDriverInterfaceGetCalibrationState_t getCalibrationState;
         /// A function to get calibration data (optional).
-        MdvSensorDriverInterface_GetCalibrationData_t GetCalibrationData;
+        MdvSensorDriverInterfaceGetCalibrationData_t getCalibrationData;
         /// A function to set calibration data (optional).
-        MdvSensorDriverInterface_SetCalibrationData_t SetCalibrationData;
+        MdvSensorDriverInterfaceSetCalibrationData_t setCalibrationData;
         /// A function to get the sensor configuration data (optional).
-        MdvSensorDriverInterface_GetConfiguration_t GetConfiguration;
+        MdvSensorDriverInterfaceGetConfiguration_t getConfiguration;
         /// A function to set the sensor configuration data (optional).
-        MdvSensorDriverInterface_SetConfiguration_t SetConfiguration;
+        MdvSensorDriverInterfaceSetConfiguration_t setConfiguration;
         /// A function to set sensor input data (mandatory).
-        MdvSensorDriverInterface_SetInput_t SetInput;
+        MdvSensorDriverInterfaceSetInput_t setInput;
         /// A function to get sensor output data (mandatory).
-        MdvSensorDriverInterface_GetOutput_t GetOutput;
-        /// A function to turn the sensor on (optional).
-        MdvSensorDriverInterface_On_t On;
-        /// A function to turn the sensor off (optional).
-        MdvSensorDriverInterface_On_t Off;
-        /// A function to run the sensor state machine (optional).
-        MdvSensorDriverInterface_Run_t Run;
+        MdvSensorDriverInterfaceGetOutput_t getOutput;
         /// Sensor data sets.
         struct{
                 /// Data item count in the input data set.
@@ -592,6 +491,10 @@ mdv_sensor_set_output_data(
 **
 \******************************************************************************/
 
+#ifdef __cplusplus
+extern "C"{
+#endif // ifdef __cplusplus
+
 /*-------------------------------------------------------------------------*//**
 **  @brief Initializes a sensor driver.
 **
@@ -608,9 +511,9 @@ mdv_sensor_set_output_data(
 **      null if not used).
 **  @param[in] funcSetCalibrationData Driver function pointer (optional, set to
 **      null if not used).
-**  @param[in] funcGetConfiguration Driver function pointer (optional, set to 
+**  @param[in] funcGetConfiguration Driver function pointer (optional, set to
 **      null if not used).
-**  @param[in] funcSetConfiguration Driver function pointer (optional, set to 
+**  @param[in] funcSetConfiguration Driver function pointer (optional, set to
 **      null if not used).
 **  @param[in] funcSetInput Driver function pointer (mandatory).
 **  @param[in] funcGetOutput Driver function pointer (mandatory).
@@ -647,19 +550,16 @@ mdv_sensor_set_output_data(
 void
 mdv_sensor_init(
         MdvSensor_t *sensor,
-        MdvSensorDriverInterface_Init_t funcInit,
-        MdvSensorDriverInterface_SetCalibrationParams_t funcSetCalibrationParams,
-        MdvSensorDriverInterface_StartCalibration_t funcStartCalibration,
-        MdvSensorDriverInterface_GetCalibrationState_t funcGetCalibrationState,
-        MdvSensorDriverInterface_GetCalibrationData_t funcGetCalibrationData,
-        MdvSensorDriverInterface_SetCalibrationData_t funcSetCalibrationData,
-        MdvSensorDriverInterface_GetConfiguration_t funcGetConfiguration,
-        MdvSensorDriverInterface_SetConfiguration_t funcSetConfiguration,
-        MdvSensorDriverInterface_SetInput_t funcSetInput,
-        MdvSensorDriverInterface_GetOutput_t funcGetOutput,
-        MdvSensorDriverInterface_On_t funcOn,
-        MdvSensorDriverInterface_On_t funcOff,
-        MdvSensorDriverInterface_Run_t funcRun,
+        MdvSensorDriverInterfaceInit_t funcInit,
+        MdvSensorDriverInterfaceSetCalibrationParams_t funcSetCalibrationParams,
+        MdvSensorDriverInterfaceStartCalibration_t funcStartCalibration,
+        MdvSensorDriverInterfaceGetCalibrationState_t funcGetCalibrationState,
+        MdvSensorDriverInterfaceGetCalibrationData_t funcGetCalibrationData,
+        MdvSensorDriverInterfaceSetCalibrationData_t funcSetCalibrationData,
+        MdvSensorDriverInterfaceGetConfiguration_t funcGetConfiguration,
+        MdvSensorDriverInterfaceSetConfiguration_t funcSetConfiguration,
+        MdvSensorDriverInterfaceSetInput_t funcSetInput,
+        MdvSensorDriverInterfaceGetOutput_t funcGetOutput,
         uint8_t inputDataItemCount,
         uint8_t outputDataItemCount,
         MdvVar_t *inputDataSet,
@@ -678,7 +578,7 @@ mdv_sensor_init(
 **  @param[out] handle Pointer to a sensor handle variable.
 **
 **  @retval MDV_RESULT_OK Handle successfully got.
-**  @retval MDV_SENSORAPI_ERROR_INVALID_POINTER The driver or the handle 
+**  @retval MDV_SENSORAPI_ERROR_INVALID_POINTER The driver or the handle
 **      pointer points to null.
 **  @retval SENSOR_ERROR_NOT_INITIALIZED Driver not initialized.
 */
@@ -871,6 +771,10 @@ void
 mdv_sensor_run(
         MdvHandle_t handle
 );
+
+#ifdef __cplusplus
+}
+#endif // ifdef __cplusplus
 
 #endif // ifndef mdv_sensor_api_H
 

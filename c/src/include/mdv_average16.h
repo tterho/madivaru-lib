@@ -77,19 +77,19 @@ MdvAverage16FilterMode_t{
 typedef struct
 MdvAverage16_t
 {
-        /// Average calculation mode.
+        /// @brief Average calculation mode.
         MdvAverage16FilterMode_t mod;
-        /// Pointer to a sample buffer (floating mode only).
+        /// @brief Pointer to a sample buffer (floating mode only).
         uint16_t *bfr;
-        /// Write index (floating mode only).
+        /// @brief Write index (floating mode only).
         uint16_t wr;
-        /// Buffer size in 16-bit words (floating mode only).
+        /// @brief Buffer size in 16-bit words (floating mode only).
         uint16_t sz;
-        /// Count of samples participating.
+        /// @brief Count of samples participating.
         uint16_t cnt;
-        /// Sum of samples.
+        /// @brief Sum of samples.
         uint32_t sum;
-        /// Current average value.
+        /// @brief Current average value.
         uint16_t val;
 } MdvAverage16_t;
 
@@ -109,20 +109,20 @@ extern "C"{
 **  @param[in] average A pointer to an average structure being initialized.
 **  @param[in] mode Average calculation mode.
 **  @param[in] size Size of the sample buffer in floating mode. For contiguous
-**      mode set this parameter to zero.
+**             mode set this parameter to zero.
 **  @param[in] buffer Buffer to store samples in floating mode. For contiguous
-**      mode set this parameter to null.
+**             mode set this parameter to null.
 **
 **  @retval MDV_RESULT_OK Initialization successful.
 **  @retval MDV_ERROR_INVALID_POINTER Either the average or the buffer pointer
-**      points to null.
+**          points to null.
 */
 MdvResult_t
 mdv_average16_init(
-        MdvAverage16_t *average,
+        MdvAverage16_t *const average,
         MdvAverage16FilterMode_t mode,
         uint16_t size,
-        uint16_t *buffer
+        uint16_t *const buffer
 );
 
 /*-------------------------------------------------------------------------*//**
@@ -135,13 +135,13 @@ mdv_average16_init(
 */
 MdvResult_t
 mdv_average16_reset(
-        MdvAverage16_t *average
+        MdvAverage16_t *const average
 );
 
 /*-------------------------------------------------------------------------*//**
 **  @brief Puts a sample to an average calculator and returns the current
-**  average value. If there is not enough samples for average calculation,
-**  returns 0.
+**         average value. If there is not enough samples for average
+**         calculation, returns 0.
 **
 **  @param[in] average A pointer to an average structure where to put a sample.
 **  @param[in] sample The sample value to put.
@@ -150,7 +150,7 @@ mdv_average16_reset(
 */
 uint16_t
 mdv_average16_put(
-        MdvAverage16_t *average,
+        MdvAverage16_t *const average,
         uint16_t sample
 );
 

@@ -51,11 +51,15 @@
 **
 \******************************************************************************/
 
+#ifdef __cplusplus
+extern "C"{
+#endif // ifdef __cplusplus
+
 /*-------------------------------------------------------------------------*//**
 **  @brief Calculates a CRC-32 checksum for the input data.
 **
 **  @param[in] crc CRC from a previous calculation. Set to zero for initial
-**      calculation.
+**             calculation.
 **  @param[in] size Data size in bytes.
 **  @param[in] data Pointer to a buffer containing input data.
 **
@@ -69,8 +73,12 @@ uint32_t
 mdv_crc32(
         uint32_t crc,
         uint32_t size,
-        const uint8_t *data
+        const uint8_t *const data
 );
+
+#ifdef __cplusplus
+}
+#endif // ifdef __cplusplus
 
 #endif // ifndef mdv_crc32_H
 

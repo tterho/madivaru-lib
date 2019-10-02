@@ -46,8 +46,9 @@
 #ifndef mdv_serialport_H
 #define mdv_serialport_H
 
-#include "mdv_driver_essentials.h"
+#include "mdv_driver.h"
 #include "mdv_timer.h"
+#include "mdv_handle.h"
 
 /******************************************************************************\
 **
@@ -158,15 +159,15 @@ MdvSerialPortDataBits_t{
 */
 typedef enum
 MdvSerialPortParity_t{
-        /// No parity.
-        MDV_SERIALPORT_PARITY_NONE,
-        /// Even parity.
+        /// @brief No parity.
+        MDV_SERIALPORT_PARITY_NONE=0,
+        /// @brief Even parity.
         MDV_SERIALPORT_PARITY_EVEN,
-        /// Odd parity.
+        /// @brief Odd parity.
         MDV_SERIALPORT_PARITY_ODD,
-        /// Parity value is permanent '1'.
+        /// @brief Parity value is permanent '1'.
         MDV_SERIALPORT_PARITY_STICK_1,
-        /// Parity value is permanent '0'.
+        /// @brief Parity value is permanent '0'.
         MDV_SERIALPORT_PARITY_STICK_0
 } MdvSerialPortParity_t;
 
@@ -179,9 +180,9 @@ MdvSerialPortParity_t{
 */
 typedef enum
 MdvSerialPortStopBits_t{
-        /// One stop bit.
+        /// @brief One stop bit.
         MDV_SERIALPORT_STOPBITS_ONE=1,
-        /// Two stop bits.
+        /// @brief Two stop bits.
         MDV_SERIALPORT_STOPBITS_TWO
 } MdvSerialPortStopBits_t;
 
@@ -195,11 +196,11 @@ MdvSerialPortStopBits_t{
 */
 typedef enum
 MdvSerialPortFlowControl_t{
-        /// No flow control.
+        /// @brief No flow control.
         MDV_SERIALPORT_FLOWCONTROL_NONE,
-        /// xOn/xOff flow control.
+        /// @brief xOn/xOff flow control.
         MDV_SERIALPORT_FLOWCONTROL_XONXOFF,
-        /// Hardware RTS/CTS flow control.
+        /// @brief Hardware RTS/CTS flow control.
         MDV_SERIALPORT_FLOWCONTROL_HARDWARE
 } MdvSerialPortFlowControl_t;
 
@@ -210,15 +211,15 @@ MdvSerialPortFlowControl_t{
 */
 typedef struct
 MdvSerialPortConfig_t{
-        /// Baud rate.
+        /// @brief Baud rate.
         MdvSerialPortBaudRate_t baudRate;
-        /// Data bits.
+        /// @brief Data bits.
         MdvSerialPortDataBits_t dataBits;
-        /// Parity.
+        /// @brief Parity.
         MdvSerialPortParity_t parity;
-        /// Stop bits.
+        /// @brief Stop bits.
         MdvSerialPortStopBits_t stopBits;
-        /// Flow control.
+        /// @brief Flow control.
         MdvSerialPortFlowControl_t flowControl;
 } MdvSerialPortConfig_t;
 
@@ -235,7 +236,7 @@ MdvSerialPortConfig_t{
 typedef void
 (*MdvSerialPortTransferCompletedCallback_t)(
         MdvResult_t result,
-        void *userData
+        void *const userData
 );
 
 /*-------------------------------------------------------------------------*//**
@@ -247,7 +248,7 @@ typedef void
 typedef struct
 MdvSerialPortTransfer_t{
         struct{
-                /// Transfer ongoing flag.
+                /// @brief Transfer ongoing flag.
                 uint8_t t_on:1;
         };
         /// @brief Data length in bytes.
@@ -311,7 +312,7 @@ MdvSerialPortTransfer_t{
 
 /******************************************************************************\
 **
-**  DRIVER INTERFACE FUNCTION TYPES
+**  SERIAL PORT SPECIFIC DRIVER INTERFACE FUNCTION TYPES
 **
 \******************************************************************************/
 
@@ -327,33 +328,14 @@ MdvSerialPortTransfer_t{
 */
 typedef
 MdvResult_t
-(*MdvSerialPortDriverInterface_Transfer_t)(
-        MdvDriverInstance_t *instance,
-        MdvSerialPortTransfer_t *tfer
-);
-
-/*-------------------------------------------------------------------------*//**
-**  @brief Runs the driver.
-**
-**  @param[in] instance A pointer to driver instance data.
-**  @param[in] rxd A pointer to a reception descriptor.
-**  @param[in] txd A pointer to a transmission descriptor.
-**
-**  @retval MDV_RESULT_OK Successful.
-**  @return On error returns a negative error value specified by the driver
-**      implementation.
-*/
-typedef
-MdvResult_t
-(*MdvSerialPortDriverInterface_Run_t)(
-        MdvDriverInstance_t *instance,
-        MdvSerialPortTransfer_t *rxd,
-        MdvSerialPortTransfer_t *txd
+(*MdvSerialPortDriverTransferFunction_t)(
+        MdvDriverInstance_t *const instance,
+        MdvSerialPortTransfer_t *const tfer
 );
 
 /******************************************************************************\
 **
-**  DRIVER INTERFACE DEFINITION
+**  SERIAL PORT SPECIFIC DRIVER INTERFACE DEFINITION
 **
 \******************************************************************************/
 
@@ -364,14 +346,21 @@ MdvResult_t
 */
 typedef struct
 MdvSerialPortDriverInterface_t{
-        /// @brief Driver essentials.
-        MdvDriverEssentials_t essentials;
-        /// @brief Reads data from the serial port.
-        MdvSerialPortDriverInterface_Transfer_t funcRead;
-        /// @brief Writes data to the serial port.
-        MdvSerialPortDriverInterface_Transfer_t funcWrite;
-        /// @brief Runs the driver.
-        MdvSerialPortDriverInterface_Run_t funcRun;
+        /// @brief Driver common API.
+        MdvDriver_t common;
+        /// @brief Serial port specific driver interface extension.
+        struct{
+                /// @brief Interface initialization status.
+                bool initialized;
+                /// @brief Serial port specific driver functions.
+                struct{
+                        /// @brief Serial port specific driver interface.
+                        /// @brief Reads data from the serial port.
+                        MdvSerialPortDriverTransferFunction_t read;
+                        /// @brief Writes data to the serial port.
+                        MdvSerialPortDriverTransferFunction_t write;
+                } func;
+        } specific;
 } MdvSerialPortDriverInterface_t;
 
 /******************************************************************************\
@@ -385,15 +374,15 @@ MdvSerialPortDriverInterface_t{
 */
 typedef struct
 MdvSerialPort_t{
-        /// Driver interface.
+        /// @brief Driver interface.
         MdvSerialPortDriverInterface_t drv;
-        /// Port initialization status.
+        /// @brief Port initialization status.
         bool initialized;
-        /// Serial port configuration data.
+        /// @brief Serial port configuration data.
         MdvSerialPortConfig_t cfg;
-        /// Reception descriptor.
+        /// @brief Reception descriptor.
         MdvSerialPortTransfer_t rxd;
-        /// Transmission descriptor.
+        /// @brief Transmission descriptor.
         MdvSerialPortTransfer_t txd;
 } MdvSerialPort_t;
 
@@ -423,23 +412,20 @@ extern "C"{
 **
 **  @param[out] port Serial port instance whose driver interface to set up.
 **  @param[in] instance A pointer to a driver instance that will be associated
-**      to the port.
+**             to the port.
 **  @param[in] funcRead (Mandatory) A function to read data from the port.
 **  @param[in] funcWrite (Mandatory) A function to write data to the port.
-**  @param[in] funcRun (Optional) A function to support asynchronous
-**      data transfer processing.
 **
 **  @retval MDV_RESULT_OK Successful.
-**  @retval MDV_ERROR_INVALID_POINTER The port parameter points to null.
+**  @retval MDV_ERROR_INVALID_POINTER The port parameter points to NULL.
 **  @retval MDV_ERROR_INVALID_PARAMETER At least one of the mandatory function
-**      pointers is null.
+**          ponters is NULL.
 */
 MdvResult_t
 mdv_serialport_setup_driver_interface(
-        MdvSerialPort_t *port,
-        MdvSerialPortDriverInterface_Transfer_t funcRead,
-        MdvSerialPortDriverInterface_Transfer_t funcWrite,
-        MdvSerialPortDriverInterface_Run_t funcRun
+        MdvSerialPort_t *const port,
+        MdvSerialPortDriverTransferFunction_t funcRead,
+        MdvSerialPortDriverTransferFunction_t funcWrite
 );
 
 /*-------------------------------------------------------------------------*//**
@@ -447,17 +433,20 @@ mdv_serialport_setup_driver_interface(
 **
 **  @param[out] port Serial port to initialize.
 **  @param[in] rxCompleted RX completed callback for asynchronous read
-**      operations. Set to null for synchronous reads.
+**             operations. Set to NULL for synchronous reads.
 **  @param[in] txCompleted TX completed callback for asynchronous write
-**      operations. Set to null for synchronous writes.
+**             operations. Set to NULL for synchronous writes.
 **  @param[in] timerSys Timer system to use.
 **  @param[in] timeUnit Time units to use.
 **  @param[in] userData A pointer to user specified data.
 **
 **  @retval MDV_RESULT_OK Successful.
-**  @retval MDV_ERROR_INVALID_POINTER The port parameter points to null.
+**  @retval MDV_ERROR_INVALID_POINTER The port parameter points to NULL.
+**  @retval MDV_ERROR_INITIALIZATION_FAILED The driver interface has not been
+**          initialized. Use the @ref mdv_serial_port_setup_driver_interface
+**          function to initialize the driver interface.
 **  @return On a driver error returns a negative error code. See the driver
-**      implementation for more information.
+**          implementation for more information.
 **
 **  Initializes the serial port and the hardware by calling driver's
 **  initialization method. The driver interface must be initialized before this
@@ -465,12 +454,12 @@ mdv_serialport_setup_driver_interface(
 */
 MdvResult_t
 mdv_serialport_init(
-        MdvSerialPort_t *port,
+        MdvSerialPort_t *const port,
         MdvSerialPortTransferCompletedCallback_t rxCompleted,
         MdvSerialPortTransferCompletedCallback_t txCompleted,
-        MdvTimerSystem_t *timerSys,
+        MdvTimerSystem_t *const timerSys,
         MdvTimeUnit_t timeUnit,
-        void *userData
+        void *const userData
 );
 
 /*-------------------------------------------------------------------------*//**
@@ -478,16 +467,16 @@ mdv_serialport_init(
 **
 **  @param[in] port Serial port for which to get the configuration.
 **  @param[out] config Pointer to a configuration structure where the
-**      information will be copied.
+**              information will be copied.
 **
 **  @retval MDV_RESULT_OK Configuration got successfully.
 **  @return MDV_ERROR_INVALID_POINTER The port or config parameter points to
-**      null.
+**          NULL.
 */
 MdvResult_t
 mdv_serialport_get_current_configuration(
-        MdvSerialPort_t *port,
-        MdvSerialPortConfig_t *config
+        MdvSerialPort_t *const port,
+        MdvSerialPortConfig_t *const config
 );
 
 /*-------------------------------------------------------------------------*//**
@@ -495,23 +484,22 @@ mdv_serialport_get_current_configuration(
 **
 **  @param[in] port Serial port to open.
 **  @param[in] config Pointer to a configuration structure.
-**  @param[out] handle Pointer to a variable where the serial port handle will
-**      be stored.
+**  @param[in] handle Pointer to a handle.
 **
 **  @retval MDV_RESULT_OK Open successful.
-**  @retval MDV_ERROR_INVALID_POINTER The port, config or handle parameter
-**      points to null.
+**  @retval MDV_ERROR_INVALID_POINTER The port, config or handle pointer
+**          points to NULL.
 **  @return On a driver error returns a negative error code. See the driver
-**      implementation for more information.
+**          implementation for more information.
 **
 **  Opens a serial port using the given configuration. Returns a port handle as
 **  an output parameter.
 */
 MdvResult_t
 mdv_serialport_open(
-        MdvSerialPort_t *port,
-        MdvSerialPortConfig_t *config,
-        MdvHandle_t *handle
+        MdvSerialPort_t *const port,
+        MdvSerialPortConfig_t *const config,
+        MdvHandle_t *const handle
 );
 
 /*-------------------------------------------------------------------------*//**
@@ -520,15 +508,15 @@ mdv_serialport_open(
 **  @param[out] handle Pointer to the handle of the port being closed.
 **
 **  @retval MDV_RESULT_OK Closed successfully.
-**  @retval MDV_ERROR_INVALID_POINTER The handle parameter points to null.
+**  @retval MDV_ERROR_INVALID_POINTER The handle pointer points to NULL.
 **  @return On a driver error returns a negative error code. See the driver
-**      implementation for more information.
+**          implementation for more information.
 **
 **  Closes a serial port and resets the given port handle.
 */
 MdvResult_t
 mdv_serialport_close(
-        MdvHandle_t *handle
+        MdvHandle_t *const handle
 );
 
 /*-------------------------------------------------------------------------*//**
@@ -538,17 +526,18 @@ mdv_serialport_close(
 **  @param[in] config Pointer to a configuration structure.
 **
 **  @retval MDV_RESULT_OK Successful
-**  @retval MDV_ERROR_INVALID_POINTER The config parameter points to null.
-**  @retval MDV_ERROR_INVALID_PARAMETER The handle is invalid.
+**  @retval MDV_ERROR_INVALID_POINTER The config or handle pointer points to
+**          NULL.
+**  @retval MDV_ERROR_INVALID_HANDLE The handle is invalid.
 **  @return On a driver error returns a negative error code. See the driver
-**      implementation for more information.
+**          implementation for more information.
 **
 **  Closes a serial port and re-opens it with the new configuration values.
 */
 MdvResult_t
 mdv_serialport_change_configuration(
-        MdvHandle_t handle,
-        MdvSerialPortConfig_t *config
+        MdvHandle_t *const handle,
+        MdvSerialPortConfig_t *const config
 );
 
 /*-------------------------------------------------------------------------*//**
@@ -558,27 +547,26 @@ mdv_serialport_change_configuration(
 **  @param[in] length Data length in bytes.
 **  @param[out] data Pointer to an output buffer.
 **  @param[out] bytesRead Pointer to a variable for received data length. This
-**      parameter is optional and can be null.
+**              parameter is optional and can be NULL.
 **  @param[in] timeout Maximum time in milliseconds between two bytes or an
-**      initial wait timeout.
+**             initial wait timeout.
 **
 **  @retval MDV_RESULT_OK Read successful.
-**  @retval MDV_ERROR_INVALID_POINTER The data or bytesRead parameter points to
-**      null.
-**  @retval MDV_ERROR_INVALID_PARAMETER The handle is invalid.
+**  @retval MDV_ERROR_INVALID_POINTER The handle or data pointer points to NULL.
+**  @retval MDV_ERROR_INVALID_HANDLE The handle is invalid.
 **  @retval MDV_ERROR_TIMEOUT Reception timed out.
 **  @return On a driver error returns a negative error code. See the driver
-**      implementation for more information.
+**          implementation for more information.
 **
 **  Reads a chunk of data from the serial port. If not enough data received
 **  within the given timeout time, returns an error.
 */
 MdvResult_t
 mdv_serialport_read(
-        MdvHandle_t handle,
+        MdvHandle_t *const handle,
         uint32_t length,
-        uint8_t *data,
-        uint32_t *bytesRead,
+        uint8_t *const data,
+        uint32_t *const bytesRead,
         uint32_t timeout
 );
 
@@ -589,26 +577,25 @@ mdv_serialport_read(
 **  @param[in] length Data length in bytes.
 **  @param[in] data Pointer to a data buffer.
 **  @param[out] bytesWritten Pointer to a variable for transmitted data
-**      length. This parameter is optional and can be null.
+**              length. This parameter is optional and can be NULL.
 **  @param[in] timeout Maximum time in milliseconds between two bytes or an
-**      initial wait timeout.
+**             initial wait timeout.
 **
 **  @retval MDV_RESULT_OK Write successful.
-**  @retval MDV_ERROR_INVALID_POINTER One or more of the pointer parameters
-**      handle and data points to null.
-**  @retval MDV_ERROR_INVALID_PARAMETER The handle is invalid.
+**  @retval MDV_ERROR_INVALID_POINTER The handle or data pointer points to NULL.
+**  @retval MDV_ERROR_INVALID_HANDLE The handle is invalid.
 **  @retval MDV_ERROR_TIMEOUT Transmission timed out.
 **  @return On a driver error returns a negative error code. See the driver
-**      implementation for more information.
+**          implementation for more information.
 **
 **  Writes a chunk of data to a TX buffer.
 */
 MdvResult_t
 mdv_serialport_write(
-        MdvHandle_t handle,
+        MdvHandle_t *const handle,
         uint32_t length,
-        uint8_t *data,
-        uint32_t *bytesWritten,
+        uint8_t *const data,
+        uint32_t *const bytesWritten,
         uint32_t timeout
 );
 
@@ -619,9 +606,8 @@ mdv_serialport_write(
 **  @param[out] data Pointer to a character variable.
 **
 **  @retval MDV_RESULT_OK Character got successfully.
-**  @retval MDV_ERROR_INVALID_POINTER One or more of the pointer parameters
-**      handle and data points to null.
-**  @retval MDV_ERROR_INVALID_PARAMETER The handle is invalid.
+**  @retval MDV_ERROR_INVALID_POINTER The handle or data pointer points to NULL.
+**  @retval MDV_ERROR_INVALID_HANDLE The handle is invalid.
 **  @retval MDV_SERIALPORT_ERROR_RX_BUFFER_EMPTY The RX buffer is empty.
 **
 **  Gets a single character from the serial port. If the RX buffer is empty,
@@ -629,8 +615,8 @@ mdv_serialport_write(
 */
 MdvResult_t
 mdv_serialport_getchar(
-        MdvHandle_t handle,
-        uint8_t *data
+        MdvHandle_t *const handle,
+        uint8_t *const data
 );
 
 /*-------------------------------------------------------------------------*//**
@@ -640,18 +626,18 @@ mdv_serialport_getchar(
 **  @param[in] data Character to put.
 **
 **  @retval MDV_RESULT_OK Character put successfully.
-**  @retval MDV_ERROR_INVALID_POINTER Pointer parameter handle points to null.
-**  @retval MDV_ERROR_INVALID_PARAMETER The handle is invalid.
+**  @retval MDV_ERROR_INVALID_POINTER The handle pointer points to NULL.
+**  @retval MDV_ERROR_INVALID_HANDLE The handle is invalid.
 **  @retval MDV_SERIALPORT_ERROR_TX_BUFFER_FULL The TX buffer is full.
 **  @return On a driver error returns a negative error code. See the driver
-**      implementation for more information.
+**          implementation for more information.
 **
 **  Puts a single character to the TX buffer. If the buffer is full, returns
 **  an error without waiting.
 */
 MdvResult_t
 mdv_serialport_putchar(
-        MdvHandle_t handle,
+        MdvHandle_t *const handle,
         uint8_t data
 );
 
@@ -661,14 +647,14 @@ mdv_serialport_putchar(
 **  @param[in] handle Serial port handle.
 **
 **  @return MDV_RESULT_OK Successful.
-**  @return MDV_ERROR_INVALID_PARAMETER The handle is invalid.
+**  @return MDV_ERROR_INVALID_POINTER The handle pointer points to NULL.
 **
 **  This function must be called periodically in order to run asynchronous
 **  transfers. The callback functions are called in this context.
 */
 MdvResult_t
 mdv_serialport_runtime_process(
-        MdvHandle_t handle
+        MdvHandle_t *const handle
 );
 
 #ifdef __cplusplus

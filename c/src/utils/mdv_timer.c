@@ -109,7 +109,7 @@ mdv_timer_get_time(
         // running tick counter, advance the invokation counter. Otherwise,
         // reset the invokation counter.
         if(timerSys->ctim==timerSys->tck){
-                timerSys->icnt++;
+                ++timerSys->icnt;
         }else{
                 timerSys->icnt=0;
         }

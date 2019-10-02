@@ -53,14 +53,14 @@
 */
 MdvResult_t
 mdv_average16_init(
-        MdvAverage16_t *average,
+        MdvAverage16_t *const average,
         MdvAverage16FilterMode_t mode,
         uint16_t size,
-        uint16_t *buffer
+        uint16_t *const buffer
 )
 {
         if(!average||!buffer){
-                return MDV_AVERAGE_ERROR_INVALID_POINTER;
+                return MDV_ERROR_INVALID_POINTER;
         }        
         average->mod=mode;
         average->sz=size;
@@ -74,11 +74,11 @@ mdv_average16_init(
 */
 MdvResult_t
 mdv_average16_reset(
-        MdvAverage16_t *average
+        MdvAverage16_t *const average
 )
 {
         if(!average){
-                return MDV_AVERAGE_ERROR_INVALID_POINTER;
+                return MDV_ERROR_INVALID_POINTER;
         }
         average->wr=0;
         average->cnt=0;
@@ -93,7 +93,7 @@ mdv_average16_reset(
 */
 uint16_t
 mdv_average16_put(
-        MdvAverage16_t *average,
+        MdvAverage16_t *const average,
         uint16_t sample
 )
 {
@@ -108,13 +108,13 @@ mdv_average16_put(
                 // Write new sample to the buffer.
                 average->bfr[average->wr]=sample;
                 // Advance the buffer pointer and wrap around if end of buffer.
-                average->wr++;
+                ++average->wr;
                 if(average->wr==average->sz){
                         average->wr=0;
                 }
                 // Increase sample count if smaller than the buffer size.
                 if(average->cnt<average->sz){
-                        average->cnt++;
+                        ++average->cnt;
                 }
                 // Add the sample to the sum of the buffered samples.
                 average->sum+=sample;
@@ -130,7 +130,7 @@ mdv_average16_put(
                         return average->val;
                 }
                 average->sum+=sample;
-                average->cnt++;
+                ++average->cnt;
                 break;
         }
         // Calculate average.

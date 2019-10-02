@@ -59,8 +59,8 @@
 */
 static void
 cli_echo(
-        MdvCliParser_t *parser,
-        char *str,
+        MdvCliParser_t *const parser,
+        char *const str,
         uint16_t sz
 )
 {
@@ -81,7 +81,7 @@ cli_echo(
 */
 static void
 cli_start_new_line(
-        MdvCliParser_t *parser
+        MdvCliParser_t *const parser
 )
 {
         cli_echo(parser,"\r\n",2);
@@ -97,7 +97,7 @@ cli_start_new_line(
 */
 static void
 cli_begin_new_input(
-        MdvCliParser_t *parser,
+        MdvCliParser_t *const parser,
         bool newLine
 )
 {
@@ -118,7 +118,7 @@ cli_begin_new_input(
 */
 static void
 cli_print_help_summary(
-        MdvCliParser_t *parser
+        MdvCliParser_t *const parser
 )
 {
         uint8_t i;
@@ -157,7 +157,7 @@ cli_print_help_summary(
 */
 static void
 cli_print_help_for_command(
-        MdvCliParser_t *parser,
+        MdvCliParser_t *const parser,
         uint8_t cmdId
 )
 {
@@ -199,8 +199,8 @@ cli_print_help_for_command(
 */
 static MdvResult_t
 cli_parse_parameter(
-        MdvCliParser_t *parser,
-        uint16_t *i
+        MdvCliParser_t *const parser,
+        uint16_t *const i
 )
 {
         uint16_t j;
@@ -217,7 +217,7 @@ cli_parse_parameter(
         }
         // Bypass preceding spaces.
         while(parser->inp[*i]==32){
-                (*i)++;
+                ++(*i);
                 // EOL found.
                 if(*i==parser->icnt){
                         return MDV_CLI_RESULT_PARSING_FINISHED;
@@ -227,7 +227,7 @@ cli_parse_parameter(
         if(parser->inp[*i]!='-'){
                 return MDV_CLI_ERROR_PARSER_INVALID_PARAMETER;
         }
-        (*i)++;
+        ++(*i);
         // EOL found, but not expected: return an error.
         if(*i==parser->icnt){
                 return MDV_CLI_ERROR_PARSER_UNEXPECTED_EOL;
@@ -239,8 +239,8 @@ cli_parse_parameter(
         }
         // Find the end of the parameter name.
         while(parser->inp[*i]!=32&&parser->inp[*i]!='='){
-                len++;
-                (*i)++;
+                ++len;
+                ++(*i);
                 if(*i==parser->icnt){
                         break;
                 }
@@ -273,7 +273,7 @@ cli_parse_parameter(
                                 val->type=MDV_VARTYPE_NONE;
                                 val->U32=0;
                                 val->sz=0;
-                                parser->pcnt++;
+                                ++parser->pcnt;
                                 found=true;
                                 break;
                         }
@@ -320,7 +320,7 @@ cli_parse_parameter(
         if(p->varType==MDV_VARTYPE_NONE){
                 return MDV_CLI_ERROR_PARSER_UNEXPECTED_PARAMETER_VALUE;
         }
-        (*i)++;
+        ++(*i);
         // EOL found, but not expected: return an error.
         if(*i==parser->icnt){
                 return MDV_CLI_ERROR_PARSER_UNEXPECTED_EOL;
@@ -328,8 +328,8 @@ cli_parse_parameter(
         // Get the value.
         len=0;
         while(parser->inp[*i]!=32){
-                (*i)++;
-                len++;
+                ++(*i);
+                ++len;
                 // An EOL found.
                 if(*i==parser->icnt){
                         break;
@@ -508,8 +508,8 @@ cli_parse_input(
         for(j=0;j<parser->clipcnt;j++){
                 switch(parser->cliprm[i+j].type){
                 default:break;
-                case MDV_CLI_PARAMETER_TYPE_MANDATORY:m[0]++;break;
-                case MDV_CLI_PARAMETER_TYPE_ALTERNATIVE:a[0]++;break;
+                case MDV_CLI_PARAMETER_TYPE_MANDATORY:++m[0];break;
+                case MDV_CLI_PARAMETER_TYPE_ALTERNATIVE:++a[0];break;
                 }
         }
         // Calculate the amount of mandatory and alternative parameters in the
@@ -517,8 +517,8 @@ cli_parse_input(
         for(j=0;j<parser->pcnt;j++){
                 switch(parser->pprm[j].t){
                 default:
-                case MDV_CLI_PARAMETER_TYPE_MANDATORY:m[1]++;break;
-                case MDV_CLI_PARAMETER_TYPE_ALTERNATIVE:a[1]++;break;
+                case MDV_CLI_PARAMETER_TYPE_MANDATORY:++m[1];break;
+                case MDV_CLI_PARAMETER_TYPE_ALTERNATIVE:++a[1];break;
                 }
         }
         // Check that all mandatory parameters have been found.

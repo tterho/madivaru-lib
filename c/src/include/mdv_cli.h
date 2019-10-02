@@ -158,14 +158,15 @@
 */
 typedef enum
 MdvCliParameterType_t{
-        /// No parameter defined.
+        /// @brief No parameter defined.
         MDV_CLI_PARAMETER_TYPE_NONE=0,
-        /// The parameter is optional.
+        /// @brief The parameter is optional.
         MDV_CLI_PARAMETER_TYPE_OPTIONAL,
-        /// The parameter is mandatory. A missing parameter causes an error.
+        /// @brief The parameter is mandatory. A missing parameter causes an
+        ///        error.
         MDV_CLI_PARAMETER_TYPE_MANDATORY,
-        /// The parameter is an alternative. At least one alternative parameter
-        /// must exist in the command line.
+        /// @brief The parameter is an alternative. At least one alternative
+        ///        parameter must exist in the command line.
         MDV_CLI_PARAMETER_TYPE_ALTERNATIVE
 } MdvCliParameterType_t;
 
@@ -174,11 +175,11 @@ MdvCliParameterType_t{
 */
 typedef struct
 MdvCliParameter_t{
-        /// The ID of the parameter.
+        /// @brief The ID of the parameter.
         uint8_t id;
-        /// The value of the parameter.
+        /// @brief The value of the parameter.
         MdvVar_t val;
-        /// The type of the parameter.
+        /// @brief The type of the parameter.
         MdvCliParameterType_t t;
 } MdvCliParameter_t;
 
@@ -192,7 +193,7 @@ MdvCliParameter_t{
 **
 **  @retval MDV_RESULT_OK Successful.
 **  @return On an error returns a negative error code that is passed to the
-**      invoker.
+**          invoker.
 **
 **  This callback is invoked by the command interpreter once for each command
 **  line command. The callback passes information about the command and its
@@ -202,9 +203,9 @@ MdvCliParameter_t{
 typedef MdvResult_t
 (*MdvCliCommandCallback_t)(
         uint8_t cmdId,
-        MdvCliParameter_t *params,
+        MdvCliParameter_t *const params,
         uint8_t paramCount,
-        void *userData
+        void *const userData
 );
 
 /*-------------------------------------------------------------------------*//**
@@ -212,13 +213,13 @@ typedef MdvResult_t
 */
 typedef struct
 MdvCliCommandDescriptor_t{
-        /// The name of the command.
+        /// @brief The name of the command.
         char *cmd;
-        /// The description of the options of the command.
+        /// @brief The description of the options of the command.
         char *optDescr;
-        /// The detailed description of the command.
+        /// @brief The detailed description of the command.
         char *descr;
-        /// A callback that handles the command.
+        /// @brief A callback that handles the command.
         MdvCliCommandCallback_t Cbk;
 } MdvCliCommandDescriptor_t;
 
@@ -227,15 +228,15 @@ MdvCliCommandDescriptor_t{
 */
 typedef struct
 MdvCliParameterDescriptor_t{
-        /// The type of the parameter (optional/required).
+        /// @brief The type of the parameter (optional/required).
         MdvCliParameterType_t type;
-        /// The name of the parameter.
+        /// @brief The name of the parameter.
         char *param;
-        /// The description of the parameter.
+        /// @brief The description of the parameter.
         char *descr;
-        /// Indicates whether the parameter should have a value or not.
+        /// @brief Indicates whether the parameter should have a value or not.
         bool hasValue;
-        /// Type of the parameter value.
+        /// @brief Type of the parameter value.
         MdvVarType_t varType;
 } MdvCliParameterDescriptor_t;
 
@@ -253,9 +254,9 @@ MdvCliParameterDescriptor_t{
 */
 typedef void
 (*MdvCliEchoCallback_t)(
-        char *str,
+        char *const str,
         uint16_t length,
-        void *userData
+        void *const userData
 );
 
 /*-------------------------------------------------------------------------*//**
@@ -263,48 +264,44 @@ typedef void
 */
 typedef struct
 MdvCliParser_t{
-        /// A user defined list of command line commands.
+        /// @brief A user defined list of command line commands.
         const MdvCliCommandDescriptor_t *clicmd;
-        /// The amount of the commands in the list.
+        /// @brief The amount of the commands in the list.
         uint8_t cliccnt;
-        /// A user defined list of command line parameters.
+        /// @brief A user defined list of command line parameters.
         const MdvCliParameterDescriptor_t *cliprm;
-        /// A pointer to an external buffer for parsed parameters.
+        /// @brief A pointer to an external buffer for parsed parameters.
         MdvCliParameter_t *pprm;
-        /// The maximum amount of parameters per command.
+        /// @brief The maximum amount of parameters per command.
         uint8_t clipcnt;
-        /// A user defined list of enumerated value names for the parameter
-        /// values.
+        /// @brief A user defined list of enumerated value names for the
+        ///        parameter values.
         const char **clienu;
-        /// The amount of enumerated value names in the list.
+        /// @brief The amount of enumerated value names in the list.
         uint16_t cliecnt;
-        /// A pointer to an external buffer for the command line input.
+        /// @brief A pointer to an external buffer for the command line input.
         char *inp;
-        /// The length of the input buffer.
+        /// @brief The length of the input buffer.
         uint16_t inl;
-        /// Input write pointer.
+        /// @brief Input write pointer.
         char *iptr;
-        /// Input character count.
+        /// @brief Input character count.
         uint16_t icnt;
-        /// The parsed command id.
+        /// @brief The parsed command id.
         uint8_t pcmd;
-        /// The parsed parameter count.
+        /// @brief The parsed parameter count.
         uint8_t pcnt;
-        /// A callback to echo the command line input.
+        /// @brief A callback to echo the command line input.
         MdvCliEchoCallback_t ecbk;
-        /// Echo enable.
+        /// @brief Echo enable.
         bool eena;
-        /// Parser enable.
+        /// @brief Parser enable.
         bool pena;
-        /// Help header.
+        /// @brief Help header.
         const char *hhdr;
-        /// A pointer to user specified data.
+        /// @brief A pointer to user specified data.
         void *ud;
 } MdvCliParser_t;
-
-#ifdef __cplusplus
-extern "C"{
-#endif // ifdef __cplusplus
 
 /******************************************************************************\
 **
@@ -312,23 +309,28 @@ extern "C"{
 **
 \******************************************************************************/
 
+#ifdef __cplusplus
+extern "C"{
+#endif // ifdef __cplusplus
+
 /*-------------------------------------------------------------------------*//**
 **  @brief Initializes a parser for command line input.
 **
 **  @param[in] inputBuffer A pointer to a buffer where the input data is
-**      received.
+**             received.
 **  @param[in] inputBufferLength The length of the input buffer.
 **  @param[in] cliCmds A user defined list of commands supported by the
-**      application. The list must contain at least cmdCount items.
+**             application. The list must contain at least cmdCount items.
 **  @param[in] cliCmdCount The amount of commands in supported by the
-**      application.
+**             application.
 **  @param[in] cliParams A user defined list of parameters supported by the
-**      commands. The list must contain at least cmdCount * maxParams items.
+**             commands. The list must contain at least cmdCount * maxParams
+**             items.
 **  @param[in] parsedParams A pointer to an external buffer for parsed
-**      parameters. The list must contain at least maxParams items.
+**             parameters. The list must contain at least maxParams items.
 **  @param[in] cliMaxParams The maximum amount of parameters per command.
 **  @param[in] cliEnums A user defined list of enumerated value names for the
-**      parameter values.
+**             parameter values.
 **  @param[in] cliEnumCount The amount of enumerated value names in the list.
 **  @param[in] echo A callback for command line echo.
 **  @param[in] helpHeader A pointer to a help header text.
@@ -337,23 +339,23 @@ extern "C"{
 **
 **  @retval MDV_RESULT_OK Successful.
 **  @retval MDV_ERROR_INVALID_POINTER One of the pointer parameters parser,
-**      inputBuffer, clicmd or cliparam is invalid (points to null).
+**          inputBuffer, clicmd or cliparam is invalid (points to null).
 */
 MdvResult_t
 mdv_cli_init_parser(
-        char *inputBuffer,
+        char *const inputBuffer,
         uint16_t inputBufferLength,
-        const MdvCliCommandDescriptor_t *cliCmds,
+        const MdvCliCommandDescriptor_t *const cliCmds,
         uint8_t cliCmdCount,
-        const MdvCliParameterDescriptor_t *cliParams,
-        MdvCliParameter_t *parsedParams,
+        const MdvCliParameterDescriptor_t *const cliParams,
+        MdvCliParameter_t *const parsedParams,
         uint8_t cliMaxParams,
-        const char **cliEnums,
+        const char **const cliEnums,
         uint16_t cliEnumCount,
         MdvCliEchoCallback_t echo,
-        const char *helpHeader,
-        void *userData,
-        MdvCliParser_t *parser
+        const char *const helpHeader,
+        void *const userData,
+        MdvCliParser_t *const parser
 );
 
 /*-------------------------------------------------------------------------*//**
@@ -366,7 +368,7 @@ mdv_cli_init_parser(
 */
 MdvResult_t
 mdv_cli_enable_parser(
-        MdvCliParser_t *parser
+        MdvCliParser_t *const parser
 );
 
 /*-------------------------------------------------------------------------*//**
@@ -379,7 +381,7 @@ mdv_cli_enable_parser(
 */
 MdvResult_t
 mdv_cli_disable_parser(
-        MdvCliParser_t *parser
+        MdvCliParser_t *const parser
 );
 
 /*-------------------------------------------------------------------------*//**
@@ -392,7 +394,7 @@ mdv_cli_disable_parser(
 */
 MdvResult_t
 mdv_cli_enable_echo(
-        MdvCliParser_t *parser
+        MdvCliParser_t *const parser
 );
 
 /*-------------------------------------------------------------------------*//**
@@ -405,7 +407,7 @@ mdv_cli_enable_echo(
 */
 MdvResult_t
 mdv_cli_disable_echo(
-        MdvCliParser_t *parser
+        MdvCliParser_t *const parser
 );
 
 /*-------------------------------------------------------------------------*//**
@@ -419,13 +421,13 @@ mdv_cli_disable_echo(
 */
 MdvResult_t
 mdv_cli_begin_new_input(
-        MdvCliParser_t *parser,
+        MdvCliParser_t *const parser,
         bool newLine
 );
 
 /*-------------------------------------------------------------------------*//**
 **  @brief Puts an ASCII character to the parser and executes actions on a
-**      command characters.
+**         command characters.
 **
 **  @param[in] parser A parser to use.
 **  @param[in] input An input character.
@@ -433,11 +435,11 @@ mdv_cli_begin_new_input(
 **  @retval MDV_RESULT_OK Successful.
 **  @retval MDV_ERROR_INVALID_POINTER The parser parameter points to null.
 **  @return On parser errors returns negative error codes. See the error
-**      descriptions for more information.
+**          descriptions for more information.
 */
 MdvResult_t
 mdv_cli_putchar(
-        MdvCliParser_t *parser,
+        MdvCliParser_t *const parser,
         uint8_t input
 );
 
