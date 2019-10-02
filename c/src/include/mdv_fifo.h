@@ -99,25 +99,24 @@
 **  @brief FIFO structure
 */
 typedef struct
-MdvFifo_t
-{
-        /// Pointer to the FIFO data buffer.
+MdvFifo_t{
+        /// @brief Pointer to the FIFO data buffer.
         void *d;
-        /// Data item size in bytes.
+        /// @brief Data item size in bytes.
         uint16_t dsz;
-        /// Buffer size in bytes.
+        /// @brief Buffer size in bytes.
         uint32_t sz;
-        /// Maximum items in the FIFO.
+        /// @brief Maximum items in the FIFO.
         uint16_t max;
-        /// Current amount of data items in the FIFO.
+        /// @brief Current amount of data items in the FIFO.
         uint16_t cnt;
-        /// Write index.
+        /// @brief Write index.
         uint16_t wr;
-        /// Read index.
+        /// @brief Read index.
         uint16_t rd;
-        /// Write pointer.
+        /// @brief Write pointer.
         void *wrp;
-        /// Read pointer.
+        /// @brief Read pointer.
         void *rdp;
 } MdvFifo_t;
 
@@ -126,6 +125,10 @@ MdvFifo_t
 **  API FUNCTION DECLARATIONS
 **
 \******************************************************************************/
+
+#ifdef __cplusplus
+extern "C"{
+#endif // ifdef __cplusplus
 
 /*-------------------------------------------------------------------------*//**
 **  @brief Initializes a FIFO.
@@ -137,17 +140,17 @@ MdvFifo_t
 **
 **  @retval MDV_RESULT_OK Successful
 **  @retval MDV_ERROR_INVALID_POINTER Either the fifo or data parameter points
-**      to null.
+**          to null.
 **  @retval MDV_ERROR_INVALID_PARAMETER The size or the data size is zero, or
-**      the size is smaller than the data size.
+**          the size is smaller than the data size.
 **
 **  Initializes a FIFO by associating it with an externally allocated data
 **  buffer and resets the FIFO.
 */
 MdvResult_t
 mdv_fifo_init(
-        MdvFifo_t *fifo,
-        void *data,
+        MdvFifo_t *const fifo,
+        void *const data,
         uint32_t size,
         uint16_t dsize
 );
@@ -165,7 +168,7 @@ mdv_fifo_init(
 */
 MdvResult_t
 mdv_fifo_reset(
-        MdvFifo_t *fifo
+        MdvFifo_t *const fifo
 );
 
 /*-------------------------------------------------------------------------*//**
@@ -176,7 +179,7 @@ mdv_fifo_reset(
 **
 **  @retval MDV_RESULT_OK Successful
 **  @retval MDV_ERROR_INVALID_POINTER Either the fifo or the data parameter
-**      points to null.
+**          points to null.
 **  @retval MDV_FIFO_ERROR_FULL FIFO is full.
 **
 **  Puts data to a FIFO, advances its write pointer and increases data count.
@@ -185,8 +188,8 @@ mdv_fifo_reset(
 */
 MdvResult_t
 mdv_fifo_put(
-        MdvFifo_t *fifo,
-        void *data
+        MdvFifo_t *const fifo,
+        void *const data
 );
 
 /*-------------------------------------------------------------------------*//**
@@ -197,16 +200,20 @@ mdv_fifo_put(
 **
 **  @retval MDV_RESULT_OK Successful
 **  @retval MDV_ERROR_INVALID_POINTER Either the fifo or the data parameter
-**      points to null.
+**          points to null.
 **  @return MDV_FIFO_ERROR_EMPTY FIFO is empty.
 **
 **  Gets data from a FIFO, advances its read pointer and decreases data count.
 */
 MdvResult_t
 mdv_fifo_get(
-        MdvFifo_t *fifo,
-        void *data
+        MdvFifo_t *const fifo,
+        void *const data
 );
+
+#ifdef __cplusplus
+}
+#endif // ifdef __cplusplus
 
 #endif // ifndef mdv_fifo_H
 

@@ -163,7 +163,7 @@ xtc_ptc_resistance_to_temperature(
 
 float
 mdv_xtc_get_temperature(
-        MdvXtc_t *xtc,
+        MdvXtc_t *const xtc,
         float R
 )
 {
@@ -176,7 +176,7 @@ mdv_xtc_get_temperature(
 
 float
 mdv_xtc_get_resistance(
-        MdvXtc_t *xtc,
+        MdvXtc_t *const xtc,
         float T
 )
 {

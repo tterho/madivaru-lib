@@ -96,6 +96,10 @@ MdvXtc_t{
 **
 \******************************************************************************/
 
+#ifdef __cplusplus
+extern "C"{
+#endif // ifdef __cplusplus
+
 /*-------------------------------------------------------------------------*//**
 **  @brief Converts resistance to the corresponding temperature value.
 **
@@ -106,7 +110,7 @@ MdvXtc_t{
 */
 float
 mdv_xtc_get_temperature(
-        MdvXtc_t *xtc,
+        MdvXtc_t *const xtc,
         float R
 );
 
@@ -120,9 +124,13 @@ mdv_xtc_get_temperature(
 */
 float
 mdv_xtc_get_resistance(
-        MdvXtc_t *xtc,
+        MdvXtc_t *const xtc,
         float T
 );
+
+#ifdef __cplusplus
+}
+#endif // ifdef __cplusplus
 
 #endif // ifndef mdv_xtc_H
 

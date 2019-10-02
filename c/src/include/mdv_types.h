@@ -51,10 +51,11 @@
 #include <inttypes.h>
 #include <stdbool.h>
 
-/*-------------------------------------------------------------------------*//**
-**  @brief Handle data type.
-*/
-typedef void *MdvHandle_t;
+/******************************************************************************\
+**
+**  GENERIC VARIABLE TYPE
+**
+\******************************************************************************/
 
 /*-------------------------------------------------------------------------*//**
 **  @brief Identifiers of the generic variable data types.
@@ -137,25 +138,21 @@ MdvVar_t{
         };
 } MdvVar_t;
 
-#ifdef __cplusplus
-class MdvVariable_c
-{
-        public:
-
-        MdvVariable_c() {}
-        MdvVariable_c(MdvVar_t var): Var(var){}
-        MdvVar_t Var;
-};
-#endif // ifdef __cplusplus
-
-/*-------------------------------------------------------------------------*//**
-**  @brief Bit macro.
+/******************************************************************************\
 **
-**  @param A Bit index.
+**  FUNCTION RESULT AND ERROR HANDLING
 **
-**  This macro is used to generate a bit mask by the means of the bit index.
-*/
-#define MDV_BIT(A) (1<<(A))
+**  The error code range is divided into two sections:
+**  - section from -1 to n + 1 is reserved for common (generic) error codes,
+**  - section from n to m = INT16_MIN can be used as module specific error 
+**    codes.
+**
+**  Constants and macros for the error code section:
+**  - The constant MDV_MODULE_SPECIFIC_ERROR_RANGE specifies the n of the range.
+**  - The macro MDV_MODULE_SPECIFIC_ERROR(INDEX) can be used to declare a module
+**    specific error code by an index beginning from 0.
+**
+\******************************************************************************/
 
 /*-------------------------------------------------------------------------*//**
 **  @brief Common result data type for function result handling, and common
@@ -163,47 +160,90 @@ class MdvVariable_c
 */
 typedef int16_t MdvResult_t;
 
-/// @brief A pointer parameter is invalid (points to null).
-#define MDV_ERROR_INVALID_POINTER -1
-
-/// @brief A parameter value is invalid.
-#define MDV_ERROR_INVALID_PARAMETER -2
-
-/// @brief A driver interface has not been initialized.
-#define MDV_ERROR_DRIVER_INTERFACE -3
-
-/// @brief A driver hardware error.
-#define MDV_ERROR_HARDWARE -4
-
-/// @brief A driver internal failure.
-#define MDV_ERROR_DRIVER_INTERNAL_FAILURE -5
-
-/// @brief A resource is in use (handle already occupied).
-#define MDV_ERROR_RESOURCE_IN_USE -6
-
-/// @brief A time-out occurred.
-#define MDV_ERROR_TIMEOUT -7
-
-/// @brief A configuration parameter value is invalid.
-#define MDV_ERROR_INVALID_CONFIGURATION -8
-
-/// @brief A device initialization has failed.
-#define MDV_ERROR_INITIALIZATION_FAILED -9
-
-/// @brief The requested operation is not allowed in the current operational
-///     state.
-#define MDV_ERROR_INVALID_OPERATION -10
-
-/// @brief A macro to specify module specific errors by an index.
-#define MDV_MODULE_SPECIFIC_ERROR(INDEX) (-100-(INDEX))
-
 /*-------------------------------------------------------------------------*//**
 **  @brief A macro to test a result.
 */
 #define MDV_SUCCESSFUL(RESULT) ((RESULT)>=0)
 
-/// Generic definition for a successful result.
+/// @brief Generic definition for a successful result.
 #define MDV_RESULT_OK 0
+
+/******************************************************************************\
+**
+**  COMMON ERROR CODES
+** 
+\******************************************************************************/
+
+/// @brief A generic (unspecified) error.
+#define MDV_ERROR_GENERIC -1
+
+/// @brief A pointer parameter is invalid (points to null).
+#define MDV_ERROR_INVALID_POINTER -2
+
+/// @brief A parameter value is invalid.
+#define MDV_ERROR_INVALID_PARAMETER -3
+
+/// @brief Trying to use an uninitialized handle.
+#define MDV_ERROR_INVALID_HANDLE -4
+
+/// @brief A configuration parameter value is invalid.
+#define MDV_ERROR_INVALID_CONFIGURATION -5
+
+/// @brief The operation is not allowed in the current operational state.
+#define MDV_ERROR_INVALID_OPERATION -6
+
+/// @brief Out of resources.
+#define MDV_ERROR_OUT_OF_RESOURCES -7
+
+/// @brief A resource is in use.
+#define MDV_ERROR_RESOURCE_IN_USE -8
+
+/// @brief A device initialization has failed.
+#define MDV_ERROR_INITIALIZATION_FAILED -9
+
+/// @brief A driver hardware error.
+#define MDV_ERROR_HARDWARE -10
+
+/// @brief A time-out occurred.
+#define MDV_ERROR_TIMEOUT -11
+
+/// @brief A driver interface has not been initialized.
+#define MDV_ERROR_DRIVER_INTERFACE -12
+
+/// @brief A driver internal failure.
+#define MDV_ERROR_DRIVER_INTERNAL_FAILURE -13
+
+/******************************************************************************\
+**
+**  MODULE SPECIFIC ERROR CODE RANGE
+**
+\******************************************************************************/
+
+/// @brief Module specific error range begins from this value.
+#define MDV_MODULE_SPECIFIC_ERROR_RANGE -100
+
+/*-------------------------------------------------------------------------*//**
+**  @brief A macro to specify module specific error codes by an index.
+**
+**  @param INDEX An index for an error code (beginning from 0).
+*/
+#define MDV_MODULE_SPECIFIC_ERROR(INDEX) \
+        ((MDV_MODULE_SPECIFIC_ERROR_RANGE)-(INDEX))
+
+/******************************************************************************\
+**
+**  GENERAL PURPOSE VALUE MANIPULATION MACROS
+**
+\******************************************************************************/
+
+/*-------------------------------------------------------------------------*//**
+**  @brief Bit macro.
+**
+**  @param INDEX Bit index.
+**
+**  This macro is used to generate a bit mask by the means of the bit index.
+*/
+#define MDV_BIT(INDEX) (1<<(INDEX))
 
 /*-------------------------------------------------------------------------*//**
 **  @brief Increases a value and wraps around.

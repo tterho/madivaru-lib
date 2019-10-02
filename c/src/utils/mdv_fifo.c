@@ -66,10 +66,10 @@ mdv_fifo_init(
 {
         // Check the parameters.
         if(!fifo||!data){
-                return MDV_FIFO_ERROR_INVALID_POINTER;
+                return MDV_ERROR_INVALID_POINTER;
         }
         if(!size||!dsize||size<dsize){
-                return MDV_FIFO_ERROR_INVALID_PARAMETER;
+                return MDV_ERROR_INVALID_PARAMETER;
         }
         // Setup the FIFO.
         fifo->d=data;
@@ -90,7 +90,7 @@ mdv_fifo_reset(
 )
 {
         if(!fifo){
-                return MDV_FIFO_ERROR_INVALID_POINTER;
+                return MDV_ERROR_INVALID_POINTER;
         }        
         // Reset the write and read pointers and the item counter.
         fifo->wr=0;
@@ -111,7 +111,7 @@ mdv_fifo_put(
 )
 {
         if(!fifo||!data){
-                return MDV_FIFO_ERROR_INVALID_POINTER;
+                return MDV_ERROR_INVALID_POINTER;
         }
         // If there is no room for data, return an error.
         if(fifo->cnt==fifo->max){
@@ -120,8 +120,8 @@ mdv_fifo_put(
         // Write data to the buffer and advance the write pointers.
         MDV_FIFO_ENTER_CRITICAL();
         memcpy(fifo->wrp,data,fifo->dsz);
-        fifo->wr++;
-        fifo->cnt++;
+        ++fifo->wr;
+        ++fifo->cnt;
         fifo->wrp=(uint8_t*)fifo->wrp+fifo->dsz;
         MDV_FIFO_EXIT_CRITICAL();
         // Write index and pointer wrap-around.
@@ -142,7 +142,7 @@ mdv_fifo_get(
 )
 {
         if(!fifo||!data){
-                return MDV_FIFO_ERROR_INVALID_POINTER;
+                return MDV_ERROR_INVALID_POINTER;
         }        
         // If there is no data in the FIFO, return error.
         if(!fifo->cnt){
@@ -151,8 +151,8 @@ mdv_fifo_get(
         // Read data from the buffer and advance the read pointers.
         memcpy(data,fifo->rdp,fifo->dsz);
         MDV_FIFO_ENTER_CRITICAL();
-        fifo->rd++;
-        fifo->cnt--;
+        ++fifo->rd;
+        --fifo->cnt;
         fifo->rdp=(uint8_t*)fifo->rdp+fifo->dsz;
         MDV_FIFO_EXIT_CRITICAL();
         // Read index and pointer wrap-around.

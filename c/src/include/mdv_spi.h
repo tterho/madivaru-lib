@@ -43,7 +43,8 @@
 #ifndef mdv_spi_H
 #define mdv_spi_H
 
-#include "mdv_driver_essentials.h"
+#include "mdv_driver.h"
+#include "mdv_handle.h"
 
 /******************************************************************************\
 **
@@ -158,7 +159,7 @@ typedef void
 */
 typedef
 MdvResult_t
-(*MdvSpiDriverInterface_SelectSlave_t)(
+(*MdvSpiDriverSelectSlave_t)(
         MdvDriverInstance_t *instance,
         uint8_t slaveAddress
 );
@@ -175,11 +176,11 @@ MdvResult_t
 **
 **  @remarks Implement this function if the driver is capable of to transmit one
 **  byte at the time. Otherwise, implement the function
-**  @ref MdvSpiDriverInterface_Transfer_t.
+**  @ref MdvSpiDriverTransfer_t.
 */
 typedef
 MdvResult_t
-(*MdvSpiDriverInterface_TransferByte_t)(
+(*MdvSpiDriverTransferByte_t)(
         MdvDriverInstance_t *instance,
         uint8_t dout,
         uint8_t *din
@@ -199,11 +200,11 @@ MdvResult_t
 **
 **  @remarks Implement this function if the driver is capable of to transmit
 **  multiple bytes at the time. Otherwise, implement the function
-**  @ref MdvSpiDriverInterface_TransferByte_t.
+**  @ref MdvSpiDriverTransferByte_t.
 */
 typedef
 MdvResult_t
-(*MdvSpiDriverInterface_Transfer_t)(
+(*MdvSpiDriverTransfer_t)(
         MdvDriverInstance_t *instance,
         uint8_t *dout,
         uint16_t outsz,
@@ -222,14 +223,22 @@ MdvResult_t
 */
 typedef struct
 MdvSpiDriverInterface_t{
-        /// @brief Driver essentials.
-        MdvDriverEssentials_t essentials;
-        /// @brief Selects a slave for communication.
-        MdvSpiDriverInterface_SelectSlave_t funcSelectSlave;
-        /// @brief Transfers one byte in both directions.
-        MdvSpiDriverInterface_TransferByte_t funcTransferByte;
-        /// @brief Transfers data in both directions.
-        MdvSpiDriverInterface_Transfer_t funcTransfer;
+        /// @brief Driver common API.
+        MdvDriver_t common;
+        /// @brief SPI specific driver interface extension.
+        struct{
+                /// @brief Interface initialization status.
+                bool initialized;
+                /// @brief SPI specific driver functions.
+                struct{
+                        /// @brief Selects a slave for communication.
+                        MdvSpiDriverSelectSlave_t selectSlave;
+                        /// @brief Transfers one byte in both directions.
+                        MdvSpiDriverTransferByte_t transferByte;
+                        /// @brief Transfers data in both directions.
+                        MdvSpiDriverTransfer_t transfer;
+                } func;
+        } specific;
 } MdvSpiDriverInterface_t;
 
 /******************************************************************************\
@@ -280,10 +289,10 @@ extern "C"{
 */
 MdvResult_t
 mdv_spi_setup_driver_interface(
-        MdvSpi_t *spi,
-        MdvSpiDriverInterface_SelectSlave_t funcSelectSlave,
-        MdvSpiDriverInterface_TransferByte_t funcTransferByte,
-        MdvSpiDriverInterface_Transfer_t funcTransfer
+        MdvSpi_t *const spi,
+        MdvSpiDriverSelectSlave_t funcSelectSlave,
+        MdvSpiDriverTransferByte_t funcTransferByte,
+        MdvSpiDriverTransfer_t funcTransfer
 );
 
 /*-------------------------------------------------------------------------*//**
@@ -307,11 +316,11 @@ mdv_spi_setup_driver_interface(
 */
 MdvResult_t
 mdv_spi_open(
-        MdvSpi_t *spi,
-        MdvSpiConfig_t *config,
+        MdvSpi_t *const spi,
+        MdvSpiConfig_t *const config,
         MdvSpiTransferCompletedCallback_t callback,
-        void *userData,
-        MdvHandle_t *handle
+        void *const userData,
+        MdvHandle_t *const handle
 );
 
 /*-------------------------------------------------------------------------*//**
@@ -325,7 +334,7 @@ mdv_spi_open(
 */
 MdvResult_t
 mdv_spi_close(
-        MdvHandle_t *handle
+        MdvHandle_t *const handle
 );
 
 /*-------------------------------------------------------------------------*//**
@@ -342,7 +351,7 @@ mdv_spi_close(
 */
 MdvResult_t
 mdv_spi_select_slave(
-        MdvHandle_t handle,
+        MdvHandle_t *const handle,
         uint8_t slaveAddress
 );
 
@@ -376,7 +385,7 @@ mdv_spi_select_slave(
 */
 MdvResult_t
 mdv_spi_transfer(
-        MdvHandle_t handle,
+        MdvHandle_t *const handle,
         uint8_t *dout,
         uint16_t outsz,
         uint8_t *din,
