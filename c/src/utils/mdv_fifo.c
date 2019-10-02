@@ -3,7 +3,7 @@
 **  @file       mdv_fifo.c
 **  @ingroup    madivaru-lib
 **  @brief      A general purpose first-in/first-out buffer (FIFO).
-**  @copyright  Copyright (C) 2012-2018 Tuomas Terho. All rights reserved.
+**  @copyright  Copyright (c) Tuomas Terho. All rights reserved.
 **
 **  The maximum capacity of this FIFO is 65535 data items, 65535 bytes each.
 **
@@ -11,7 +11,7 @@
 /*
 **  BSD 3-Clause License
 **
-**  COPYRIGHT (c) 2012-2018, Tuomas Terho
+**  COPYRIGHT (c) Tuomas Terho
 **  All rights reserved.
 **
 **  Redistribution and use in source and binary forms, with or without

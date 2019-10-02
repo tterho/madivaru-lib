@@ -3,13 +3,13 @@
 **  @file       mdv_sensor_api.c
 **  @ingroup    madivaru-lib
 **  @brief      Sensor framework implementation
-**  @copyright  Copyright (C) 2012-2018 Tuomas Terho. All rights reserved.
+**  @copyright  Copyright (c) Tuomas Terho. All rights reserved.
 **
 *******************************************************************************/
 /*
 **  BSD 3-Clause License
 **
-**  COPYRIGHT (c) 2012-2018, Tuomas Terho
+**  COPYRIGHT (c) Tuomas Terho
 **  All rights reserved.
 **
 **  Redistribution and use in source and binary forms, with or without

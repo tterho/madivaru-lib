@@ -3,11 +3,11 @@
 **  @file       mdv_cli.c
 **  @ingroup    madivaru-lib
 **  @brief      A general purpose command line input processor.
-**  @copyright  Copyright (C) 2012-2018 Tuomas Terho
+**  @copyright  Copyright (c) Tuomas Terho
 **
 *******************************************************************************/
 /*
-**  COPYRIGHT (c) 2012-2018, Tuomas Terho
+**  COPYRIGHT (c) Tuomas Terho
 **  All rights reserved.
 **
 **  Redistribution and use in source and binary forms, with or without
