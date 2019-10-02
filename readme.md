@@ -1,11 +1,11 @@
 # madivaru-lib
-General purpose C libraries especially for embedded systems.
+General purpose C libraries especially for bare metal embedded systems.
 NOTE! The C++ part is heavily under construction.
 
 ## CLI API
 
-* cli_api.h
-* cli_api.c
+* mdv_cli_api.h
+* mdv_cli_api.c
 
 **A generic application programming interface for creating command line 
 interfaces (CLI).**
@@ -17,8 +17,8 @@ handles the callback functions and performs the actions.
 
 ## Sensor Framework
 
-* sensor_api.h
-* sensor_api.c
+* mdv_sensor_api.h
+* mdv_sensor_api.c
 
 **A generic application programming interface and sensor driver definition for 
 applications using different types sensors.**
@@ -32,8 +32,8 @@ configuration, and separate processes.
 
 ## Serial port API
 
-* serialport.h
-* serialport.c
+* mdv_serialport.h
+* mdv_serialport.c
 
 **A simple generic driver definition and API for serial port communication.**
 
@@ -45,8 +45,8 @@ the serial port implementation in personal computers.
 
 ## SPI API
 
-* spi_api.h
-* spi_api.c
+* mdv_spi_api.h
+* mdv_spi_api.c
 
 **A simple generic driver definition and API for synchronous peripheral 
 interface (SPI) communication.**
@@ -60,8 +60,8 @@ peripheral.
 
 ### Average16
 
-* average16.h
-* average16.c
+* mdv_average16.h
+* mdv_average16.c
 
 **A library for 16-bit average value calculations.**
 
@@ -76,8 +76,8 @@ the reset of the calculator.
 
 ### CRC-16
 
-* crc16.h
-* crc16.c
+* mdv_crc16.h
+* mdv_crc16.c
 
 **A library for 16-bit cyclic redundancy check (CRC) value calculations.**
 
@@ -89,8 +89,8 @@ The CRC calculation is performed by using the **CRC-16-IBM** polynomial
 
 ### CRC-32
 
-* crc32.h
-* crc32.c
+* mdv_crc32.h
+* mdv_crc32.c
 
 **A library for 32-bit cyclic redundancy check (CRC) value calculations.**
 
@@ -99,8 +99,8 @@ continued modes. The calculation is performed by using a look-up table.
 
 ### FIFO
 
-* fifo.h
-* fifo.c
+* mdv_fifo.h
+* mdv_fifo.c
 
 **A library for creating and managing custom data first-in, first-out (FIFO) 
 buffers.**
@@ -111,8 +111,10 @@ size per data item. The FIFO can contain up to 4,294,967,295 data items
 
 ### Software timer
 
-* timer.h
-* timer.c
+* mdv_timer.h
+* mdv_timer.c
+* mdv_timer_system.h
+* mdv_timer_system.c
 
 **A library for creating and managing software timers with different time 
 bases.**
@@ -120,12 +122,12 @@ bases.**
 This library can be used to create unlimited amount of software timers with 
 different time bases (timer systems). 
 
-A timer system is ticked by a system timer, for example a timer interrupt. The 
-frequency of the software timer (the time base) depends on the timer tick 
-frequency. A software timer is created by using a timer system as a time base. 
-The timer is a simple 32-bit variable that gets a time stamp from the current 
-timer counter when "started". The counter is advanced (ticked) continuously on 
-the background by the system timer. When compared with the current timer counter 
-value, the timer results into the time lapse between the initial state of time 
-and the current state of time. This result can be used to create delays without 
-stopping the whole application.
+A timer system is ticked by a system timer, for example a timer overflow 
+interrupt. The frequency of the software timer (the time base) depends on the 
+timer tick frequency. The timer is a simple structure that gets a time stamp 
+from the current timer counter when "started". The counter is advanced (ticked) 
+continuously on the background by the system timer. When compared with the 
+current timer counter value, the timer results into the time lapse between the 
+initial state of time and the current state of time. This result can be used to 
+create delays without stopping the whole application. The timer system can
+detect timer stuck errors (e.g. timer interrupt not running properly).
