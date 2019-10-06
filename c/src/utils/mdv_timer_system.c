@@ -4,6 +4,7 @@
 **  @ingroup    madivaru-lib
 **  @brief      A general purpose timer API.
 **  @copyright  Copyright (c) Tuomas Terho. All rights reserved.
+**  @version    1.0
 **
 *******************************************************************************/
 /*
@@ -58,6 +59,9 @@ mdv_timer_system_init(
         if(!tsys){
                 return MDV_ERROR_INVALID_POINTER;
         }
+        if(!ttd){
+                return MDV_ERROR_INVALID_PARAMETER;
+        }
         tsys->tck=0;
         tsys->ctck=0;
         tsys->icnt=0;
@@ -89,9 +93,10 @@ mdv_timer_system_get_tick_count(
                 return MDV_ERROR_INVALID_POINTER;
         }
         // If there is no change between the last tick count value and the
-        // running tick counter, advance the invocation counter. Otherwise,
+        // running tick counter, and the invocation counting is enabled (limit
+        // is greater than zero), advance the invocation counter. Otherwise,
         // reset the invocation counter.
-        if(tsys->ctck==tsys->tck){
+        if((tsys->ctck==tsys->tck)&&(tsys->ilim)){
                 ++tsys->icnt;
         }else{
                 tsys->icnt=0;

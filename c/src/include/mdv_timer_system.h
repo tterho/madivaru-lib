@@ -4,6 +4,7 @@
 **  @ingroup    madivaru-lib
 **  @brief      A timer system for general purpose timers.
 **  @copyright  Copyright (c) Tuomas Terho. All rights reserved.
+**  @version    1.0
 **
 *******************************************************************************/
 /*
@@ -94,15 +95,15 @@ extern "C"{
 **  @brief Initializes the timer system.
 **
 **  @param[in] tsys Timer system to be initialized.
-**  @param[in] ttd Time tick duration in microseconds. This value specifies how 
-**             many microseconds one timer tick takes time. This timer system 
+**  @param[in] ttd Time tick duration in microseconds. This value specifies how
+**             many microseconds one timer tick takes time. This timer system
 **             doesn't support timers faster than one microsecond.
 **  @param[in] ilim This limit specifies how many times the @ref
-**             mdv_timer_get_time function can be invoked without increase in 
-**             the timer tick value before the system stops waiting. Set this 
+**             mdv_timer_get_time function can be invoked without increase in
+**             the timer tick value before the system stops waiting. Set this
 **             value depending on the ratio between the system clock and the
-**             timer tick frequency. Too small limit value causes the timer to  
-**             get tired accidentally. However, keeping this as small as 
+**             timer tick frequency. Too small limit value causes the timer to
+**             get tired accidentally. However, keeping this as small as
 **             possible enhances the system response on error situations.
 **
 **  @retval MDV_RESULT_OK Initialization successful.
@@ -141,7 +142,7 @@ mdv_timer_system_tick(
 **  @param[out] ticks A pointer to a variable where to store the tick count.
 **
 **  @retval MDV_RESULT_OK Successful.
-**  @retval MDV_ERROR_INVALID_POINTER Either the tsys or ticks pointer points to 
+**  @retval MDV_ERROR_INVALID_POINTER Either the tsys or ticks pointer points to
 **          null.
 **  @retval MDV_TIMER_SYSTEM_ERROR_TIMER_NOT_RUNNING The timer system is not
 **          working properly. Check that the @ref mdv_timer_system_tick function
